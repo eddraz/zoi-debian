@@ -423,12 +423,12 @@ Scope {
                         anchors.rightMargin: 6
                         anchors.verticalCenter: parent.verticalCenter
                         visible: !root.findOpen
-                        height: 22
-                        width: searchHintRow.implicitWidth + 12
-                        radius: Style.radius
-                        color: searchBtnMouse.containsMouse ? Color.surface : "transparent"
+                        height: 18
+                        width: searchHintRow.implicitWidth + 8
+                        radius: 3
+                        color: Color.surface
                         border.width: 1
-                        border.color: searchBtnMouse.containsMouse ? Color.subtleBorder : "transparent"
+                        border.color: Color.subtleBorder
 
                         Row {
                             id: searchHintRow
