@@ -15,6 +15,8 @@ Scope {
     property int selectedIndex: 0
     property bool deleteFocused: false
     property bool confirmingClear: false
+    property bool clearConfirmFocused: true   // true = Confirm, false = Cancelar
+    property bool findOpen: false
     property var entries: []
 
     readonly property string pasteHelper: Quickshell.env("HOME") + "/.local/bin/qs-clip-paste"
@@ -116,8 +118,15 @@ Scope {
         selectedIndex = 0;
         deleteFocused = false;
         confirmingClear = false;
+        clearConfirmFocused = true;
+        findOpen = false;
         opened = true;
         listProc.running = true;
+        Qt.callLater(() => card.forceActiveFocus());
+    }
+
+    function beginSearch() {
+        findOpen = true;
         Qt.callLater(() => searchField.forceActiveFocus());
     }
 
@@ -151,6 +160,102 @@ Scope {
     function clearAll(): void {
         confirmingClear = false;
         wipeProc.running = true;
+    }
+
+    function handleKey(event): bool {
+        if (event.key === Qt.Key_Escape) {
+            if (root.confirmingClear) {
+                root.confirmingClear = false;
+                root.clearConfirmFocused = true;
+            } else if (root.findOpen) {
+                root.findOpen = false;
+                root.query = "";
+                card.forceActiveFocus();
+            } else {
+                root.close();
+            }
+            return true;
+        }
+        if (event.key === Qt.Key_Slash || event.text === "/") {
+            if (!root.findOpen) {
+                root.beginSearch();
+                return true;
+            }
+            return false;
+        }
+        if (event.key === Qt.Key_0 && !root.findOpen) {
+            if (root.entries.length > 0 && !root.confirmingClear) {
+                root.confirmingClear = true;
+                root.clearConfirmFocused = true;
+                return true;
+            }
+            return false;
+        }
+        if (event.key === Qt.Key_L && (event.modifiers & Qt.ControlModifier)) {
+            if (root.entries.length > 0 && !root.confirmingClear) {
+                root.confirmingClear = true;
+                root.clearConfirmFocused = true;
+                return true;
+            }
+            return false;
+        }
+        if (root.confirmingClear) {
+            if (event.key === Qt.Key_Left || event.key === Qt.Key_H) {
+                root.clearConfirmFocused = false;
+                return true;
+            }
+            if (event.key === Qt.Key_Right || event.key === Qt.Key_L) {
+                root.clearConfirmFocused = true;
+                return true;
+            }
+            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                if (root.clearConfirmFocused)
+                    root.clearAll();
+                else
+                    root.confirmingClear = false;
+                return true;
+            }
+            return false;
+        }
+        if (event.key === Qt.Key_Down || event.key === Qt.Key_J) {
+            root.selectedIndex = Math.min(root.selectedIndex + 1, Math.max(0, root.filtered.length - 1));
+            return true;
+        }
+        if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
+            root.selectedIndex = Math.max(0, root.selectedIndex - 1);
+            return true;
+        }
+        if (event.key === Qt.Key_PageDown) {
+            root.selectedIndex = Math.min(root.selectedIndex + 5, Math.max(0, root.filtered.length - 1));
+            return true;
+        }
+        if (event.key === Qt.Key_PageUp) {
+            root.selectedIndex = Math.max(0, root.selectedIndex - 5);
+            return true;
+        }
+        if (event.key === Qt.Key_Right || event.key === Qt.Key_L) {
+            root.deleteFocused = true;
+            return true;
+        }
+        if (event.key === Qt.Key_Left || event.key === Qt.Key_H) {
+            root.deleteFocused = false;
+            return true;
+        }
+        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
+            if (root.filtered.length > 0) {
+                if (root.deleteFocused)
+                    root.remove(root.filtered[root.selectedIndex]);
+                else
+                    root.paste(root.filtered[root.selectedIndex]);
+            }
+            return true;
+        }
+        if (event.key === Qt.Key_Delete) {
+            if (root.filtered.length > 0)
+                root.remove(root.filtered[root.selectedIndex]);
+            return true;
+        }
+        return false;
     }
 
     Connections {
@@ -237,6 +342,11 @@ Scope {
             anchors.top: parent.top
             anchors.topMargin: root.opened ? 72 : 60
             width: 460
+            focus: true
+            Keys.onPressed: event => {
+                if (!searchField.activeFocus)
+                    event.accepted = root.handleKey(event);
+            }
             implicitHeight: Math.min(column.implicitHeight + Style.pad * 2, (win.height > 200 ? win.height - 100 : 560))
             color: Color.popupBackground
             radius: Style.cardRadius
@@ -447,10 +557,11 @@ Scope {
                     }
                 }
 
-                // Search Input Box
+                // Search Input Box (hidden until / like other panels)
                 Rectangle {
+                    visible: root.findOpen
                     width: parent.width
-                    height: 32
+                    height: root.findOpen ? 32 : 0
                     radius: Style.radius
                     color: Color.crust
                     border.width: 1
@@ -498,74 +609,8 @@ Scope {
                                     root.selectedIndex = 0;
                                 }
                                 Keys.onPressed: event => {
-                                    if (event.key === Qt.Key_Escape) {
-                                        if (root.confirmingClear) {
-                                            root.confirmingClear = false;
-                                            root.clearConfirmFocused = true;
-                                        } else if (root.query !== "") {
-                                            root.query = "";
-                                        } else {
-                                            root.close();
-                                        }
-                                        event.accepted = true;
-                                    } else if (event.key === Qt.Key_0) {
-                                        if (root.entries.length > 0 && !root.confirmingClear) {
-                                            root.confirmingClear = true;
-                                            root.clearConfirmFocused = true;
-                                            event.accepted = true;
-                                        }
-                                    } else if (event.key === Qt.Key_L && (event.modifiers & Qt.ControlModifier)) {
-                                        if (root.entries.length > 0 && !root.confirmingClear) {
-                                            root.confirmingClear = true;
-                                            root.clearConfirmFocused = true;
-                                            event.accepted = true;
-                                        }
-                                    } else if (root.confirmingClear) {
-                                        if (event.key === Qt.Key_Left || event.key === Qt.Key_H) {
-                                            root.clearConfirmFocused = false;
-                                            event.accepted = true;
-                                        } else if (event.key === Qt.Key_Right || event.key === Qt.Key_L) {
-                                            root.clearConfirmFocused = true;
-                                            event.accepted = true;
-                                        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                            if (root.clearConfirmFocused)
-                                                root.clearAll();
-                                            else
-                                                root.confirmingClear = false;
-                                            event.accepted = true;
-                                        }
-                                    } else if (event.key === Qt.Key_Down) {
-                                        root.selectedIndex = Math.min(root.selectedIndex + 1, Math.max(0, root.filtered.length - 1));
-                                        event.accepted = true;
-                                    } else if (event.key === Qt.Key_Up) {
-                                        root.selectedIndex = Math.max(0, root.selectedIndex - 1);
-                                        event.accepted = true;
-                                    } else if (event.key === Qt.Key_PageDown) {
-                                        root.selectedIndex = Math.min(root.selectedIndex + 5, Math.max(0, root.filtered.length - 1));
-                                        event.accepted = true;
-                                    } else if (event.key === Qt.Key_PageUp) {
-                                        root.selectedIndex = Math.max(0, root.selectedIndex - 5);
-                                        event.accepted = true;
-                                    } else if (event.key === Qt.Key_Right) {
-                                        root.deleteFocused = true;
-                                        event.accepted = true;
-                                    } else if (event.key === Qt.Key_Left) {
-                                        root.deleteFocused = false;
-                                        event.accepted = true;
-                                    } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                        if (root.filtered.length > 0) {
-                                            if (root.deleteFocused)
-                                                root.remove(root.filtered[root.selectedIndex]);
-                                            else
-                                                root.paste(root.filtered[root.selectedIndex]);
-                                        }
-                                        event.accepted = true;
-                                    } else if (event.key === Qt.Key_Delete) {
-                                        if (root.filtered.length > 0)
-                                            root.remove(root.filtered[root.selectedIndex]);
-                                        event.accepted = true;
+                                        event.accepted = root.handleKey(event);
                                     }
-                                }
                             }
                         }
 
