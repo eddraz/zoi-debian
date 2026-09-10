@@ -1,0 +1,47 @@
+#!/bin/bash
+set -u
+
+ART="${HOME}/.config/quickshell/screensaver.txt"
+BANNER="$HOME/.local/bin/qs-screensaver-banner"
+EFFECTS=(
+    beams binarypath blackhole bouncyballs bubbles burn colorshift crumble
+    decrypt errorcorrect expand fireworks highlight laseretch matrix middleout
+    orbittingvolley overflow pour print rain randomsequence rings scattered
+    slice slide spotlights spray swarm sweep synthgrid unstable vhstape waves wipe
+)
+
+cleanup() {
+    tput cnorm 2>/dev/null || true
+    stty sane 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+tput civis 2>/dev/null || true
+stty -echo -icanon time 0 min 0 2>/dev/null || true
+printf '\033[?25l' 2>/dev/null || true
+
+while true; do
+    text="ZOI"
+    if [ -f "$ART" ]; then
+        text="$(sed -n '/[^[:space:]]/{p;q;}' "$ART" | tr -d '\r')"
+        [ -n "$text" ] || text="ZOI"
+    fi
+    art="$("$BANNER" "$text")"
+    effect="${EFFECTS[RANDOM % ${#EFFECTS[@]}]}"
+    printf '%s\n' "$art" | tte \
+        --frame-rate 120 \
+        --canvas-width 0 \
+        --canvas-height 0 \
+        --anchor-canvas c \
+        --anchor-text c \
+        "$effect" 2>/dev/null &
+    tte_pid=$!
+    while kill -0 "$tte_pid" 2>/dev/null; do
+        if read -r -n 1 -t 0.2 _ </dev/tty 2>/dev/null; then
+            kill "$tte_pid" 2>/dev/null || true
+            wait "$tte_pid" 2>/dev/null || true
+            exit 0
+        fi
+    done
+    wait "$tte_pid" 2>/dev/null || true
+done

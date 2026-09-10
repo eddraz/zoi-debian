@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+import sys
+
+try:
+    import gi
+    gi.require_version("GdkPixbuf", "2.0")
+    from gi.repository import GdkPixbuf
+except Exception:
+    sys.exit(1)
+
+
+def clamp(value):
+    return max(0, min(255, int(value)))
+
+
+def mix(a, b, t):
+    return tuple(clamp(a[i] * (1 - t) + b[i] * t) for i in range(3))
+
+
+def scale(c, f):
+    return tuple(clamp(x * f) for x in c)
+
+
+def lum(c):
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+
+
+def sat(c):
+    mx, mn = max(c), min(c)
+    if mx <= 0:
+        return 0.0
+    return (mx - mn) / mx
+
+
+def hexc(c):
+    return "#{:02x}{:02x}{:02x}".format(*c)
+
+
+def kmeans(points, k=6, rounds=8):
+    if not points:
+        return []
+    step = max(1, len(points) // k)
+    centers = [points[min(i * step, len(points) - 1)] for i in range(k)]
+    for _ in range(rounds):
+        buckets = [[] for _ in range(k)]
+        for p in points:
+            best = 0
+            best_d = None
+            for i, c in enumerate(centers):
+                d = (p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2 + (p[2] - c[2]) ** 2
+                if best_d is None or d < best_d:
+                    best_d = d
+                    best = i
+            buckets[best].append(p)
+        for i, bucket in enumerate(buckets):
+            if not bucket:
+                continue
+            n = len(bucket)
+            centers[i] = (
+                sum(p[0] for p in bucket) // n,
+                sum(p[1] for p in bucket) // n,
+                sum(p[2] for p in bucket) // n,
+            )
+    return centers
+
+
+def main():
+    if len(sys.argv) < 2:
+        return 2
+    path = sys.argv[1]
+    pb = GdkPixbuf.Pixbuf.new_from_file_at_size(path, 96, 96)
+    pixels = pb.get_pixels()
+    rs = pb.get_rowstride()
+    n = pb.get_n_channels()
+    w, h = pb.get_width(), pb.get_height()
+    points = []
+    for y in range(h):
+        for x in range(w):
+            o = y * rs + x * n
+            points.append((pixels[o], pixels[o + 1], pixels[o + 2]))
+    centers = kmeans(points)
+    if not centers:
+        return 1
+    dark = min(centers, key=lum)
+    light = max(centers, key=lum)
+    colorful = [c for c in centers if 28 < lum(c) < 220]
+    if not colorful:
+        colorful = centers[:]
+    def far(c, ref):
+        return abs(c[0] - ref[0]) + abs(c[1] - ref[1]) + abs(c[2] - ref[2])
+
+    def distinct(c, ref, fallback):
+        return c if far(c, ref) > 48 else mix(c, fallback, 0.72)
+
+    accent = max(colorful, key=sat)
+    urgent = max(colorful, key=lambda c: c[0] - (c[1] + c[2]) / 2)
+    green = max(colorful, key=lambda c: c[1] - (c[0] + c[2]) / 2)
+    peach = max(colorful, key=lambda c: c[0] * 0.6 + c[1] * 0.4 - c[2])
+    yellow = max(colorful, key=lambda c: c[0] + c[1] - 2 * c[2])
+    if lum(dark) > 80:
+        dark = scale(dark, 0.45)
+    if lum(light) < 160:
+        light = mix(light, (245, 245, 245), 0.55)
+    bg, fg = dark, light
+    accent = distinct(accent, bg, mix(accent, (90, 150, 220), 0.6))
+    urgent = distinct(urgent, bg, (220, 80, 95))
+    green = distinct(green, bg, (120, 180, 110))
+    peach = distinct(peach, bg, (230, 150, 90))
+    yellow = distinct(yellow, bg, (230, 190, 90))
+    pal = {
+        "background": bg,
+        "mantle": scale(bg, 0.86),
+        "crust": scale(bg, 0.72),
+        "foreground": fg,
+        "muted": mix(fg, bg, 0.42),
+        "overlay": mix(fg, bg, 0.62),
+        "surface": mix(bg, fg, 0.16),
+        "accent": accent,
+        "urgent": urgent,
+        "green": green,
+        "peach": peach,
+        "yellow": yellow,
+    }
+    for key, value in pal.items():
+        print(f"{key}={hexc(value)}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

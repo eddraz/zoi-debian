@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "bar": {
+    "layout": {
+      "left": [
+        "workspaces",
+        "window"
+      ],
+      "center": [
+        "clock"
+      ],
+      "right": [
+        "session",
+        "audio",
+        "power",
+        "bluetooth",
+        "network",
+        "notifs",
+        "dnd",
+        "reminders",
+        "media",
+        "weather",
+        "keyboard",
+        "tray"
+      ]
+    }
+  },
+  "disabledPlugins": []
+}

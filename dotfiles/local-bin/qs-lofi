@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+
+URL="https://play.streamafrica.net/lofiradio"
+
+if pgrep -f "mpv.*qs-lofi" >/dev/null 2>&1; then
+    pkill -f "mpv.*qs-lofi" || true
+    exit 0
+fi
+
+playerctl -a pause >/dev/null 2>&1 || true
+
+exec mpv \
+    --no-video \
+    --really-quiet \
+    --title=qs-lofi \
+    --force-media-title="Lofi radio" \
+    --no-terminal \
+    "$URL"

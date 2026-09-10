@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+dir="${OMARCHY_SCREENRECORD_DIR:-$HOME/Vídeos/records}"
+mkdir -p "$dir"
+
+if pgrep -x wf-recorder >/dev/null 2>&1; then
+    pkill -INT -x wf-recorder
+    notify-send "Screen record" "Stopping…"
+    exit 0
+fi
+
+if pgrep -x slurp >/dev/null 2>&1; then
+    pkill -x slurp
+    exit 0
+fi
+
+file="$dir/screenrecording-$(date +%Y-%m-%d_%H-%M-%S).mp4"
+geom=$(slurp) || exit 0
+notify-send "Screen record" "Recording… Alt+Print to stop"
+wf-recorder -g "$geom" -f "$file"
+notify-send "Screen record" "$file"

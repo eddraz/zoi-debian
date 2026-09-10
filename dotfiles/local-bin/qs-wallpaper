@@ -1,0 +1,56 @@
+#!/bin/bash
+set -euo pipefail
+
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/quickshell"
+STATE="$STATE_DIR/wallpaper"
+MODE="${1:-restore}"
+
+list_images() {
+  local dirs=("$HOME/Imágenes" "$HOME/Pictures" "$HOME/.local/share/wallpapers")
+  local d
+  for d in "${dirs[@]}"; do
+    [ -d "$d" ] || continue
+    find "$d" -maxdepth 2 -type f \( \
+      -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o \
+      -iname '*.webp' -o -iname '*.bmp' \) \
+      ! -path '*/screenshots/*' ! -path '*/records/*' 2>/dev/null
+  done | sort -u
+}
+
+set_bg() {
+  local f="${1:-}"
+  [ -n "$f" ] && [ -f "$f" ] || exit 1
+  mkdir -p "$STATE_DIR"
+  printf '%s\n' "$f" > "$STATE"
+  pkill -x swaybg 2>/dev/null || true
+  sleep 0.05
+  # Do not pass -o *: sway stacks extra -o flags on the same process and the
+  # image renders torn. Unscoped swaybg paints every output.
+  setsid -f swaybg -i "$f" -m fill >/dev/null 2>&1
+}
+
+case "$MODE" in
+  list)
+    list_images
+    ;;
+  set)
+    set_bg "${2:-}"
+    ;;
+  current)
+    if [ -f "$STATE" ]; then
+      head -n1 "$STATE"
+    fi
+    ;;
+  restore)
+    if [ -f "$STATE" ]; then
+      f="$(head -n1 "$STATE")"
+      if [ -f "$f" ]; then
+        set_bg "$f"
+      fi
+    fi
+    ;;
+  *)
+    echo "usage: qs-wallpaper list|set <path>|current|restore" >&2
+    exit 2
+    ;;
+esac

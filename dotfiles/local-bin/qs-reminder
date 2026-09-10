@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+import json
+import os
+import subprocess
+import sys
+import time
+
+PREFIX = "qs-reminder-"
+
+
+def run(cmd, check=False):
+    return subprocess.run(cmd, check=check, capture_output=True, text=True)
+
+
+def add(minutes, message):
+    minutes = int(minutes)
+    if minutes < 1:
+        raise SystemExit("minutes must be >= 1")
+    msg = (message or "").strip() or f"In {minutes} min"
+    uid = str(int(time.time()))
+    unit = PREFIX + uid
+    subprocess.run(
+        [
+            "systemd-run",
+            "--user",
+            "--collect",
+            f"--on-active={minutes}min",
+            f"--unit={unit}",
+            f"--description=Reminder: {msg}",
+            "/usr/bin/notify-send",
+            "-u",
+            "normal",
+            "Reminder",
+            msg,
+        ],
+        check=True,
+    )
+    print(unit)
+
+
+def unit_names():
+    out = run(
+        [
+            "systemctl",
+            "--user",
+            "list-units",
+            "--type=timer",
+            "--all",
+            "--no-legend",
+            "--plain",
+            PREFIX + "*",
+        ]
+    ).stdout
+    names = []
+    for line in out.splitlines():
+        parts = line.split()
+        if not parts:
+            continue
+        name = parts[0] if not parts[0].startswith("*") else parts[1] if len(parts) > 1 else ""
+        if name.startswith(PREFIX) and name.endswith(".timer"):
+            names.append(name)
+    return names
+
+
+def show_prop(unit, key):
+    out = run(["systemctl", "--user", "show", unit, "-p", key, "--value"]).stdout.strip()
+    return out
+
+
+def list_json():
+    items = []
+    listed = run(["systemctl", "--user", "list-timers", "--all", "--no-legend", "--no-pager"]).stdout
+    left_by_unit = {}
+    for line in listed.splitlines():
+        if PREFIX not in line:
+            continue
+        parts = line.split()
+        unit = next((p for p in parts if p.startswith(PREFIX) and p.endswith(".timer")), "")
+        if not unit:
+            continue
+        left = next((p for p in parts if p and p[0].isdigit() and p[-1] in "smh"), "")
+        left_by_unit[unit] = left
+    for unit in unit_names():
+        desc = show_prop(unit, "Description")
+        msg = desc.split("Reminder: ", 1)[-1] if "Reminder:" in desc else desc
+        items.append({"id": unit, "message": msg, "left": left_by_unit.get(unit, "")})
+    print(json.dumps({"count": len(items), "items": items}))
+
+
+def cancel(unit):
+    if not unit.startswith(PREFIX):
+        raise SystemExit("invalid id")
+    run(["systemctl", "--user", "stop", unit])
+    svc = unit.replace(".timer", ".service")
+    run(["systemctl", "--user", "stop", svc])
+
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
+        print("usage: qs-reminder add <minutes> [message] | list | cancel <id>")
+        raise SystemExit(2)
+    cmd = sys.argv[1]
+    if cmd == "add":
+        if len(sys.argv) < 3:
+            raise SystemExit("usage: qs-reminder add <minutes> [message]")
+        add(sys.argv[2], " ".join(sys.argv[3:]))
+    elif cmd == "list":
+        list_json()
+    elif cmd == "cancel":
+        if len(sys.argv) < 3:
+            raise SystemExit("usage: qs-reminder cancel <id>")
+        cancel(sys.argv[2])
+    else:
+        raise SystemExit("unknown command")
+
+
+if __name__ == "__main__":
+    main()

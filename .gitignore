@@ -1,0 +1,16 @@
+.DS_Store
+*.swp
+*.bak
+.cache/
+*.qmlc
+*.jsc
+.DS_Store
+.idea/
+.vscode/
+
+# Runtime state (NOT dotfiles, NOT git)
+state/
+
+# Logs
+*.log
+.codegraph/

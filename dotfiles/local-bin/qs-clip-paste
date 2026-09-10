@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+
+tmp=$(mktemp)
+trap 'rm -f "$tmp"' EXIT
+
+printf '%s\n' "$1" | cliphist decode >"$tmp"
+
+wl-copy <"$tmp"
+wl-copy --primary <"$tmp"
+
+# Overlay must drop keyboard focus before we synthesize paste.
+sleep 0.25
+exec wtype -s 80 -M shift -k Insert -m shift

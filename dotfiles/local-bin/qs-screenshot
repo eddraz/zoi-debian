@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+dir="${OMARCHY_SCREENSHOT_DIR:-$HOME/Imágenes/screenshots}"
+mkdir -p "$dir"
+file="$dir/screenshot-$(date +%Y-%m-%d_%H-%M-%S).png"
+
+if pgrep -x slurp >/dev/null 2>&1; then
+    pkill -x slurp
+    exit 0
+fi
+
+geom=$(slurp) || exit 0
+grim -g "$geom" "$file"
+wl-copy --type image/png < "$file"
+notify-send -i "$file" "Screenshot" "$file"

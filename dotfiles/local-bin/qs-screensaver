@@ -1,0 +1,51 @@
+#!/bin/sh
+set -eu
+
+FOOT_CLASS="qs-screensaver"
+RUN="$HOME/.local/bin/qs-screensaver-run"
+STAY="$HOME/.local/state/quickshell/stay-awake"
+COLORS="$HOME/.local/state/quickshell/screensaver-colors"
+
+running() {
+    pgrep -f -- "--app-id=${FOOT_CLASS}" >/dev/null 2>&1
+}
+
+stop() {
+    pkill -f -- "--app-id=${FOOT_CLASS}" >/dev/null 2>&1 || true
+}
+
+bg="11111b"
+fg="89b4fa"
+if [ -f "$COLORS" ]; then
+    bg=$(sed -n '1p' "$COLORS" | tr -d '#[:space:]')
+    fg=$(sed -n '2p' "$COLORS" | tr -d '#[:space:]')
+fi
+[ -n "$bg" ] || bg="11111b"
+[ -n "$fg" ] || fg="89b4fa"
+
+case "${1:-start}" in
+    stop)
+        stop
+        ;;
+    start|"")
+        if [ -f "$STAY" ] && [ "$(tr -d '\n' < "$STAY")" = "1" ]; then
+            exit 0
+        fi
+        if running; then
+            exit 0
+        fi
+        setsid -f foot \
+            --app-id="$FOOT_CLASS" \
+            --title=ZOI \
+            --fullscreen \
+            -o "colors.background=${bg}" \
+            -o "colors.foreground=${fg}" \
+            -o "font=DejaVu Sans Mono:size=18" \
+            -o pad=0x0 \
+            "$RUN" >/dev/null 2>&1
+        ;;
+    *)
+        echo "usage: qs-screensaver [start|stop]" >&2
+        exit 2
+        ;;
+esac
