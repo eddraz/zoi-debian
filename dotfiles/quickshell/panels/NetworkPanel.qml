@@ -167,6 +167,14 @@ Column {
         return list.slice(0, 8);
     }
 
+    Component.onCompleted: {
+        for (let i = 0; i < Math.min(3, networks.length); i++) {
+            const n = networks[i];
+            console.warn("[NETDBG]", n.name, "signalStrength=" + n.signalStrength,
+                "type=" + typeof n.signalStrength, "connected=" + n.connected);
+        }
+    }
+
     onVisibleChanged: {
         if (visible) {
             root.wifiTabFocus = -1;
@@ -441,7 +449,7 @@ Column {
                         font.family: Style.fontFamily
                         font.pixelSize: Style.fontCaption
                         text: {
-                            const sig = Math.round(modelData.signalStrength || 0);
+                            const sig = Math.round((modelData.signalStrength || 0) * 100);
                             if (modelData.connected)
                                 return "Conectada · Señal al " + sig + "%";
                             if (modelData.known)
@@ -472,7 +480,7 @@ Column {
                         font.pixelSize: Style.fontCaption - 1
                         font.bold: true
                         color: modelData.connected ? Color.accent : Color.popupMuted
-                        text: modelData.connected ? "CONECTADO" : (modelData.known ? "GUARDADA" : Math.round(modelData.signalStrength || 0) + "%")
+                        text: modelData.connected ? "CONECTADO" : (modelData.known ? "GUARDADA" : Math.round((modelData.signalStrength || 0) * 100) + "%")
                     }
                 }
 
