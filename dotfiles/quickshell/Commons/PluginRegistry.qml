@@ -167,7 +167,7 @@ Singleton {
             "kinds": ["panel"],
             "popup": "bar",
             "panel": "../panels/BarEditorPanel.qml",
-            "title": "Bar",
+            "title": "Plugin Registry",
             "centerCard": true,
             "cardWidth": 480
         },
@@ -459,7 +459,9 @@ Singleton {
         const script = "p=\"$HOME/.config/quickshell/shell.json\"; " +
                           "tmp=\"${p}.tmp\"; " +
                           "printf '%s\\n' \"$1\" > \"$tmp\"; " +
-                          "mv \"$tmp\" \"$p\"";
+                          "mv \"$tmp\" \"$p\"; " +
+                          "d=\"$HOME/projects/zoi-debian/dotfiles/quickshell/shell.json\"; " +
+                          "[ -d \"$(dirname \"$d\")\" ] && cp \"$p\" \"$d\" 2>/dev/null || true";
         Quickshell.execDetached(["bash", "-c", script, "qs-bar-write", json]);
         return payload;
     }

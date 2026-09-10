@@ -430,19 +430,30 @@ Column {
                         readonly property int chipSec: sectionCol.secIndex
 
                         width: parent.width
-                        height: 26
+                        height: 28
                         radius: Style.radius
                         color: {
                             if (root._isPicked(chipSec, chipIndex))
                                 return Color.accent;
-                            if (chipMouse.containsMouse)
-                                return Color.focusFill;
-                            if (root.section === chipSec && root._cursorArr[chipSec] === chipIndex)
+                            if (chipMouse.containsMouse || (root.section === chipSec && root._cursorArr[chipSec] === chipIndex))
                                 return Color.focusFill;
                             return Color.surface;
                         }
-                        border.width: (root.section === chipSec && root._cursorArr[chipSec] === chipIndex) ? 2 : 0
-                        border.color: Color.accent
+                        border.width: 1
+                        border.color: root._isPicked(chipSec, chipIndex) || (root.section === chipSec && root._cursorArr[chipSec] === chipIndex) ? Color.accent : "transparent"
+                        Behavior on color { ColorAnimation { duration: Style.animDuration } }
+                        Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
+
+                        Rectangle {
+                            width: 3
+                            height: parent.height - 10
+                            radius: 1.5
+                            color: root._isPicked(chipSec, chipIndex) ? Color.background : Color.accent
+                            anchors.left: parent.left
+                            anchors.leftMargin: 2
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: root._isPicked(chipSec, chipIndex) || (root.section === chipSec && root._cursorArr[chipSec] === chipIndex)
+                        }
 
                         Row {
                             anchors.fill: parent
@@ -560,11 +571,13 @@ Column {
                 Rectangle {
                     width: parent.width
                     visible: root.sectionAvailable[sectionCol.secIndex].length > 0
-                    height: 22
+                    height: 26
                     radius: Style.radius
                     color: availMouse.containsMouse ? Color.focusFill : ((root.section === sectionCol.secIndex && root._cursorArr[sectionCol.secIndex] === root.sectionIds[sectionCol.secIndex].length) ? Color.focusFill : "transparent")
                     border.width: 1
-                    border.color: Color.overlay
+                    border.color: (root.section === sectionCol.secIndex && root._cursorArr[sectionCol.secIndex] === root.sectionIds[sectionCol.secIndex].length) ? Color.accent : Color.subtleBorder
+                    Behavior on color { ColorAnimation { duration: Style.animDuration } }
+                    Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
 
                     Text {
                         anchors.fill: parent

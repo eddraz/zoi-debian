@@ -91,7 +91,7 @@ Column {
     readonly property var searchEntries: {
         const e = [
             { "label": "shortcuts", "index": 0 },
-            { "label": "bar", "index": 1 },
+            { "label": "plugin registry bar", "index": 1 },
             { "label": "stay awake", "index": 2 },
             { "label": "night light", "index": 3 },
             { "label": "theme", "index": 4 }
@@ -227,7 +227,7 @@ Column {
             font.pixelSize: Style.fontCaption
             font.bold: root.cursor === 1
             elide: Text.ElideRight
-            text: "Bar"
+            text: "Plugin Registry"
         }
 
         HoverMouse {
