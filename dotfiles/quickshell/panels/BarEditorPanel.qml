@@ -314,11 +314,6 @@ Column {
         }
     }
 
-    Connections {
-        target: PluginRegistry
-        function onRevisionChanged() { root.dirty = true; }
-    }
-
     Rectangle {
         width: parent.width
         height: 22
@@ -327,8 +322,7 @@ Column {
         Text {
             id: helpText
             anchors.left: parent.left
-            anchors.right: saveBtn.left
-            anchors.rightMargin: 8
+            anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             color: Color.popupMuted
             font.family: Style.fontFamily
@@ -358,33 +352,6 @@ Column {
                         HoverTip.show(parent, helpText.fullText);
                     else
                         HoverTip.hide();
-                }
-            }
-        }
-
-        Rectangle {
-            id: saveBtn
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            width: saveRow.implicitWidth + 18
-            height: 22
-            radius: Style.radius
-            color: root.dirty ? Color.accent : Color.surface
-
-            Text {
-                id: saveRow
-                anchors.centerIn: parent
-                text: root.dirty ? "Save" : "Saved"
-                color: root.dirty ? Color.background : Color.popupMuted
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption
-                font.bold: true
-            }
-
-            HoverMouse {
-                onClicked: {
-                    PluginRegistry.writeShell();
-                    root.dirty = false;
                 }
             }
         }

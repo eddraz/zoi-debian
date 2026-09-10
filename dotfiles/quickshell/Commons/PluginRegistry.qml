@@ -13,6 +13,17 @@ Singleton {
     property var disabled: []
     property int revision: 0
 
+    Timer {
+        id: autoSaveTimer
+        interval: 150
+        repeat: false
+        onTriggered: root.writeShell()
+    }
+
+    function scheduleSave() {
+        autoSaveTimer.restart();
+    }
+
     readonly property var defaultLayout: ({
         "left": ["workspaces", "window"],
         "center": ["clock"],
@@ -366,6 +377,7 @@ Singleton {
             return false;
         layout = next;
         revision++;
+        scheduleSave();
         return true;
     }
 
@@ -429,10 +441,12 @@ Singleton {
             return false;
         disabled = list;
         revision++;
+        scheduleSave();
         return true;
     }
 
     function writeShell() {
+        autoSaveTimer.stop();
         const payload = {
             "version": 1,
             "bar": { "layout": { "left": orderedIds("left"), "center": orderedIds("center"), "right": orderedIds("right") } },
@@ -465,6 +479,11 @@ Singleton {
         } catch (e) {
             console.warn("PluginRegistry: shell.json parse failed:", e);
         }
+    }
+
+    Component.onDestruction: {
+        if (autoSaveTimer.running)
+            root.writeShell();
     }
 
     FileView {
