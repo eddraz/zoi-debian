@@ -170,7 +170,7 @@ swaymsg exec /usr/bin/qs -n --daemonize
 qs ipc call popups toggle audio
 
 # Save bar layout from terminal
-echo '{"version":1,"bar":{"layout":{"left":["workspaces","window"],"center":["clock"],"right":["session","audio","power","bluetooth","network","notifs","dnd","reminders","media","weather","keyboard","tray"]}},"disabledPlugins":[]}' > ~/.config/quickshell/shell.json
+echo '{"version":1,"bar":{"layout":{"left":["session","workspaces","window"],"center":["reminders","clock","weather"],"right":["keyboard","media","audio","power","bluetooth","network","notifs","dnd","tray"]}},"disabledPlugins":[]}' > ~/.config/quickshell/shell.json
 
 # Inspect plugin registry state (no IPC, but you can grep the catalog)
 grep -A 3 '"workspaces":' ~/.config/quickshell/Commons/PluginRegistry.qml

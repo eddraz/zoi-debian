@@ -147,7 +147,7 @@ if ! grep -q "qs -n --daemonize" "$HOME/.config/sway/config"; then
 
 # zoi-debian: arrancar qs (si no lo está)
 exec_always /usr/bin/qs -n --daemonize
-exec_always /home/eddraz/.local/bin/qs-idle
+exec_always $HOME/.local/bin/qs-idle
 EOF
 fi
 

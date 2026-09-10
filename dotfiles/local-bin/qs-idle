@@ -1,8 +1,8 @@
 #!/bin/sh
 pkill -x swayidle 2>/dev/null || true
 exec swayidle -w \
-    timeout 150 '/home/eddraz/.local/bin/qs-screensaver' \
-    timeout 300 '/home/eddraz/.local/bin/qs-screensaver stop; /usr/bin/qs ipc call lock lock' \
+    timeout 150 "$HOME/.local/bin/qs-screensaver" \
+    timeout 300 "$HOME/.local/bin/qs-screensaver stop; /usr/bin/qs ipc call lock lock" \
     timeout 330 'swaymsg "output * power off"' \
-    resume '/home/eddraz/.local/bin/qs-screensaver stop; swaymsg "output * power on"' \
-    before-sleep '/home/eddraz/.local/bin/qs-screensaver stop; /usr/bin/qs ipc call lock lock'
+    resume "$HOME/.local/bin/qs-screensaver stop; swaymsg \"output * power on\"" \
+    before-sleep "$HOME/.local/bin/qs-screensaver stop; /usr/bin/qs ipc call lock lock"

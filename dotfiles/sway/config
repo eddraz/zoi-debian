@@ -36,9 +36,9 @@ include /etc/sway/config-vars.d/*
 
 ### Idle configuration
 #
-exec_always /home/eddraz/.local/bin/qs-idle
-exec_always /home/eddraz/.local/bin/qs-clipwatch
-exec_always /home/eddraz/.local/bin/qs-wallpaper restore
+exec_always ~/.local/bin/qs-idle
+exec_always ~/.local/bin/qs-clipwatch
+exec_always ~/.local/bin/qs-wallpaper restore
 
 ### Input configuration
 #
@@ -243,9 +243,9 @@ bindsym $mod+Shift+r exec /usr/bin/qs ipc call media toggleArm
     bindsym --locked XF86MonBrightnessDown exec brightnessctl set 5%- && /usr/bin/qs ipc call osd brightness
     bindsym --locked XF86MonBrightnessUp exec brightnessctl set 5%+ && /usr/bin/qs ipc call osd brightness
     # Special key to take a screenshot with grim
-    bindsym Print exec /home/eddraz/.local/bin/qs-screenshot
-    bindsym $mod+Shift+s exec /home/eddraz/.local/bin/qs-screenshot
-    bindsym Mod1+Print exec /home/eddraz/.local/bin/qs-screenrecord
+    bindsym Print exec ~/.local/bin/qs-screenshot
+    bindsym $mod+Shift+s exec ~/.local/bin/qs-screenshot
+    bindsym Mod1+Print exec ~/.local/bin/qs-screenrecord
 
 for_window [app_id="qs-screensaver"] fullscreen enable, border none
 

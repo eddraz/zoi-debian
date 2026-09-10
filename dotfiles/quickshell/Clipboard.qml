@@ -74,17 +74,20 @@ Scope {
             open();
     }
 
+    readonly property string pasteHelper: Quickshell.env("HOME") + "/.local/bin/qs-clip-paste"
+    readonly property string deleteHelper: Quickshell.env("HOME") + "/.local/bin/qs-clip-delete"
+
     function paste(entry): void {
         if (!entry)
             return;
         close();
-        Quickshell.execDetached(["/home/eddraz/.local/bin/qs-clip-paste", entry.line]);
+        Quickshell.execDetached([root.pasteHelper, entry.line]);
     }
 
     function remove(entry): void {
         if (!entry)
             return;
-        deleteProc.command = ["/home/eddraz/.local/bin/qs-clip-delete", entry.line];
+        deleteProc.command = [root.deleteHelper, entry.line];
         deleteProc.running = true;
     }
 

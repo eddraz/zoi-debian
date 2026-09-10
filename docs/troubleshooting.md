@@ -55,7 +55,7 @@ O el catálogo tiene el mismo `target:` declarado dos veces.
 
 ```sh
 swaymsg 'output * bg'  # ver outputs actuales
-swaymsg 'output eDP-1 bg "/home/eddraz/Imágenes/baby-yoda-cartoon.jpg" fill'
+swaymsg "output eDP-1 bg \"$HOME/Imágenes/baby-yoda-cartoon.jpg\" fill"
 ```
 
 Si usás `swaybg -o * -o eDP-1` (stack), parpadea. Preferí `swaymsg output * bg`.
@@ -65,7 +65,7 @@ Si usás `swaybg -o * -o eDP-1` (stack), parpadea. Preferí `swaymsg output * bg
 `Wallpaper.current` no está seteado. Aplicá wallpaper desde Session → Wallpaper. Si está roto, editá a mano:
 
 ```sh
-echo "/home/eddraz/Imágenes/baby-yoda-cartoon.jpg" > ~/.local/state/quickshell/wallpaper
+echo "$HOME/Imágenes/baby-yoda-cartoon.jpg" > ~/.local/state/quickshell/wallpaper
 ```
 
 ## "Mi emoji picker no se abre"

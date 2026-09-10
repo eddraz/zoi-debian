@@ -67,16 +67,16 @@ Cada id declara **kinds** (uno o más de `bar-widget`, `panel`, `service`, `over
   "version": 1,
   "bar": {
     "layout": {
-      "left":   ["workspaces", "window"],
-      "center": ["clock"],
-      "right":  ["session", "audio", ...]
+      "left":   ["session", "workspaces", "window"],
+      "center": ["reminders", "clock", "weather"],
+      "right":  ["keyboard", "media", "audio", ...]
     }
   },
   "disabledPlugins": []
 }
 ```
 
-Un `FileView` con `watchChanges: true` recarga el layout cuando el usuario guarda desde el Bar editor.
+Un `FileView` con `watchChanges: true` recarga el layout automáticamente cuando se reorganiza desde el Bar editor.
 
 ### Loaders por sección
 

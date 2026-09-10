@@ -22,9 +22,10 @@ fi
 log "Removing qs-* scripts from ~/.local/bin."
 rm -f $HOME/.local/bin/qs-*
 
-if grep -q "qs -n --daemonize" "$HOME/.config/sway/config" 2>/dev/null; then
-  log "Restoring waybar as default bar in sway/config."
-  $SUDO sed -i '/exec_always \/usr\/bin\/qs -n --daemonize/d' "$HOME/.config/sway/config"
+if [ -f "$HOME/.config/sway/config" ]; then
+  log "Cleaning up quickshell autostart entries in sway/config."
+  sed -i '/exec_always .*\/qs -n --daemonize/d' "$HOME/.config/sway/config"
+  sed -i '/exec_always .*\/qs-idle/d' "$HOME/.config/sway/config"
 fi
 
 log "Done. Los paquetes apt NO se desinstalaron. Para hacerlo:"

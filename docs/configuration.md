@@ -172,20 +172,20 @@ QSG_INFO=1 QT_LOGGING_RULES="*.debug=true" qs -n
 
 ### Cambiar el layout de la barra
 
-**Recomendado**: usar el Bar editor (`Super+Shift+B`). Edita, click "Save".
+**Recomendado**: usar el Bar editor (`Super+Shift+B`). Al reordenar o mover chips entre Left/Center/Right los cambios se guardan automáticamente.
 
 **Manual**:
 
 ```sh
 # Editar
 nano ~/.config/quickshell/shell.json
-# Cambio ejemplo: poner audio primero en right
+# Layout por defecto:
 {
   "bar": {
     "layout": {
-      "left": ["workspaces", "window"],
-      "center": ["clock"],
-      "right": ["audio", "session", "power", "bluetooth", "network", "notifs", "dnd", "reminders", "media", "weather", "keyboard", "tray"]
+      "left": ["session", "workspaces", "window"],
+      "center": ["reminders", "clock", "weather"],
+      "right": ["keyboard", "media", "audio", "power", "bluetooth", "network", "notifs", "dnd", "tray"]
     }
   }
 }
@@ -246,9 +246,9 @@ Session → Theme no tiene off — pero podés deshabilitar el plugin en `shell.
 {
   "bar": {
     "layout": {
-      "left": ["workspaces", "window"],
-      "center": ["clock"],
-      "right": ["session", "audio", "power", "bluetooth", "network", "notifs", "dnd", "reminders", "media", "weather", "keyboard", "tray"]
+      "left": ["session", "workspaces", "window"],
+      "center": ["reminders", "clock", "weather"],
+      "right": ["keyboard", "media", "audio", "power", "bluetooth", "network", "notifs", "dnd", "tray"]
     }
   },
   "disabledPlugins": ["weather"]

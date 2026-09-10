@@ -194,8 +194,9 @@ Esta tabla lista todos los binds de Sway + atajos internos de Quickshell.
 | Acción | Resultado |
 |---|---|
 | Click chip del bar | Abre panel correspondiente |
+| Click ícono de Tray | Colapsa / expande ítems del system tray |
 | Click derecho bell | Toggle DND |
-| Click save en Bar editor | Persiste |
+| Reorganizar en Bar editor | Auto-guarda cambios automáticamente |
 | Hover chip | Highlight tenue |
 | Hover columna title | Cambia cursor a pointer (clickeable) |
 | Hover help text (Bar) | Tooltip con detalle |

@@ -28,6 +28,7 @@ Detalle de cada feature, cómo funciona por dentro, qué archivos toca.
 22. [DND indicator](#dnd-indicator)
 23. [PluginRegistry](#pluginregistry)
 24. [Bar visual editor](#bar-visual-editor)
+25. [System tray](#system-tray)
 
 ---
 
@@ -149,7 +150,7 @@ Lista de apps: `Quickshell.DesktopEntries.applications` (todo lo que esté en `~
 `swayidle` lo arranca `~/.local/bin/qs-idle`, que se llama desde `sway/config` con `exec_always`:
 
 ```
-exec_always /home/eddraz/.local/bin/qs-idle
+exec_always ~/.local/bin/qs-idle
 ```
 
 El script `qs-idle`:
@@ -157,11 +158,11 @@ El script `qs-idle`:
 ```sh
 pkill -x swayidle 2>/dev/null || true
 exec swayidle -w \
-    timeout 150 '/home/eddraz/.local/bin/qs-screensaver' \
-    timeout 300 '/home/eddraz/.local/bin/qs-screensaver stop; /usr/bin/qs ipc call lock lock' \
+    timeout 150 "$HOME/.local/bin/qs-screensaver" \
+    timeout 300 "$HOME/.local/bin/qs-screensaver stop; /usr/bin/qs ipc call lock lock" \
     timeout 330 'swaymsg "output * power off"' \
-    resume '/home/eddraz/.local/bin/qs-screensaver stop; swaymsg "output * power on"' \
-    before-sleep '/home/eddraz/.local/bin/qs-screensaver stop; /usr/bin/qs ipc call lock lock'
+    resume "$HOME/.local/bin/qs-screensaver stop; swaymsg \"output * power on\"" \
+    before-sleep "$HOME/.local/bin/qs-screensaver stop; /usr/bin/qs ipc call lock lock"
 ```
 
 **Flujo:**
@@ -243,13 +244,11 @@ input type:touchpad {
 
 ## MPRIS + Media panel
 
-`Commons/Media.qml` envuelve `Quickshell.Services.Mpris`. Múltiples players (mpv, brave, etc.) se unifican en una cola **exclusiva**: cuando uno arranca, los demás se pausan (`Media.takeExclusive(playerName)` con timer 400ms para evitar matar la propia radio).
+`Commons/Media.qml` envuelve `Quickshell.Services.Mpris`. Múltiples players (navegadores, Spotify, mpv, etc.) se unifican en una cola **exclusiva**: cuando uno arranca, los demás se pausan (`Media.pauseOthers(keep)`).
 
-**Widget del bar** (`Player.qml`): muestra el ícono + título elidido a ~96px (no se scrollea, para no comer espacio).
-
-**Panel** (`MediaPanel.qml`): lista de players con transport controls, prev/play-pause/next, búsqueda.
-
-**Lanzar**: cada vez que un player nuevo aparece, se loguea en `~/.cache/quickshell/mpris.log`.
+- **Persistencia en pausa**: Al pausar una canción, `Media.qml` retiene la referencia al reproductor activo (`activePlayer`). El título de la pista y el artista permanecen visibles en la barra sin alternar a otros reproductores ni resetearse; únicamente el ícono conmuta de `pause` a `play`. Al presionar `Play`, se reanuda directamente la canción pausada.
+- **Widget del bar** (`Player.qml`): se muestra dinámicamente cuando hay un reproductor activo. Presenta el ícono de estado y el título elidido a ~96px.
+- **Panel** (`MediaPanel.qml`): controles de transporte (prev/play-pause/next), metadata y atajos de teclado.
 
 ---
 
@@ -351,15 +350,16 @@ Geolocation por IP (default Bogotá: 4.6, -74.0). Para cambiar tu ciudad, editá
 
 ## Lofi radio
 
-`AudioPanel.qml` tiene una fila "Lofi radio". Toggle arranca `qs-lofi`:
+`AudioPanel.qml` tiene una fila dedicada para activar o apagar "Lofi radio". Su invocación ejecuta `~/.local/bin/qs-lofi`:
 
 ```sh
-~/.local/bin/qs-lofi start
-# mpv --no-video --input-ipc-server=/tmp/mpv-lofi.sock \
+~/.local/bin/qs-lofi
+# mpv --no-video --really-quiet --load-scripts=no \
 #      https://play.streamafrica.net/lofiradio
 ```
 
-`mpv-mpris` expone la sesión MPRIS para que el `Player.qml` del bar muestre "Lofi radio". El modo exclusivo pausa otros players.
+- **Aislamiento MPRIS**: Se ejecuta con `--load-scripts=no` para no cargar plugins MPRIS en D-Bus, evitando colisiones o secuestros de estado con los reproductores multimedia de la barra (`Player.qml`).
+- **Activación exclusiva**: Lofi Radio se activa y desactiva exclusivamente desde el panel de **Volume** (`AudioPanel.qml`). Si se reproduce audio en otro reproductor (navegador, Spotify), la radio se detiene limpiamente.
 
 ---
 
@@ -409,7 +409,15 @@ Ver `docs/architecture.md` para detalle.
 
 **Hover**: cada chip tiene `MouseArea` que pinta `focusFill` al entrar y restaura la expresión original al salir (`Qt.binding(...)`).
 
-**Persistencia**: botón "Save" arriba a la derecha → `PluginRegistry.writeShell()` → `bash -c 'tmp+rename'` atómico → `FileView` recarga → barra se actualiza sola.
+**Persistencia**: Auto-guardado instantáneo. Cada reordenamiento o movimiento entre columnas (Left, Center, Right) se persiste atómicamente a `~/.config/quickshell/shell.json` mediante `PluginRegistry.writeShell()` sin necesidad de botón de guardado manual.
+
+---
+
+## System tray
+
+`widgets/Tray.qml` maneja la bandeja del sistema (SNI/StatusNotifierItem):
+- **Ícono representativo**: Dibujado con `StatusIcon.qml` (`icon: "tray"`).
+- **Modo colapsable**: Hacer clic en el ícono de bandeja expande o contrae los ítems activos de la bandeja para ahorrar espacio en la barra.
 
 ---
 
