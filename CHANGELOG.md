@@ -1,5 +1,40 @@
 # CHANGELOG
 
+## 0.1.2 — 2026-09-10
+
+### Features & Major Improvements
+- **ZOI Theme Engine (`zoi-theme`)**:
+  - Implemented the declarative theme architecture inspired by Omarchy Quatro with standardized 22-color palettes (`colors.toml`) and `.tpl` templates.
+  - Included 17 built-in themes: Tokyo Night, Catppuccin (Mocha, Macchiato, Frappé, Latte), Gruvbox, Nord, Kanagawa, Dracula, Rosé Pine, Everforest, Osaka Jade, Retro 82, Solitude, Matte Black, Miasma, and Lumon.
+  - Dynamic template compilation with atomic staging and file locking (`flock`).
+  - Real-time cross-application dispatching to:
+    - **Foot**: `~/.config/foot/foot.ini`
+    - **Sway**: `~/.config/sway/theme.conf` + dynamic window borders via `swaymsg client.*`
+    - **btop**: `~/.config/btop/themes/zoi.theme` + `btop.conf`
+    - **Helix Editor**: `~/.config/helix/themes/zoi.toml` + `config.toml`
+    - **Zed Editor**: `~/.config/zed/themes/zoi.json` + `settings.json`
+    - **VSCode / Antigravity IDE**: `settings.json` (`workbench.colorCustomizations`)
+    - **GTK 3 & GTK 4 / LibreWolf**: `~/.config/gtk-3.0/gtk.css`, `~/.config/gtk-4.0/gtk.css` + `gsettings`
+    - **Herdr**: `~/.config/herdr/config.toml`
+  - User hook execution support via `~/.config/zoi/hooks/theme-set.d/*`.
+- **Wallpaper 22-Color Palette Extraction**:
+  - Rewrote `qs-theme-from-wallpaper` to generate full 22-color palettes adhering to WCAG AAA contrast (> 7:1), deep tinted dark backgrounds, and vibrant extracted accents.
+  - Selecting a wallpaper now immediately applies and propagates the extracted theme across all supported applications.
+- **Search Isolation & Hotkey Suspension**:
+  - Added `Popups.isSearching` state across all Quickshell popups and panels.
+  - Suspended all quick numbers (1-9, 0) and hotkeys when search bars or text inputs are active.
+  - Number jump badges (`IndexBadge.qml`) automatically hide during search as visual confirmation.
+  - Integrated keyboard navigation in search matches (`Down`/`Tab` for next, `Up`/`Shift+Tab` for prev, `Enter` to run, `Escape` to cancel).
+- **Network Panel QR Sharing**:
+  - Added a vector QR code icon in `StatusIcon.qml` (`paintQr`).
+  - Added a QR sharing action button in the card header next to the search button.
+  - Dedicated `Q` hotkey to instantly display the Wi-Fi QR code when the Network panel is open.
+- **Installation & Maintenance Scripts**:
+  - Updated `scripts/install.sh` with dependencies (`bc`, `btop`, `python3-gi`, `gir1.2-gdkpixbuf-2.0`, `libqrencode4`).
+  - Integrated theme and template deployment to `~/.config/zoi/` and `~/.local/share/zoi/`.
+  - Added initial theme application during installation.
+  - Updated `scripts/uninstall.sh` to clean up theme state and binaries.
+
 ## 0.1.1 — 2026-09-10
 
 ### Improvements & Fixes

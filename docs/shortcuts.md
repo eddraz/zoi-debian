@@ -83,13 +83,19 @@ Esta tabla lista todos los binds de Sway + atajos internos de Quickshell.
 
 | Tecla | Acción (universal) |
 |---|---|
-| `0-9` | Saltar al ítem N |
+| `0-9` | Saltar al ítem N (se ocultan durante la búsqueda) |
 | `↑/↓` o `J/K` | Cursor arriba/abajo |
 | `←/→` o `H/L` | Cursor izquierda/derecha (slider o columna según panel) |
-| `Tab` / `Shift+Tab` | Sección siguiente / anterior |
-| `/` | Mostrar campo de búsqueda (si `searchEntries` está implementado) |
+| `Tab` / `Shift+Tab` | Sección siguiente / anterior (en modo normal) |
+| `/` | Mostrar campo de búsqueda (si el panel lo soporta) |
 | `Escape` | Limpiar búsqueda o cerrar popup |
 | `Enter` | Activar el ítem seleccionado |
+
+> **Aislamiento durante la búsqueda**: Cuando el buscador está activo, todas las teclas rápidas de navegación y saltos numéricos están suspendidas. En su lugar:
+> - `↓` o `Tab`: Siguiente coincidencia
+> - `↑` o `Shift+Tab`: Coincidencia anterior
+> - `Enter`: Ejecutar acción del elemento coincidente
+> - `Escape`: Cancelar búsqueda y volver a la navegación normal
 
 ## Popups específicos
 
@@ -141,6 +147,7 @@ Esta tabla lista todos los binds de Sway + atajos internos de Quickshell.
 - Hover (mouse) = highlight tenue + click = focus
 
 ### Network panel
+- `Q` = Abrir código QR para compartir la red Wi-Fi activa (también botón con ícono QR en la cabecera)
 - `0` = Wi-Fi on/off
 - `1+` = redes
 - `Enter` = conectar / desconectar

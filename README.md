@@ -29,7 +29,8 @@ Después de instalar, cerrá sesión y volvé a entrar (para que `systemd --user
 - **Sway** (WM) + **foot** (terminal). El bar por defecto es **Quickshell** (no waybar).
 - **Quickshell 0.3.0** desde trixie-backports.
 - **PipeWire** implícito vía los servicios de QS.
-- Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `librewolf` (default browser).
+- **ZOI Theme Engine (`zoi-theme`)**: Motor de temas declarativo (arquitectura Omarchy Quatro) con 17 paletas estándar, 22 colores normalizados (`colors.toml`), plantillas (`*.tpl`) y propagación atómica en vivo a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK 3/4 y Herdr.
+- Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `btop` `bc` `libqrencode4` `librewolf` (default browser).
 - **Fish** shell (default interactive shell).
 - Fuente: **Noto Color Emoji** para el picker de emojis. No instalamos Nerd Font (los íconos del bar son Canvas / QPainter).
 
@@ -40,21 +41,23 @@ Ver [docs/install.md](docs/install.md) para el detalle completo de paquetes y pr
 ```
 zoi-debian/
 ├── README.md                  este archivo
+├── CHANGELOG.md               historial de cambios y versiones
 ├── docs/
 │   ├── install.md             paquetes, fuentes, systemd
 │   ├── features.md            qué hace cada feature
-│   ├── configuration.md       dónde está cada config
+│   ├── configuration.md       dónde está cada config y motor de temas
 │   ├── shortcuts.md           tabla completa de atajos
-│   ├── architecture.md        PluginRegistry + singletons
+│   ├── architecture.md        PluginRegistry + singletons + theme engine
 │   └── troubleshooting.md     problemas frecuentes
 ├── scripts/
 │   ├── install.sh             bootstrap completo (curl | sh friendly)
 │   └── uninstall.sh
 ├── dotfiles/
 │   ├── quickshell/            todo el árbol de QML
+│   ├── themes/                17 temas base (colors.toml) + templates/ (*.tpl)
 │   ├── sway/config            bindings + autoexec
 │   ├── config/foot/foot.ini
-│   └── local-bin/             scripts auxiliares qs-*
+│   └── local-bin/             zoi-theme CLI y scripts auxiliares qs-*
 ├── assets/
 │   └── default-wallpaper.jpg  baby-yoda
 └── skills/
@@ -66,7 +69,8 @@ zoi-debian/
 
 | Feature | Cómo se activa |
 |---|---|
-| Catppuccin Mocha bar + tokens | siempre |
+| ZOI Theme Engine (17 temas + dynamic wallpaper) | `Session → Theme`, `zoi-theme set <id>` o desde Wallpaper |
+| Extracción dinámica 22 colores de wallpaper | Automático al elegir fondo (WCAG AAA contrast) |
 | Launch app launcher | `Super+Space` |
 | Notifications bell | click en la campana |
 | Lock screen (swaylock) | `Super+Escape → Lock` o `qs ipc call lock lock` |
@@ -75,9 +79,9 @@ zoi-debian/
 | Night light (wlsunset 4000K) | `Session → Night light` toggle |
 | Polkit overlay themeado | automático cuando algo pide auth |
 | Wallpaper picker | `Session → Wallpaper` (lee `~/Imágenes`) |
-| Theme picker (9 paletas) | `Session → Theme` |
 | Emoji picker | `Super+.` (latam: `Super+Shift+,`) |
 | Clipboard history | `Super+V` |
+| Network Panel con compartir QR | `Super+I` (tecla `Q` o botón QR en cabecera) |
 | Reminders (systemd-run timers) | `Super+Shift+N` |
 | DND (do not disturb) | click derecho en la campana |
 | Stay awake | `Session → Stay awake` toggle |
@@ -101,6 +105,7 @@ Ver [docs/features.md](docs/features.md) para detalle.
 | `Super+V` | Clipboard history |
 | `Super+period` / `Super+Shift+comma` | Emoji picker |
 | `Super+C / T / N / M / P / I / U` | Calendar / Weather / Notifs / Audio / Power / Network / Bluetooth |
+| `Super+I` → `Q` | Mostrar código QR de la red Wi-Fi activa |
 | `Super+Shift+B` | Bar visual editor |
 | `Super+Shift+N` | Reminders overlay |
 | `Super+Shift+R` | Media arm (1/2/3 = prev/play/next) |
@@ -112,4 +117,4 @@ Ver [docs/shortcuts.md](docs/shortcuts.md) para el mapa completo.
 
 ## Agradecimientos
 
-Omarchy Quattro (Manjaro / Hyprland) — robamos los patrones, no el código. Todo lo que ves aquí es **first-party**: sin `qs.Ui`, sin `$OMARCHY_PATH`, sin clones, sin third-party plugins.
+Omarchy Quattro (Manjaro / Hyprland) — adoptamos la arquitectura de plantillas declarativas y paletas de 22 colores estandarizadas (`colors.toml`), implementadas de forma nativa para Debian + Sway + Quickshell sin Hyprland ni dependencias de Arch.

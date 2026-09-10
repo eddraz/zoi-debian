@@ -77,22 +77,113 @@ Una línea con la palabra que el screensaver TTE muestra como banner. Default `Z
 | `stay-awake` | `on` o `off` |
 | `screensaver-colors` | cache de los colores derivados del wallpaper (escrito por `qs-theme-from-wallpaper`) |
 
+## Motor de Temas ZOI (`zoi-theme`)
+
+ZOI implementa la arquitectura declarativa de **Omarchy Quatro**, permitiendo aplicar temas unificados a nivel de todo el sistema operativo con paletas normalizadas de 22 colores y plantillas `.tpl`.
+
+### 1. Paleta de 22 Colores Estándar (`colors.toml`)
+
+Cada tema se define en un archivo `colors.toml` con las siguientes 22 variables normalizadas:
+
+```toml
+name = "Tokyo Night"
+mode = "dark" # "dark" | "light"
+
+# Colores principales
+background = "#1a1b26"
+foreground = "#c0caf5"
+accent = "#7aa2f7"
+
+# Jerarquía de fondos y textos
+dark_background = "#16161e"
+darker_background = "#0f0f14"
+lighter_background = "#24283b"
+dark_foreground = "#565f89"
+light_foreground = "#cfc9c2"
+bright_foreground = "#ffffff"
+
+# Selección y atenuados
+selection = "#283457"
+muted = "#565f89"
+
+# 8 Colores ANSI estándar
+red = "#f7768e"
+orange = "#ff9e64"
+yellow = "#e0af68"
+green = "#9ece6a"
+cyan = "#7dcfff"
+blue = "#7aa2f7"
+magenta = "#bb9af7"
+brown = "#8f5e15"
+
+# 6 Colores ANSI brillantes
+bright_red = "#ff899d"
+bright_yellow = "#f1c37b"
+bright_green = "#b1e380"
+bright_cyan = "#8ee2ff"
+bright_blue = "#8cb2ff"
+bright_magenta = "#caa9ff"
+```
+
+### 2. Plantillas Declarativas (`*.tpl`)
+
+Ubicadas en `~/.config/zoi/themed/*.tpl` (o `dotfiles/themes/templates/*.tpl`):
+- `{{ variable }}`: Inserta el color con `#` (ej: `#7aa2f7`).
+- `{{ variable_strip }}`: Inserta el color sin `#` (ej: `7aa2f7` para foot/hex).
+- `{{ variable_rgb }}`: Inserta valores RGB separados por coma (ej: `122, 162, 247`).
+- `{{ mix c1 c2 25% }}`: Mezcla dos colores con un ratio porcentual o decimal.
+
+Aplicaciones compiladas automáticamente:
+- **Foot Terminal**: `~/.config/foot/foot.ini`
+- **Sway Window Manager**: `~/.config/sway/theme.conf` + bordes dinámicos vía `swaymsg`
+- **btop**: `~/.config/btop/themes/zoi.theme` + `btop.conf`
+- **Helix Editor**: `~/.config/helix/themes/zoi.toml` + `config.toml`
+- **Zed Editor**: `~/.config/zed/themes/zoi.json` + `settings.json`
+- **VSCode / Antigravity IDE / VSCodium**: `settings.json` (`workbench.colorCustomizations`)
+- **GTK 3.0 y GTK 4.0 / LibreWolf**: `~/.config/gtk-3.0/gtk.css` y `~/.config/gtk-4.0/gtk.css` + `gsettings prefer-dark/prefer-light`
+- **Herdr**: `~/.config/herdr/config.toml`
+
+### 3. Comandos CLI `zoi-theme`
+
+```sh
+# Listar todos los temas disponibles (sistema y usuario)
+zoi-theme list
+
+# Aplicar un tema por nombre/ID
+zoi-theme set tokyo-night
+zoi-theme set catppuccin-mocha
+zoi-theme set gruvbox
+zoi-theme set nord
+
+# Ver tema actual
+zoi-theme current
+
+# Obtener definición de un tema en JSON
+zoi-theme get tokyo-night
+
+# Aplicar paleta personalizada desde JSON
+zoi-theme apply-json '{"background": "#11111b", "foreground": "#cdd6f4", "accent": "#89b4fa"}'
+```
+
+### 4. Hooks de Usuario
+
+Al cambiar de tema, `zoi-theme` ejecuta de forma automática cualquier script ejecutable ubicado en `~/.config/zoi/hooks/theme-set.d/*`, pasándole el `theme_id` como primer argumento.
+
+### 5. Extracción Dinámica desde Fondos de Pantalla
+
+El helper `~/.local/bin/qs-theme-from-wallpaper` extrae la paleta completa de 22 colores con contraste WCAG AAA (> 7:1) a partir de cualquier imagen, oscureciendo fondos con tinte sutil y seleccionando acentos vibrantes. Se aplica inmediatamente al seleccionar un fondo en el panel de **Wallpaper**.
+
+---
+
 ## Foot
 
-`~/.config/foot/foot.ini`
+`~/.config/foot/foot.ini` (generado y gestionado por `zoi-theme`):
 
 ```ini
 [main]
 font=monospace:size=11
 pad=8x8
 term=xterm-256color
-
-[colors]
-# Catppuccin Mocha
-background=1e1e2e
-foreground=cdd6f4
-regular0=45475a
-...
 ```
 
 Cambiá `font=` para usar otra tipografía (no requiere Nerd Font; los íconos del bar son Canvas).

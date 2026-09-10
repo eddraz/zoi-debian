@@ -29,15 +29,16 @@ Por defecto clona el repo en `~/projects/zoi-debian`. Variables de entorno:
 1. **Activa backports** (`/etc/apt/sources.list.d/backports.list`) si no existe.
 2. **Instala paquetes** (ver tabla abajo).
 3. **Clona** el repo de zoi-debian en `$ZOI_DIR`.
-4. **Copia dotfiles**:
+4. **Copia dotfiles y temas**:
    - `~/.config/quickshell/` (todos los QML + `shell.json`)
+   - `~/.config/zoi/themes/` y `~/.config/zoi/themed/` (17 temas + plantillas `.tpl`)
    - `~/.config/sway/config`
    - `~/.config/foot/foot.ini`
-   - `~/.local/bin/qs-*` (15 scripts auxiliares)
+   - `~/.local/bin/` (`zoi-theme` CLI + 18 scripts auxiliares `qs-*`)
 5. **Pone wallpaper por defecto** (`baby-yoda-cartoon.jpg`).
-6. **Inicializa** `~/.local/state/quickshell/wallpaper` y `~/.config/quickshell/screensaver.txt`.
+6. **Inicializa** `~/.local/state/quickshell/wallpaper`, `~/.config/quickshell/screensaver.txt` y aplica el tema base con `zoi-theme`.
 7. **Cambia la shell** a `fish`.
-8. **Agrega** `exec_always /usr/bin/qs -n --daemonize` al `sway/config` para arrancar qs automáticamente.
+8. **Agrega** `exec_always /usr/bin/qs -n --daemonize` y `exec_always ~/.local/bin/qs-idle` al `sway/config`.
 9. Verifica binarios y avisa si falta alguno.
 
 ### 3. Cerrá sesión y volvé a entrar
@@ -82,8 +83,11 @@ Importante: el primer arranque de `qs` necesita:
 | `light` | Brillo de teclado |
 | `lightdm` | Display manager |
 | `librewolf` | Browser default |
-| `libreoffice` | Suite ofimática (opcional — la instalación actual no la incluye) |
 | `fish` | Default shell |
+| `bc` | Cálculos matemáticos en scripts auxiliares |
+| `btop` | Monitor de recursos del sistema (themeado por zoi-theme) |
+| `python3-gi` + `gir1.2-gdkpixbuf-2.0` | Extracción de paleta de 22 colores desde wallpapers |
+| `libqrencode4` + `qrencode` | Generación de código QR para compartir red Wi-Fi |
 | `network-manager` + `applet` | Wifi panel |
 | `bluez` + `bluez-tools` | Bluetooth panel |
 | `polkit` | Polkit overlay |
@@ -175,14 +179,27 @@ Importante: el primer arranque de `qs` necesita:
     ├── Weather.qml
     └── Workspaces.qml
 
-~/.local/bin/qs-*            # 15 scripts auxiliares
+~/.config/zoi/
+├── themes/                  # 17 paletas estándar (colors.toml)
+├── themed/                  # plantillas declarativas (*.tpl)
+└── hooks/theme-set.d/       # hooks de usuario post-cambio de tema
 
-~/.local/state/quickshell/   # estado runtime
+~/.local/bin/
+├── zoi-theme                # CLI y motor de compilación de temas
+└── qs-*                     # 18 scripts auxiliares de Quickshell
+
+~/.local/state/zoi/theme/    # estado del motor de temas
+├── current/                 # archivos compilados activos (foot.ini, sway.theme.conf, btop.theme, etc.)
+├── colors.json              # paleta activa en JSON
+├── colors.toml              # paleta activa en TOML
+└── colors.sh                # exports de entorno
+
+~/.local/state/quickshell/   # estado runtime de quickshell
 ├── night-light              # on/off + temperatura
 ├── wallpaper                # path absoluto
 ├── dnd                      # on/off
 ├── stay-awake               # on/off
-└── theme                    # id de paleta
+└── theme                    # id de paleta activa
 
 ~/.config/quickshell/screensaver.txt   # texto del banner (default: ZOI)
 ```

@@ -207,30 +207,43 @@ def render_template(template_str, pal):
 class ZoiThemeManager:
     def __init__(self):
         self.home = os.path.expanduser("~")
-        self.repo_root = os.path.join(self.home, "projects/zoi-debian")
+        self.script_dir = os.path.dirname(os.path.realpath(__file__))
+        self.repo_root = os.path.abspath(os.path.join(self.script_dir, "../.."))
         
-        self.system_tpl_dir = os.path.join(self.repo_root, "dotfiles/themes/templates")
-        self.user_tpl_dir = os.path.join(self.home, ".config/zoi/themed")
+        self.tpl_search_dirs = [
+            os.path.join(self.home, ".config/zoi/themed"),
+            os.path.join(self.home, ".local/share/zoi/templates"),
+            os.path.join(self.repo_root, "dotfiles/themes/templates"),
+            os.path.join(self.home, "projects/zoi-debian/dotfiles/themes/templates"),
+            "/usr/share/zoi/templates"
+        ]
         
-        self.system_themes_dir = os.path.join(self.repo_root, "dotfiles/themes")
-        self.user_themes_dir = os.path.join(self.home, ".config/zoi/themes")
+        self.theme_search_dirs = [
+            os.path.join(self.home, ".config/zoi/themes"),
+            os.path.join(self.home, ".local/share/zoi/themes"),
+            os.path.join(self.repo_root, "dotfiles/themes"),
+            os.path.join(self.home, "projects/zoi-debian/dotfiles/themes"),
+            "/usr/share/zoi/themes"
+        ]
         
         self.state_dir = os.path.join(self.home, ".local/state/zoi/theme")
         self.qs_state_dir = os.path.join(self.home, ".local/state/quickshell")
         os.makedirs(self.state_dir, exist_ok=True)
         os.makedirs(self.qs_state_dir, exist_ok=True)
-        os.makedirs(self.user_themes_dir, exist_ok=True)
-        os.makedirs(self.user_tpl_dir, exist_ok=True)
+        os.makedirs(os.path.join(self.home, ".config/zoi/themes"), exist_ok=True)
+        os.makedirs(os.path.join(self.home, ".config/zoi/themed"), exist_ok=True)
 
         self.lock_file = os.path.join(self.state_dir, "theme.lock")
 
     def list_themes(self):
         themes = {}
-        if os.path.isdir(self.system_themes_dir):
-            for entry in sorted(os.listdir(self.system_themes_dir)):
+        for search_dir in reversed(self.theme_search_dirs):
+            if not os.path.isdir(search_dir):
+                continue
+            for entry in sorted(os.listdir(search_dir)):
                 if entry == "templates":
                     continue
-                colors_path = os.path.join(self.system_themes_dir, entry, "colors.toml")
+                colors_path = os.path.join(search_dir, entry, "colors.toml")
                 if os.path.isfile(colors_path):
                     try:
                         with open(colors_path, "rb") as f:
@@ -241,42 +254,18 @@ class ZoiThemeManager:
                             "mode": data.get("mode", "dark"),
                             "accent": data.get("accent", "#89b4fa"),
                             "background": data.get("background", "#1e1e2e"),
-                            "source": "system",
-                            "path": os.path.join(self.system_themes_dir, entry)
+                            "source": "user" if ".config" in search_dir else "system",
+                            "path": os.path.join(search_dir, entry)
                         }
                     except Exception:
                         pass
-
-        if os.path.isdir(self.user_themes_dir):
-            for entry in sorted(os.listdir(self.user_themes_dir)):
-                colors_path = os.path.join(self.user_themes_dir, entry, "colors.toml")
-                if os.path.isfile(colors_path):
-                    try:
-                        with open(colors_path, "rb") as f:
-                            data = tomllib.load(f)
-                        themes[entry] = {
-                            "id": entry,
-                            "name": data.get("name", entry.replace("-", " ").title()),
-                            "mode": data.get("mode", "dark"),
-                            "accent": data.get("accent", "#89b4fa"),
-                            "background": data.get("background", "#1e1e2e"),
-                            "source": "user",
-                            "path": os.path.join(self.user_themes_dir, entry)
-                        }
-                    except Exception:
-                        pass
-
         return themes
 
     def get_theme_palette(self, theme_id):
-        candidates = [
-            os.path.join(self.user_themes_dir, theme_id, "colors.toml"),
-            os.path.join(self.system_themes_dir, theme_id, "colors.toml")
-        ]
-        
-        for c in candidates:
-            if os.path.isfile(c):
-                with open(c, "rb") as f:
+        for search_dir in self.theme_search_dirs:
+            candidate = os.path.join(search_dir, theme_id, "colors.toml")
+            if os.path.isfile(candidate):
+                with open(candidate, "rb") as f:
                     raw = tomllib.load(f)
                 return normalize_palette(raw, theme_id=theme_id)
 
@@ -298,14 +287,11 @@ class ZoiThemeManager:
         os.makedirs(staging_dir, exist_ok=True)
 
         templates = {}
-        if os.path.isdir(self.system_tpl_dir):
-            for tpl in os.listdir(self.system_tpl_dir):
-                if tpl.endswith(".tpl"):
-                    templates[tpl] = os.path.join(self.system_tpl_dir, tpl)
-        if os.path.isdir(self.user_tpl_dir):
-            for tpl in os.listdir(self.user_tpl_dir):
-                if tpl.endswith(".tpl"):
-                    templates[tpl] = os.path.join(self.user_tpl_dir, tpl)
+        for tpl_dir in reversed(self.tpl_search_dirs):
+            if os.path.isdir(tpl_dir):
+                for tpl in os.listdir(tpl_dir):
+                    if tpl.endswith(".tpl"):
+                        templates[tpl] = os.path.join(tpl_dir, tpl)
 
         rendered_files = {}
         for tpl_name, tpl_path in templates.items():

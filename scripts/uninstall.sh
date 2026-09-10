@@ -19,8 +19,11 @@ if [ -d "$HOME/.config/quickshell" ]; then
   mv "$HOME/.config/quickshell" "$HOME/.config/quickshell.bak.$(date +%s)"
 fi
 
-log "Removing qs-* scripts from ~/.local/bin."
-rm -f $HOME/.local/bin/qs-*
+log "Removing qs-* and zoi-theme scripts from ~/.local/bin."
+rm -f $HOME/.local/bin/qs-* $HOME/.local/bin/zoi-theme
+
+log "Cleaning up state directories in ~/.local/state/zoi and ~/.local/state/quickshell."
+rm -rf $HOME/.local/state/zoi $HOME/.local/state/quickshell
 
 if [ -f "$HOME/.config/sway/config" ]; then
   log "Cleaning up quickshell autostart entries in sway/config."
@@ -29,5 +32,5 @@ if [ -f "$HOME/.config/sway/config" ]; then
 fi
 
 log "Done. Los paquetes apt NO se desinstalaron. Para hacerlo:"
-log "  sudo apt remove quickshell swaybg swayidle wlsunset figlet python3-terminaltexteffects"
+log "  sudo apt remove quickshell swaybg swayidle wlsunset figlet python3-terminaltexteffects btop bc libqrencode4"
 log "Restart Sway with: swaymsg reload"

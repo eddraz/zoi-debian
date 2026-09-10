@@ -198,11 +198,19 @@ Cada panel en `panels/<X>Panel.qml` es un `Column` (o `Item`) que expone opciona
 
 `bindPanel(item)` en `Bar.qml` conecta `openKeys/openWallpaper/openTheme/openBar` si existen.
 
-## Estilo y tema
+## Estilo y arquitectura de temas
 
-`Commons/Color.qml` expone las **writable properties** del Singleton. `Themes.qml` las cambia cuando el usuario elige paleta. `Wallpaper.qml` (al aplicar wallpaper) llama a `Themes.refreshFromWallpaper(path)` que deriva colores via `qs-theme-from-wallpaper` (Python+Pillow) y aplica como accent + foreground.
+ZOI cuenta con un sistema de temas desacoplado y reactivo de dos niveles:
 
-Los popups y widgets leen `Color.accent`, `Color.surface`, etc. directamente, así que cambian en vivo sin reload.
+1. **Nivel UI Quickshell (`Color.qml`, `Themes.qml`, `Wallpaper.qml`)**:
+   - `Commons/Color.qml` expone las propiedades reactivas del Singleton.
+   - `Themes.qml` y `Wallpaper.qml` sincronizan en tiempo real los colores activos en Quickshell y despachan la paleta completa al motor de compilación.
+
+2. **Nivel Sistema (`zoi-theme` + Templates `*.tpl`)**:
+   - Compilador maestro que procesa plantillas declarativas usando paletas de 22 colores estandarizadas (`colors.toml`).
+   - Bloqueo por archivo (`flock`) y staging atómico en `~/.local/state/zoi/theme/current`.
+   - Propaga simultáneamente a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK y Herdr.
+   - Ejecuta hooks de usuario en `~/.config/zoi/hooks/theme-set.d/*`.
 
 ## Tradeoffs y límites
 

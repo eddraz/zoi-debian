@@ -104,12 +104,16 @@ PopupCard (anchors to bar)
 
 **Navegación dentro del popup:**
 
-- `0-9` salta al ítem del índice.
+- `0-9` salta al ítem del índice (se oculta automáticamente al buscar).
 - `↑/↓` o `J/K` mueve cursor.
 - `H/L` o `←/→` mueve slider (volumen, mic, brillo).
-- `/` muestra el campo de búsqueda (solo si el panel expone `searchEntries`).
-- `Tab`/`Shift+Tab` cicla secciones (Theme, Audio, Session, etc.).
-- `Escape` borra el search si está activo, o cierra el popup.
+- `/` activa el campo de búsqueda (si el panel expone `searchEntries`).
+- **Aislamiento en búsqueda**: Mientras el buscador está activo (`Popups.isSearching === true`), todas las teclas rápidas y saltos numéricos quedan estrictamente deshabilitados para poder escribir texto/números sin disparar acciones.
+  - `↓` o `Tab`: Salta a la siguiente coincidencia encontrada.
+  - `↑` o `Shift+Tab`: Salta a la coincidencia anterior.
+  - `Enter`: Ejecuta la acción del ítem seleccionado y cierra la búsqueda.
+  - `Escape`: Limpia la búsqueda y restaura el foco al panel.
+- `Tab`/`Shift+Tab` cicla secciones (Theme, Audio, Session, etc.) cuando no se está en modo búsqueda de texto.
 - `Super+Q` siempre cierra.
 
 `visiblePanel()` desenvuelve `Loader.item` para que `/`, Tab, J/K, H/L, Enter sigan andando cuando el panel es un `Loader`.
@@ -296,11 +300,20 @@ swaymsg 'output * bg "'$path'" fill'
 
 ---
 
-## Theme picker
+## Theme picker & ZOI Theme Engine
 
-`ThemePanel.qml` ofrece 9 paletas: **Catppuccin** (Mocha / Macchiato / Frappé / Latte), **Kanagawa**, **Nord**, **Gruvbox**, **Dracula**, **Rosé Pine**. Cambia `Color.background/mantle/...` en vivo (las propiedades son writable). Tema actual persistido en `~/.local/state/quickshell/theme`.
-
-**Wallpaper-derived colors**: clic en "Derive from wallpaper" corre `qs-theme-from-wallpaper` que extrae colores con Python+Pillow y los aplica como accent + foreground.
+`ThemePanel.qml` y el CLI `zoi-theme` gestionan la arquitectura completa de temas declarativos (modelo Omarchy Quatro):
+- **17 Paletas base incluidas**: Tokyo Night, Catppuccin (Mocha, Macchiato, Frappé, Latte), Gruvbox, Nord, Kanagawa, Dracula, Rosé Pine, Everforest, Osaka Jade, Retro 82, Solitude, Matte Black, Miasma, Lumon.
+- **22 Colores normalizados** (`colors.toml`): fondos jerárquicos (dark/darker/lighter), textos (dark/light/bright), acentos, selección, atenuados y los 8 colores ANSI + 6 ANSI brillantes.
+- **Compilación y propagación atómica en vivo**: Al seleccionar cualquier tema (o ejecutar `zoi-theme set <id>`), se renderizan las plantillas `.tpl` y se actualiza de forma instantánea:
+  - Foot terminal (`foot.ini`)
+  - Bordes y colores de ventanas en Sway (`theme.conf` + `swaymsg client.*`)
+  - Monitor de sistema btop (`zoi.theme`)
+  - Editores de código: Helix (`zoi.toml`), Zed (`zoi.json`), VSCode / Antigravity IDE (`settings.json`)
+  - Aplicaciones GTK 3 / 4 y navegadores como LibreWolf (`gtk.css` + `prefer-dark/prefer-light`)
+  - Herdr (`config.toml`)
+- **Extracción de paleta desde Wallpaper**: `qs-theme-from-wallpaper` extrae los 22 colores con contraste WCAG AAA (> 7:1), tintando fondos suavemente y destacando acentos cromáticos. Al elegir un fondo de pantalla, todo el sistema adopta automáticamente su paleta derivada.
+- **Hooks de usuario**: Soporte para scripts personalizados en `~/.config/zoi/hooks/theme-set.d/*`.
 
 ---
 

@@ -44,7 +44,7 @@ PKGS=(
   foot foot-themes
   quickshell
   pipewire wireplumber
-  wlsunset wtype wl-clipboard grim slurp wf-recorder swaymsg
+  wlsunset wtype wl-clipboard grim slurp wf-recorder
   playerctl mpv mpv-mpris yt-dlp
   cliphist
   figlet python3-terminaltexteffects
@@ -53,6 +53,10 @@ PKGS=(
   librewolf
   fish
   jq
+  bc
+  btop
+  python3-gi gir1.2-gdkpixbuf-2.0
+  libqrencode4 qrencode
   polkit
   fonts-noto fonts-noto-color-emoji fonts-noto-cjk
   network-manager
@@ -94,6 +98,16 @@ mkdir -p "$QS_DOT/panels" "$QS_DOT/widgets" "$QS_DOT/Commons" "$QS_DOT/Ui"
 cp -r "$ZOI_DIR/dotfiles/quickshell/." "$QS_DOT/"
 chmod -R u+rwX "$QS_DOT"
 
+# ---------------------------------------------------------------- themes & templates
+log "Instalando motor de temas y plantillas de ZOI en ~/.config/zoi y ~/.local/share/zoi."
+mkdir -p "$HOME/.config/zoi/themes" "$HOME/.config/zoi/themed" "$HOME/.config/zoi/hooks/theme-set.d"
+mkdir -p "$HOME/.local/share/zoi/themes" "$HOME/.local/share/zoi/templates"
+if [ -d "$ZOI_DIR/dotfiles/themes" ]; then
+  cp -r "$ZOI_DIR/dotfiles/themes/"* "$HOME/.local/share/zoi/themes/" 2>/dev/null || true
+  cp -r "$ZOI_DIR/dotfiles/themes/templates/"* "$HOME/.local/share/zoi/templates/" 2>/dev/null || true
+  cp -r "$ZOI_DIR/dotfiles/themes/templates/"* "$HOME/.config/zoi/themed/" 2>/dev/null || true
+fi
+
 # ---------------------------------------------------------------- sway
 log "Instalando config de Sway."
 mkdir -p "$HOME/.config/sway"
@@ -110,10 +124,10 @@ if [ -f "$ZOI_DIR/dotfiles/config/foot/foot.ini" ]; then
 fi
 
 # ---------------------------------------------------------------- local-bin
-log "Instalando scripts auxiliares en ~/.local/bin."
+log "Instalando scripts auxiliares y CLI zoi-theme en ~/.local/bin."
 mkdir -p "$HOME/.local/bin"
 cp "$ZOI_DIR/dotfiles/local-bin/"* "$HOME/.local/bin/"
-chmod +x "$HOME/.local/bin/qs-"*
+chmod +x "$HOME/.local/bin/"*
 
 # ---------------------------------------------------------------- wallpaper
 log "Poniendo wallpaper por defecto."
@@ -131,6 +145,10 @@ log "Inicializando ~/.config/quickshell/shell.json."
 if [ ! -f "$HOME/.config/quickshell/shell.json" ]; then
   cp "$ZOI_DIR/dotfiles/quickshell/shell.json" "$HOME/.config/quickshell/shell.json"
 fi
+
+# ---------------------------------------------------------------- initialize theme
+log "Aplicando tema base con zoi-theme."
+"$HOME/.local/bin/zoi-theme" set tokyo-night || warn "No se pudo aplicar tema inicial; corré 'zoi-theme set tokyo-night' manualmente."
 
 # ---------------------------------------------------------------- fish as default
 if command -v fish >/dev/null && ! grep -qE "^/.*/fish$" /etc/shells 2>/dev/null; then
@@ -154,7 +172,7 @@ fi
 # ---------------------------------------------------------------- sanity
 log "Verificando binarios clave."
 MISSING=0
-for b in sway qs swaymsg playerctl wlsunset foot cliphist wl-copy wtype grim slurp wf-recorder wireplumber; do
+for b in sway qs swaymsg playerctl wlsunset foot cliphist wl-copy wtype grim slurp wf-recorder wireplumber btop bc zoi-theme; do
   command -v "$b" >/dev/null || { warn "Falta binario: $b"; MISSING=$((MISSING+1)); }
 done
 
@@ -164,4 +182,5 @@ if [ "$MISSING" -gt 0 ]; then
 fi
 log "Cerrá sesión y volvé a entrar (o corré: swaymsg reload && pkill qs && swaymsg exec /usr/bin/qs -n --daemonize)."
 log "Atajos: ver docs/shortcuts.md"
+log "Configuración y Temas: ver docs/configuration.md"
 log "Si algo falla: docs/troubleshooting.md"
