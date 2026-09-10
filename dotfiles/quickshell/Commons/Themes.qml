@@ -758,23 +758,29 @@ Singleton {
             apply("wallpaper");
     }
 
+    function applyColorProperties(pal) {
+        if (!pal || !pal.background)
+            return;
+        Color.background = pal.background;
+        Color.mantle = pal.mantle || pal.dark_background || pal.background;
+        Color.crust = pal.crust || pal.darker_background || pal.background;
+        Color.foreground = pal.foreground || "#cdd6f4";
+        Color.muted = pal.muted || pal.overlay || "#a6adc8";
+        Color.overlay = pal.overlay || pal.muted || "#6c7086";
+        Color.surface = pal.surface || pal.lighter_background || pal.background;
+        Color.accent = pal.accent || "#89b4fa";
+        Color.urgent = pal.urgent || pal.red || "#f38ba8";
+        Color.green = pal.green || "#a6e3a1";
+        Color.peach = pal.peach || pal.orange || "#fab387";
+        Color.yellow = pal.yellow || "#f9e2af";
+    }
+
     function apply(id) {
         const pal = paletteById(id);
         currentId = pal.id;
         if (id === "wallpaper" && wallpaperPath && !extractProc.running)
             refreshFromWallpaper(wallpaperPath);
-        Color.background = pal.background;
-        Color.mantle = pal.mantle;
-        Color.crust = pal.crust;
-        Color.foreground = pal.foreground;
-        Color.muted = pal.muted;
-        Color.overlay = pal.overlay;
-        Color.surface = pal.surface;
-        Color.accent = pal.accent;
-        Color.urgent = pal.urgent;
-        Color.green = pal.green;
-        Color.peach = pal.peach;
-        Color.yellow = pal.yellow;
+        applyColorProperties(pal);
         persist();
         writeScreensaverColors(pal);
         Quickshell.execDetached([applyHelper, JSON.stringify(pal)]);
@@ -802,14 +808,74 @@ Singleton {
     }
 
     FileView {
+        id: colorsJsonFile
+        path: root.stateDir + "/colors.json"
+        watchChanges: true
+        printErrors: false
+        onLoaded: {
+            try {
+                const data = JSON.parse(String(text()).trim());
+                if (data && data.background && data.accent) {
+                    root.wallpaperColors = {
+                        "id": "wallpaper",
+                        "name": "Wallpaper",
+                        "mode": data.mode || "dark",
+                        "background": data.background,
+                        "dark_background": data.dark_background || data.mantle || data.background,
+                        "darker_background": data.darker_background || data.crust || data.background,
+                        "lighter_background": data.lighter_background || data.surface || data.background,
+                        "foreground": data.foreground || "#cdd6f4",
+                        "dark_foreground": data.dark_foreground || data.muted || "#6c7086",
+                        "light_foreground": data.light_foreground || data.foreground || "#e0e2f0",
+                        "bright_foreground": data.bright_foreground || data.foreground || "#ffffff",
+                        "selection": data.selection || data.surface || "#2a3c46",
+                        "muted": data.muted || "#9fa8ad",
+                        "accent": data.accent || "#89b4fa",
+                        "red": data.red || data.urgent || "#f38ba8",
+                        "yellow": data.yellow || "#f9e2af",
+                        "orange": data.orange || data.peach || "#fab387",
+                        "green": data.green || "#a6e3a1",
+                        "cyan": data.cyan || "#94e2d5",
+                        "blue": data.blue || data.accent || "#89b4fa",
+                        "magenta": data.magenta || "#cba6f7",
+                        "brown": data.brown || "#75493d",
+                        "bright_red": data.bright_red || data.red || "#ff7a93",
+                        "bright_yellow": data.bright_yellow || data.yellow || "#ff9e64",
+                        "bright_green": data.bright_green || data.green || "#b9f27c",
+                        "bright_cyan": data.bright_cyan || data.cyan || "#0db9d7",
+                        "bright_blue": data.bright_blue || data.blue || "#7da6ff",
+                        "bright_magenta": data.bright_magenta || data.magenta || "#bb9af7",
+                        "mantle": data.mantle || data.dark_background || data.background,
+                        "crust": data.crust || data.darker_background || data.background,
+                        "surface": data.surface || data.lighter_background || data.background,
+                        "overlay": data.overlay || data.muted || "#6c7086",
+                        "urgent": data.urgent || data.red || "#f38ba8",
+                        "peach": data.peach || data.orange || "#fab387"
+                    };
+                    if (root.currentId === "wallpaper")
+                        root.applyColorProperties(root.wallpaperColors);
+                }
+            } catch (e) {
+            }
+        }
+    }
+
+    FileView {
         id: themeFile
         path: root.statePath
         watchChanges: true
         printErrors: false
         onLoaded: {
             const value = String(text()).trim();
-            if (value !== "")
-                root.apply(value);
+            if (value !== "") {
+                if (value === "wallpaper") {
+                    root.currentId = "wallpaper";
+                    if (root.wallpaperColors && root.wallpaperColors.background)
+                        root.applyColorProperties(root.wallpaperColors);
+                } else {
+                    root.apply(value);
+                }
+            }
         }
     }
 

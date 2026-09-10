@@ -48,6 +48,14 @@ case "$MODE" in
         set_bg "$f"
       fi
     fi
+    if [ -f "$STATE_DIR/theme" ]; then
+      current_theme="$(head -n1 "$STATE_DIR/theme")"
+      if [ "$current_theme" = "wallpaper" ] && [ -f "$STATE_DIR/colors.json" ]; then
+        "$HOME/.local/bin/zoi-theme" apply-json "$(cat "$STATE_DIR/colors.json")" >/dev/null 2>&1 || true
+      elif [ -n "$current_theme" ]; then
+        "$HOME/.local/bin/zoi-theme" set "$current_theme" >/dev/null 2>&1 || true
+      fi
+    fi
     ;;
   *)
     echo "usage: qs-wallpaper list|set <path>|current|restore" >&2
