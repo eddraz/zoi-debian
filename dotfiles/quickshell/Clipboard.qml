@@ -515,7 +515,10 @@ Scope {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.confirmingClear = true
+                            onClicked: {
+                                root.clearConfirmFocused = true;
+                                root.confirmingClear = true;
+                            }
                         }
                     }
                 }
@@ -606,7 +609,10 @@ Scope {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: root.confirmingClear = false
+                                onClicked: {
+                                    root.confirmingClear = false;
+                                    root.clearConfirmFocused = true;
+                                }
                             }
                         }
                     }
