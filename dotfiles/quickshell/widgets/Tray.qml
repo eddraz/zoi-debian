@@ -5,37 +5,46 @@ import Quickshell
 import Quickshell.Services.SystemTray
 import "../Commons"
 
-Row {
-    spacing: 6
+Item {
+    id: root
 
-    Repeater {
-        model: SystemTray.items
+    implicitWidth: row.implicitWidth
+    implicitHeight: Style.barHeight
 
-        MouseArea {
-            id: trayItem
+    Row {
+        id: row
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 6
 
-            required property var modelData
+        Repeater {
+            model: SystemTray.items
 
-            implicitWidth: 18
-            implicitHeight: 18
-            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-            cursorShape: Qt.PointingHandCursor
-            onClicked: event => {
-                if (event.button === Qt.LeftButton)
-                    trayItem.modelData.activate();
-                else if (event.button === Qt.MiddleButton)
-                    trayItem.modelData.secondaryActivate();
-                else
-                    trayItem.modelData.display(QsWindow.window, 0, implicitHeight);
-            }
+            MouseArea {
+                id: trayItem
 
-            Image {
-                anchors.fill: parent
-                asynchronous: true
-                fillMode: Image.PreserveAspectFit
-                source: trayItem.modelData.icon
-                sourceSize.width: 16
-                sourceSize.height: 16
+                required property var modelData
+
+                implicitWidth: 18
+                implicitHeight: 18
+                acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+                cursorShape: Qt.PointingHandCursor
+                onClicked: event => {
+                    if (event.button === Qt.LeftButton)
+                        trayItem.modelData.activate();
+                    else if (event.button === Qt.MiddleButton)
+                        trayItem.modelData.secondaryActivate();
+                    else
+                        trayItem.modelData.display(QsWindow.window, 0, implicitHeight);
+                }
+
+                Image {
+                    anchors.fill: parent
+                    asynchronous: true
+                    fillMode: Image.PreserveAspectFit
+                    source: trayItem.modelData.icon
+                    sourceSize.width: 16
+                    sourceSize.height: 16
+                }
             }
         }
     }

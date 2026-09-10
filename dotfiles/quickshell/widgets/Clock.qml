@@ -2,19 +2,26 @@ import QtQuick
 import Quickshell
 import "../Commons"
 
-Text {
+Item {
     id: root
 
     signal togglePanel
 
-    color: Color.barText
-    font.family: Style.fontFamily
-    font.pixelSize: Style.fontBody
-    text: Qt.formatDateTime(clock.date, "ddd dd MMM  HH:mm")
+    implicitWidth: label.implicitWidth
+    implicitHeight: Style.barHeight
 
     SystemClock {
         id: clock
         precision: SystemClock.Minutes
+    }
+
+    Text {
+        id: label
+        anchors.centerIn: parent
+        color: Color.barText
+        font.family: Style.fontFamily
+        font.pixelSize: Style.fontBody
+        text: Qt.formatDateTime(clock.date, "ddd dd MMM  HH:mm")
     }
 
     MouseArea {

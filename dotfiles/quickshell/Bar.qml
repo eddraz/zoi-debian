@@ -50,6 +50,7 @@ Variants {
         component ChipLoader: Loader {
             required property var modelData
             source: PluginRegistry.widgetUrl(String(modelData))
+            anchors.verticalCenter: parent ? parent.verticalCenter : undefined
             onLoaded: screenRoot.bindChip(item, String(modelData))
         }
 
@@ -71,6 +72,7 @@ Variants {
 
                 Row {
                     id: leftRow
+                    height: parent.height
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 8
@@ -83,6 +85,7 @@ Variants {
 
                 Row {
                     id: centerRow
+                    height: parent.height
                     anchors.centerIn: parent
                     spacing: 6
 
@@ -93,6 +96,8 @@ Variants {
                 }
 
                 Row {
+                    id: rightRow
+                    height: parent.height
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 6
