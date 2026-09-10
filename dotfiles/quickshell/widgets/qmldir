@@ -1,0 +1,16 @@
+ActiveWindow 1.0 ActiveWindow.qml
+Apps 1.0 Apps.qml
+Battery 1.0 Battery.qml
+Bluetooth 1.0 Bluetooth.qml
+Clock 1.0 Clock.qml
+Dnd 1.0 Dnd.qml
+KbLayout 1.0 KbLayout.qml
+Network 1.0 Network.qml
+NotifBell 1.0 NotifBell.qml
+Player 1.0 Player.qml
+Reminder 1.0 Reminder.qml
+Session 1.0 Session.qml
+Tray 1.0 Tray.qml
+Volume 1.0 Volume.qml
+Weather 1.0 Weather.qml
+Workspaces 1.0 Workspaces.qml

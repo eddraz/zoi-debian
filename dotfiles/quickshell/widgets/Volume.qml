@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import "../Commons"
 import "../Ui"
@@ -43,6 +45,8 @@ Item {
         }
     }
 
-    onTipTextChanged: if (mouse.containsMouse)
-        HoverTip.update(root, tipText, "Super+M")
+    onTipTextChanged: {
+        if (mouse.containsMouse)
+            HoverTip.update(root, tipText, "Super+M");
+    }
 }

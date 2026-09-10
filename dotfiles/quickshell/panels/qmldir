@@ -1,0 +1,14 @@
+AppsPanel 1.0 AppsPanel.qml
+AudioPanel 1.0 AudioPanel.qml
+BarEditorPanel 1.0 BarEditorPanel.qml
+BluetoothPanel 1.0 BluetoothPanel.qml
+CalendarPanel 1.0 CalendarPanel.qml
+KeyboardPanel 1.0 KeyboardPanel.qml
+KeysPanel 1.0 KeysPanel.qml
+MediaPanel 1.0 MediaPanel.qml
+NetworkPanel 1.0 NetworkPanel.qml
+NotifPanel 1.0 NotifPanel.qml
+PowerPanel 1.0 PowerPanel.qml
+SessionPanel 1.0 SessionPanel.qml
+ThemePanel 1.0 ThemePanel.qml
+WeatherPanel 1.0 WeatherPanel.qml

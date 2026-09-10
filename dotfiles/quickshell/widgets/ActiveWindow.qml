@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import Quickshell.Wayland
 import "../Commons"
@@ -54,6 +56,8 @@ Item {
         }
     }
 
-    onTitleChanged: if (mouse.containsMouse)
-        HoverTip.update(root, "Window · " + title, "Super+Shift+W")
+    onTitleChanged: {
+        if (mouse.containsMouse)
+            HoverTip.update(root, "Window · " + title, "Super+Shift+W");
+    }
 }

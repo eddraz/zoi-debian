@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import Quickshell.Networking
 import "../Commons"
@@ -100,6 +102,8 @@ Item {
         }
     }
 
-    onTipTextChanged: if (mouse.containsMouse)
-        HoverTip.update(root, tipText, "Super+I")
+    onTipTextChanged: {
+        if (mouse.containsMouse)
+            HoverTip.update(root, tipText, "Super+I");
+    }
 }

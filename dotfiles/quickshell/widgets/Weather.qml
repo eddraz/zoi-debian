@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import "../Commons"
 import "../Ui"
@@ -61,6 +63,8 @@ Item {
         return bits.join(" · ");
     }
 
-    onTipTextChanged: if (mouse.containsMouse)
-        HoverTip.update(root, tipText, "Super+T")
+    onTipTextChanged: {
+        if (mouse.containsMouse)
+            HoverTip.update(root, tipText, "Super+T");
+    }
 }
