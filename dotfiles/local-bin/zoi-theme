@@ -85,7 +85,7 @@ def hex_to_rgb(h):
 def rgb_to_hex(r, g, b):
     r_c = max(0, min(255, int(round(r))))
     g_c = max(0, min(255, int(round(g))))
-    b_c = max(0, min(255, int(round(g))))
+    b_c = max(0, min(255, int(round(b))))
     return f"#{r_c:02x}{g_c:02x}{b_c:02x}"
 
 

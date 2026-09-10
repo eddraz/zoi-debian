@@ -2,6 +2,7 @@ pragma Singleton
 pragma ComponentBehavior: Bound
 
 import Quickshell
+import Quickshell.Io
 import QtQuick
 
 Singleton {
@@ -29,4 +30,34 @@ Singleton {
     readonly property color cardBorder: Qt.rgba(accent.r, accent.g, accent.b, 0.25)
     readonly property color dimOverlay: Qt.rgba(0, 0, 0, 0.38)
     readonly property color subtleBorder: Qt.rgba(accent.r, accent.g, accent.b, 0.14)
+
+    readonly property string colorsPath: Quickshell.env("HOME") + "/.local/state/quickshell/colors.json"
+
+    FileView {
+        id: colorsFile
+        path: root.colorsPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: {
+            try {
+                const data = JSON.parse(String(text()).trim());
+                if (data && data.background) {
+                    root.background = data.background;
+                    root.mantle = data.mantle || data.dark_background || data.background;
+                    root.crust = data.crust || data.darker_background || data.background;
+                    root.foreground = data.foreground || "#cdd6f4";
+                    root.muted = data.muted || data.overlay || "#a6adc8";
+                    root.overlay = data.overlay || data.muted || "#6c7086";
+                    root.surface = data.surface || data.lighter_background || data.background;
+                    root.accent = data.accent || "#89b4fa";
+                    root.urgent = data.urgent || data.red || "#f38ba8";
+                    root.green = data.green || "#a6e3a1";
+                    root.peach = data.peach || data.orange || "#fab387";
+                    root.yellow = data.yellow || "#f9e2af";
+                }
+            } catch (e) {
+            }
+        }
+    }
 }
+
