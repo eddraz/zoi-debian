@@ -60,6 +60,8 @@ Item {
                 root.paintAlarm(ctx, w, h);
             else if (root.icon === "tray")
                 root.paintTray(ctx, w, h);
+            else if (root.icon === "apps" || root.icon === "grid")
+                root.paintApps(ctx, w, h);
         }
     }
 
@@ -324,5 +326,29 @@ Item {
         ctx.lineTo(w * 0.50, h * 0.44);
         ctx.lineTo(w * 0.62, h * 0.32);
         ctx.stroke();
+    }
+
+    function paintApps(ctx, w, h) {
+        const size = w * 0.28;
+        const gap = w * 0.16;
+        const x1 = (w - (size * 2 + gap)) / 2;
+        const x2 = x1 + size + gap;
+        const y1 = (h - (size * 2 + gap)) / 2;
+        const y2 = y1 + size + gap;
+        const r = 2;
+
+        const drawBox = (x, y) => {
+            ctx.beginPath();
+            if (ctx.roundRect)
+                ctx.roundRect(x, y, size, size, r);
+            else
+                ctx.rect(x, y, size, size);
+            ctx.stroke();
+        };
+
+        drawBox(x1, y1);
+        drawBox(x2, y1);
+        drawBox(x1, y2);
+        drawBox(x2, y2);
     }
 }

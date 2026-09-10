@@ -25,12 +25,22 @@ Singleton {
     }
 
     readonly property var defaultLayout: ({
-        "left": ["session", "workspaces", "window"],
+        "left": ["session", "apps", "workspaces", "window"],
         "center": ["reminders", "clock", "weather"],
         "right": ["keyboard", "media", "audio", "power", "bluetooth", "network", "notifs", "dnd", "tray"]
     })
 
     readonly property var catalog: ({
+        "apps": {
+            "kinds": ["bar-widget", "panel"],
+            "label": "Apps",
+            "source": "../widgets/Apps.qml",
+            "popup": "apps",
+            "panel": "../panels/AppsPanel.qml",
+            "title": "Native Apps",
+            "defaultSection": "left",
+            "cardWidth": 300
+        },
         "workspaces": {
             "kinds": ["bar-widget"],
             "label": "Workspaces",

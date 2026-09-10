@@ -15,22 +15,13 @@ Column {
     readonly property int micVol: 2 + Audio.sinks.length
     readonly property int micMute: micVol + 1
     readonly property int sourceStart: micMute + 1
-    readonly property int lofiIndex: sourceStart + Audio.sources.length
-    readonly property int count: lofiIndex + 1
+    readonly property int count: sourceStart + Audio.sources.length
 
     onVisibleChanged: if (visible)
         cursor = 0
 
-    Connections {
-        target: Radio
-        function onPlayingChanged() {
-            if (!Radio.playing && root.cursor === root.lofiIndex)
-                root.cursor = 0;
-        }
-    }
-
     function nextSection(back) {
-        cursor = KeyNav.nextStart([0, micVol, lofiIndex], cursor, back);
+        cursor = KeyNav.nextStart([0, micVol, sourceStart], cursor, back);
     }
 
     function focusItem(entry) {
@@ -52,7 +43,6 @@ Column {
             const n = Audio.sources[i];
             e.push({ "label": String(n.description || n.nickname || n.name || "source"), "index": sourceStart + i });
         }
-        e.push({ "label": "lofi radio", "index": lofiIndex });
         return e;
     }
 
@@ -93,9 +83,7 @@ Column {
                 Audio.setSink(Audio.sinks[cursor - sinkStart]);
             else if (cursor === micMute)
                 Audio.toggleSourceMute();
-            else if (cursor === lofiIndex)
-                Radio.toggle();
-            else if (cursor >= sourceStart && cursor < lofiIndex)
+            else if (cursor >= sourceStart && cursor < count)
                 Audio.setSource(Audio.sources[cursor - sourceStart]);
             return true;
         }
@@ -404,39 +392,6 @@ Column {
                     root.cursor = root.sourceStart + index;
                     Audio.setSource(modelData);
                 }
-            }
-        }
-    }
-
-    Rectangle {
-        width: parent.width
-        height: 26
-        radius: Style.radius
-        color: Radio.playing ? Color.accent : (root.cursor === root.lofiIndex ? Color.focusFill : Color.surface)
-
-        IndexBadge {
-            slot: root.lofiIndex
-            anchors.left: parent.left
-            anchors.leftMargin: 6
-            anchors.verticalCenter: parent.verticalCenter
-        }
-
-        Text {
-            anchors.fill: parent
-            anchors.leftMargin: 28
-            anchors.rightMargin: 8
-            verticalAlignment: Text.AlignVCenter
-            elide: Text.ElideRight
-            color: Radio.playing ? Color.background : Color.popupText
-            font.family: Style.fontFamily
-            font.pixelSize: Style.fontCaption
-            text: Radio.playing ? "Lofi radio on" : "Lofi radio"
-        }
-
-        HoverMouse {
-            onClicked: {
-                root.cursor = root.lofiIndex;
-                Radio.toggle();
             }
         }
     }

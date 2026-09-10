@@ -73,6 +73,7 @@ input type:touchpad {
     bindsym $mod+Shift+Return exec /usr/bin/librewolf
     bindsym $mod+Shift+KP_Enter exec /usr/bin/librewolf
     bindsym $mod+Escape exec /usr/bin/qs ipc call session toggle
+    bindsym $mod+a exec /usr/bin/qs ipc call popups toggle apps
     bindsym $mod+q exec /usr/bin/qs ipc call popups close
     bindsym $mod+c exec /usr/bin/qs ipc call popups toggle calendar
     bindsym $mod+t exec /usr/bin/qs ipc call popups toggle weather

@@ -50,13 +50,6 @@ Singleton {
         return valid[0];
     }
 
-    onPlayerChanged: {
-        if (player && activePlayer !== player)
-            activePlayer = player;
-        else if (!player && activePlayer !== null)
-            activePlayer = null;
-    }
-
     readonly property bool active: player !== null
     readonly property string title: player ? (player.trackTitle || "") : ""
     readonly property string artist: player ? (player.trackArtist || "") : ""

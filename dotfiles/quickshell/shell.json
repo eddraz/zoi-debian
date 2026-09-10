@@ -4,6 +4,7 @@
     "layout": {
       "left": [
         "session",
+        "apps",
         "workspaces",
         "window"
       ],
