@@ -1,0 +1,710 @@
+#!/usr/bin/env python3
+"""ZOI Theme Engine & Manager (Omarchy Quatro Architecture)
+Manages color palettes, declarative templates (*.tpl), atomic theme staging,
+and cross-application theme dispatching across ZOI Debian.
+"""
+
+import argparse
+import fcntl
+import json
+import math
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
+
+
+def hex_to_rgb(h):
+    s = str(h or "").strip().lstrip("#")
+    if len(s) == 3:
+        s = "".join([c * 2 for c in s])
+    if len(s) != 6:
+        return (128, 128, 128)
+    try:
+        return tuple(int(s[i:i+2], 16) for i in (0, 2, 4))
+    except ValueError:
+        return (128, 128, 128)
+
+
+def rgb_to_hex(r, g, b):
+    r_c = max(0, min(255, int(round(r))))
+    g_c = max(0, min(255, int(round(g))))
+    b_c = max(0, min(255, int(round(g))))
+    return f"#{r_c:02x}{g_c:02x}{b_c:02x}"
+
+
+def luminance(hex_color):
+    r, g, b = hex_to_rgb(hex_color)
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
+
+
+def mix_colors(c1, c2, ratio):
+    r1, g1, b1 = hex_to_rgb(c1)
+    r2, g2, b2 = hex_to_rgb(c2)
+    return rgb_to_hex(
+        r1 * (1.0 - ratio) + r2 * ratio,
+        g1 * (1.0 - ratio) + g2 * ratio,
+        b1 * (1.0 - ratio) + b2 * ratio,
+    )
+
+
+def with_hash(s):
+    s = str(s or "").strip()
+    return s if s.startswith("#") else ("#" + s)
+
+
+def strip_hash(s):
+    s = str(s or "").strip()
+    return s[1:] if s.startswith("#") else s
+
+
+def normalize_palette(raw_dict, theme_id="custom", theme_name="Custom"):
+    """Normalize any dictionary into the standard 22-color Omarchy Quatro palette."""
+    pal = dict(raw_dict)
+    
+    # 1. Base identification & mode
+    bg = with_hash(pal.get("background", "#1e1e2e"))
+    lum = luminance(bg)
+    is_dark = lum < 0.4
+    default_mode = "dark" if is_dark else "light"
+    mode = pal.get("mode", default_mode)
+
+    pal["id"] = pal.get("id", theme_id)
+    pal["name"] = pal.get("name", theme_name or theme_id.replace("-", " ").title())
+    pal["mode"] = mode
+
+    # 2. Main colors
+    fg = with_hash(pal.get("foreground", "#cdd6f4" if is_dark else "#4c4f69"))
+    accent = with_hash(pal.get("accent", "#89b4fa" if is_dark else "#1e66f5"))
+    
+    pal["background"] = bg
+    pal["foreground"] = fg
+    pal["accent"] = accent
+
+    # 3. Hierarchy backgrounds
+    if "dark_background" not in pal:
+        pal["dark_background"] = pal.get("mantle", mix_colors(bg, "#000000" if is_dark else "#ffffff", 0.15))
+    if "darker_background" not in pal:
+        pal["darker_background"] = pal.get("crust", mix_colors(bg, "#000000" if is_dark else "#ffffff", 0.30))
+    if "lighter_background" not in pal:
+        pal["lighter_background"] = pal.get("surface", mix_colors(bg, "#ffffff" if is_dark else "#000000", 0.12))
+
+    # 4. Selection & Muted
+    if "selection" not in pal:
+        pal["selection"] = mix_colors(bg, accent, 0.25 if is_dark else 0.18)
+    if "muted" not in pal:
+        pal["muted"] = pal.get("overlay", mix_colors(fg, bg, 0.55))
+
+    # 5. Foreground hierarchy
+    if "dark_foreground" not in pal:
+        pal["dark_foreground"] = mix_colors(fg, bg, 0.40)
+    if "light_foreground" not in pal:
+        pal["light_foreground"] = mix_colors(fg, "#ffffff" if is_dark else "#000000", 0.15)
+    if "bright_foreground" not in pal:
+        pal["bright_foreground"] = mix_colors(fg, "#ffffff" if is_dark else "#000000", 0.35)
+
+    # 6. Standard 8 ANSI colors
+    if "red" not in pal:
+        pal["red"] = pal.get("urgent", "#f38ba8" if is_dark else "#d20f39")
+    if "green" not in pal:
+        pal["green"] = pal.get("green", "#a6e3a1" if is_dark else "#40a02b")
+    if "yellow" not in pal:
+        pal["yellow"] = pal.get("yellow", "#f9e2af" if is_dark else "#df8e1d")
+    if "orange" not in pal:
+        pal["orange"] = pal.get("peach", "#fab387" if is_dark else "#fe640b")
+    if "blue" not in pal:
+        pal["blue"] = accent
+    if "magenta" not in pal:
+        pal["magenta"] = pal.get("magenta", "#cba6f7" if is_dark else "#8839ef")
+    if "cyan" not in pal:
+        pal["cyan"] = pal.get("cyan", "#94e2d5" if is_dark else "#179299")
+    if "brown" not in pal:
+        pal["brown"] = mix_colors(pal["orange"], "#000000", 0.3)
+
+    # 7. Bright 6 ANSI colors
+    if "bright_red" not in pal:
+        pal["bright_red"] = mix_colors(pal["red"], "#ffffff" if is_dark else "#000000", 0.2)
+    if "bright_yellow" not in pal:
+        pal["bright_yellow"] = mix_colors(pal["yellow"], "#ffffff" if is_dark else "#000000", 0.2)
+    if "bright_green" not in pal:
+        pal["bright_green"] = mix_colors(pal["green"], "#ffffff" if is_dark else "#000000", 0.2)
+    if "bright_cyan" not in pal:
+        pal["bright_cyan"] = mix_colors(pal["cyan"], "#ffffff" if is_dark else "#000000", 0.2)
+    if "bright_blue" not in pal:
+        pal["bright_blue"] = mix_colors(pal["blue"], "#ffffff" if is_dark else "#000000", 0.2)
+    if "bright_magenta" not in pal:
+        pal["bright_magenta"] = mix_colors(pal["magenta"], "#ffffff" if is_dark else "#000000", 0.2)
+
+    # 8. Backward-compatible aliases for legacy components
+    pal["mantle"] = pal["dark_background"]
+    pal["crust"] = pal["darker_background"]
+    pal["surface"] = pal["lighter_background"]
+    pal["overlay"] = pal["muted"]
+    pal["urgent"] = pal["red"]
+    pal["peach"] = pal["orange"]
+
+    for k in list(pal.keys()):
+        if k not in ["id", "name", "mode"]:
+            pal[k] = with_hash(pal[k])
+
+    return pal
+
+
+def render_template(template_str, pal):
+    """Render a .tpl template string replacing moustache tags."""
+    
+    def replace_mix(match):
+        func = match.group(1) or "mix"
+        c1_key = match.group(2)
+        c2_key = match.group(3)
+        pct_str = match.group(4)
+
+        if pct_str.endswith("%"):
+            ratio = float(pct_str[:-1]) / 100.0
+        else:
+            ratio = float(pct_str)
+
+        c1 = pal.get(c1_key, "#ffffff")
+        c2 = pal.get(c2_key, "#000000")
+        mixed = mix_colors(c1, c2, ratio)
+
+        if "strip" in func:
+            return strip_hash(mixed)
+        elif "rgb" in func:
+            r, g, b = hex_to_rgb(mixed)
+            return f"{r}, {g}, {b}"
+        return mixed
+
+    pattern_mix = re.compile(r"\{\{\s*(mix(?:_strip|_rgb)?)\s+([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\s+([0-9.]+%?)\s*\}\}")
+    rendered = pattern_mix.sub(replace_mix, template_str)
+
+    def replace_var(match):
+        full_key = match.group(1).strip()
+        if full_key.endswith("_strip"):
+            base_k = full_key[:-6]
+            val = pal.get(base_k, "")
+            return strip_hash(val)
+        elif full_key.endswith("_rgb"):
+            base_k = full_key[:-4]
+            val = pal.get(base_k, "#ffffff")
+            r, g, b = hex_to_rgb(val)
+            return f"{r}, {g}, {b}"
+        else:
+            return str(pal.get(full_key, match.group(0)))
+
+    pattern_var = re.compile(r"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}")
+    rendered = pattern_var.sub(replace_var, rendered)
+
+    return rendered
+
+
+class ZoiThemeManager:
+    def __init__(self):
+        self.home = os.path.expanduser("~")
+        self.repo_root = os.path.join(self.home, "projects/zoi-debian")
+        
+        self.system_tpl_dir = os.path.join(self.repo_root, "dotfiles/themes/templates")
+        self.user_tpl_dir = os.path.join(self.home, ".config/zoi/themed")
+        
+        self.system_themes_dir = os.path.join(self.repo_root, "dotfiles/themes")
+        self.user_themes_dir = os.path.join(self.home, ".config/zoi/themes")
+        
+        self.state_dir = os.path.join(self.home, ".local/state/zoi/theme")
+        self.qs_state_dir = os.path.join(self.home, ".local/state/quickshell")
+        os.makedirs(self.state_dir, exist_ok=True)
+        os.makedirs(self.qs_state_dir, exist_ok=True)
+        os.makedirs(self.user_themes_dir, exist_ok=True)
+        os.makedirs(self.user_tpl_dir, exist_ok=True)
+
+        self.lock_file = os.path.join(self.state_dir, "theme.lock")
+
+    def list_themes(self):
+        themes = {}
+        if os.path.isdir(self.system_themes_dir):
+            for entry in sorted(os.listdir(self.system_themes_dir)):
+                if entry == "templates":
+                    continue
+                colors_path = os.path.join(self.system_themes_dir, entry, "colors.toml")
+                if os.path.isfile(colors_path):
+                    try:
+                        with open(colors_path, "rb") as f:
+                            data = tomllib.load(f)
+                        themes[entry] = {
+                            "id": entry,
+                            "name": data.get("name", entry.replace("-", " ").title()),
+                            "mode": data.get("mode", "dark"),
+                            "accent": data.get("accent", "#89b4fa"),
+                            "background": data.get("background", "#1e1e2e"),
+                            "source": "system",
+                            "path": os.path.join(self.system_themes_dir, entry)
+                        }
+                    except Exception:
+                        pass
+
+        if os.path.isdir(self.user_themes_dir):
+            for entry in sorted(os.listdir(self.user_themes_dir)):
+                colors_path = os.path.join(self.user_themes_dir, entry, "colors.toml")
+                if os.path.isfile(colors_path):
+                    try:
+                        with open(colors_path, "rb") as f:
+                            data = tomllib.load(f)
+                        themes[entry] = {
+                            "id": entry,
+                            "name": data.get("name", entry.replace("-", " ").title()),
+                            "mode": data.get("mode", "dark"),
+                            "accent": data.get("accent", "#89b4fa"),
+                            "background": data.get("background", "#1e1e2e"),
+                            "source": "user",
+                            "path": os.path.join(self.user_themes_dir, entry)
+                        }
+                    except Exception:
+                        pass
+
+        return themes
+
+    def get_theme_palette(self, theme_id):
+        candidates = [
+            os.path.join(self.user_themes_dir, theme_id, "colors.toml"),
+            os.path.join(self.system_themes_dir, theme_id, "colors.toml")
+        ]
+        
+        for c in candidates:
+            if os.path.isfile(c):
+                with open(c, "rb") as f:
+                    raw = tomllib.load(f)
+                return normalize_palette(raw, theme_id=theme_id)
+
+        raise FileNotFoundError(f"Theme {theme_id} not found")
+
+    def apply_palette(self, pal):
+        with open(self.lock_file, "w") as lock_fd:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            try:
+                self._do_apply_palette(pal)
+            finally:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+
+    def _do_apply_palette(self, pal):
+        theme_id = pal.get("id", "custom")
+        staging_dir = os.path.join(self.state_dir, "staging")
+        current_dir = os.path.join(self.state_dir, "current")
+        shutil.rmtree(staging_dir, ignore_errors=True)
+        os.makedirs(staging_dir, exist_ok=True)
+
+        templates = {}
+        if os.path.isdir(self.system_tpl_dir):
+            for tpl in os.listdir(self.system_tpl_dir):
+                if tpl.endswith(".tpl"):
+                    templates[tpl] = os.path.join(self.system_tpl_dir, tpl)
+        if os.path.isdir(self.user_tpl_dir):
+            for tpl in os.listdir(self.user_tpl_dir):
+                if tpl.endswith(".tpl"):
+                    templates[tpl] = os.path.join(self.user_tpl_dir, tpl)
+
+        rendered_files = {}
+        for tpl_name, tpl_path in templates.items():
+            dest_name = tpl_name[:-4]
+            with open(tpl_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            rendered = render_template(content, pal)
+            staged_path = os.path.join(staging_dir, dest_name)
+            with open(staged_path, "w", encoding="utf-8") as f:
+                f.write(rendered)
+            rendered_files[dest_name] = rendered
+
+        colors_json_content = json.dumps(pal, indent=2)
+        with open(os.path.join(staging_dir, "colors.json"), "w", encoding="utf-8") as f:
+            f.write(colors_json_content)
+
+        pal_mode = pal.get("mode", "dark")
+        sh_lines = [f'export ZOI_THEME="{theme_id}"\n', f'export ZOI_THEME_MODE="{pal_mode}"\n']
+        for k, v in pal.items():
+            if k not in ["id", "name", "mode"]:
+                sh_lines.append(f'export ZOI_COLOR_{k.upper()}="{with_hash(v)}"\n')
+        with open(os.path.join(staging_dir, "colors.sh"), "w", encoding="utf-8") as f:
+            f.writelines(sh_lines)
+
+        toml_lines = [f'mode = "{pal_mode}"\n\n']
+        for k, v in pal.items():
+            if k not in ["id", "name", "mode"]:
+                toml_lines.append(f'{k} = "{with_hash(v)}"\n')
+        with open(os.path.join(staging_dir, "colors.toml"), "w", encoding="utf-8") as f:
+            f.writelines(toml_lines)
+
+        shutil.rmtree(current_dir, ignore_errors=True)
+        shutil.move(staging_dir, current_dir)
+
+        self._dispatch_foot(rendered_files.get("foot.ini"))
+        self._dispatch_btop(rendered_files.get("btop.theme"))
+        self._dispatch_sway(rendered_files.get("sway.theme.conf"), pal)
+        self._dispatch_helix(rendered_files.get("helix.toml"))
+        self._dispatch_zed(rendered_files.get("zed.json"))
+        self._dispatch_vscode(pal)
+        self._dispatch_gtk(rendered_files.get("gtk-3.0.css"), rendered_files.get("gtk-4.0.css"), pal)
+        self._dispatch_herdr(theme_id)
+        self._dispatch_state(pal, colors_json_content, sh_lines)
+        self._run_hooks(theme_id)
+
+    def _dispatch_foot(self, content):
+        if not content:
+            return
+        foot_path = os.path.join(self.home, ".config/foot/foot.ini")
+        os.makedirs(os.path.dirname(foot_path), exist_ok=True)
+        with open(foot_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        repo_foot = os.path.join(self.repo_root, "dotfiles/config/foot/foot.ini")
+        if os.path.isdir(os.path.dirname(repo_foot)):
+            with open(repo_foot, "w", encoding="utf-8") as f:
+                f.write(content)
+
+    def _dispatch_btop(self, content):
+        if not content:
+            return
+        btop_dir = os.path.join(self.home, ".config/btop")
+        themes_dir = os.path.join(btop_dir, "themes")
+        os.makedirs(themes_dir, exist_ok=True)
+        with open(os.path.join(themes_dir, "zoi.theme"), "w", encoding="utf-8") as f:
+            f.write(content)
+
+        btop_cfg = os.path.join(btop_dir, "btop.conf")
+        if os.path.exists(btop_cfg):
+            with open(btop_cfg, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            new_lines = []
+            theme_set = False
+            for line in lines:
+                if line.strip().startswith("color_theme ="):
+                    new_lines.append('color_theme = "zoi"\n')
+                    theme_set = True
+                else:
+                    new_lines.append(line)
+            if not theme_set:
+                new_lines.insert(0, 'color_theme = "zoi"\n')
+            with open(btop_cfg, "w", encoding="utf-8") as f:
+                f.writelines(new_lines)
+
+    def _dispatch_sway(self, content, pal):
+        if content:
+            sway_theme = os.path.join(self.home, ".config/sway/theme.conf")
+            os.makedirs(os.path.dirname(sway_theme), exist_ok=True)
+            with open(sway_theme, "w", encoding="utf-8") as f:
+                f.write(content)
+            repo_sway = os.path.join(self.repo_root, "dotfiles/sway/theme.conf")
+            if os.path.isdir(os.path.dirname(repo_sway)):
+                with open(repo_sway, "w", encoding="utf-8") as f:
+                    f.write(content)
+
+        accent = pal.get("accent", "#89b4fa")
+        bg_dark = pal.get("dark_background", "#181825")
+        bg_light = pal.get("lighter_background", "#313244")
+        fg = pal.get("foreground", "#cdd6f4")
+        muted = pal.get("muted", "#6c7086")
+        urgent = pal.get("red", "#f38ba8")
+        orange = pal.get("orange", "#fab387")
+
+        cmd = [
+            "swaymsg",
+            f"client.focused '{accent}' '{accent}' '{bg_dark}' '{orange}' '{accent}'; "
+            f"client.focused_inactive '{bg_light}' '{bg_light}' '{fg}' '{bg_light}' '{bg_light}'; "
+            f"client.unfocused '{bg_dark}' '{bg_dark}' '{muted}' '{bg_dark}' '{bg_dark}'; "
+            f"client.urgent '{urgent}' '{urgent}' '{bg_dark}' '{urgent}' '{urgent}'"
+        ]
+        subprocess.run(cmd, capture_output=True, timeout=1)
+
+    def _dispatch_helix(self, content):
+        if not content:
+            return
+        helix_dir = os.path.join(self.home, ".config/helix")
+        themes_dir = os.path.join(helix_dir, "themes")
+        os.makedirs(themes_dir, exist_ok=True)
+        with open(os.path.join(themes_dir, "zoi.toml"), "w", encoding="utf-8") as f:
+            f.write(content)
+
+        helix_cfg = os.path.join(helix_dir, "config.toml")
+        if os.path.exists(helix_cfg):
+            with open(helix_cfg, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            new_lines = []
+            theme_set = False
+            for line in lines:
+                if line.strip().startswith("theme ="):
+                    new_lines.append('theme = "zoi"\n')
+                    theme_set = True
+                else:
+                    new_lines.append(line)
+            if not theme_set:
+                new_lines.insert(0, 'theme = "zoi"\n')
+            with open(helix_cfg, "w", encoding="utf-8") as f:
+                f.writelines(new_lines)
+
+    def _dispatch_zed(self, content):
+        if not content:
+            return
+        zed_dir = os.path.join(self.home, ".config/zed")
+        themes_dir = os.path.join(zed_dir, "themes")
+        os.makedirs(themes_dir, exist_ok=True)
+        with open(os.path.join(themes_dir, "zoi.json"), "w", encoding="utf-8") as f:
+            f.write(content)
+
+        zed_settings = os.path.join(zed_dir, "settings.json")
+        if os.path.exists(zed_settings):
+            try:
+                with open(zed_settings, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                data["theme"] = {
+                    "mode": "dark",
+                    "light": "One Light",
+                    "dark": "ZOI Active"
+                }
+                with open(zed_settings, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2)
+            except Exception:
+                pass
+
+    def _dispatch_vscode(self, pal):
+        paths = [
+            os.path.join(self.home, ".config/Antigravity IDE/User/settings.json"),
+            os.path.join(self.home, ".config/Code/User/settings.json"),
+            os.path.join(self.home, ".config/Code - OSS/User/settings.json"),
+            os.path.join(self.home, ".config/VSCodium/User/settings.json"),
+        ]
+        
+        bg = pal["background"]
+        dark_bg = pal["dark_background"]
+        darker_bg = pal["darker_background"]
+        lighter_bg = pal["lighter_background"]
+        fg = pal["foreground"]
+        muted = pal["muted"]
+        accent = pal["accent"]
+        red = pal["red"]
+        green = pal["green"]
+        yellow = pal["yellow"]
+        blue = pal["blue"]
+        magenta = pal["magenta"]
+        cyan = pal["cyan"]
+
+        customizations = {
+            "editor.background": bg,
+            "editor.foreground": fg,
+            "activityBar.background": darker_bg,
+            "activityBar.foreground": accent,
+            "sideBar.background": dark_bg,
+            "sideBar.foreground": fg,
+            "sideBarTitle.foreground": accent,
+            "sideBarSectionHeader.background": lighter_bg,
+            "statusBar.background": darker_bg,
+            "statusBar.foreground": fg,
+            "titleBar.activeBackground": darker_bg,
+            "titleBar.activeForeground": fg,
+            "tab.activeBackground": bg,
+            "tab.activeForeground": accent,
+            "tab.inactiveBackground": darker_bg,
+            "tab.inactiveForeground": muted,
+            "editorGroupHeader.tabsBackground": darker_bg,
+            "terminal.background": bg,
+            "terminal.foreground": fg,
+            "terminal.ansiBlack": dark_bg,
+            "terminal.ansiRed": red,
+            "terminal.ansiGreen": green,
+            "terminal.ansiYellow": yellow,
+            "terminal.ansiBlue": blue,
+            "terminal.ansiMagenta": magenta,
+            "terminal.ansiCyan": cyan,
+            "terminal.ansiWhite": fg,
+            "focusBorder": accent,
+            "input.background": lighter_bg,
+            "input.foreground": fg,
+            "input.border": muted,
+            "list.activeSelectionBackground": pal["selection"],
+            "list.activeSelectionForeground": accent,
+            "list.hoverBackground": lighter_bg,
+            "badge.background": accent,
+            "badge.foreground": dark_bg
+        }
+
+        for p in paths:
+            if not os.path.exists(p):
+                continue
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                data["workbench.colorCustomizations"] = customizations
+                with open(p, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=4)
+            except Exception:
+                pass
+
+    def _dispatch_gtk(self, css3, css4, pal):
+        mode = pal.get("mode", "dark")
+        scheme = "prefer-light" if mode == "light" else "prefer-dark"
+        subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme], capture_output=True)
+
+        if css3:
+            d3 = os.path.join(self.home, ".config/gtk-3.0")
+            os.makedirs(d3, exist_ok=True)
+            with open(os.path.join(d3, "gtk.css"), "w", encoding="utf-8") as f:
+                f.write(css3)
+        if css4:
+            d4 = os.path.join(self.home, ".config/gtk-4.0")
+            os.makedirs(d4, exist_ok=True)
+            with open(os.path.join(d4, "gtk.css"), "w", encoding="utf-8") as f:
+                f.write(css4)
+
+    def _dispatch_herdr(self, theme_id):
+        herdr_cfg = os.path.join(self.home, ".config/herdr/config.toml")
+        if not os.path.exists(herdr_cfg):
+            return
+
+        theme_map = {
+            "catppuccin": "catppuccin",
+            "catppuccin-mocha": "catppuccin",
+            "catppuccin-macchiato": "catppuccin",
+            "catppuccin-frappe": "catppuccin",
+            "catppuccin-latte": "catppuccin-latte",
+            "kanagawa": "kanagawa",
+            "nord": "nord",
+            "gruvbox": "gruvbox",
+            "dracula": "dracula",
+            "rose-pine": "rose-pine",
+            "tokyo-night": "tokyo-night"
+        }
+        h_theme = theme_map.get(theme_id, "catppuccin")
+        try:
+            with open(herdr_cfg, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            new_lines = []
+            in_theme = False
+            replaced = False
+            for line in lines:
+                if line.strip().startswith("[theme]"):
+                    in_theme = True
+                    new_lines.append(line)
+                    continue
+                if in_theme and line.strip().startswith("name ="):
+                    new_lines.append(f'name = "{h_theme}"\n')
+                    replaced = True
+                    in_theme = False
+                    continue
+                if in_theme and line.startswith("["):
+                    if not replaced:
+                        new_lines.append(f'name = "{h_theme}"\n')
+                        replaced = True
+                    in_theme = False
+                new_lines.append(line)
+            if not replaced and "[theme]" not in "".join(lines):
+                new_lines.append(f'\n[theme]\nname = "{h_theme}"\nauto_switch = false\n')
+            with open(herdr_cfg, "w", encoding="utf-8") as f:
+                f.writelines(new_lines)
+            subprocess.run(["herdr", "server", "reload-config"], capture_output=True, timeout=1)
+        except Exception:
+            pass
+
+    def _dispatch_state(self, pal, json_str, sh_lines):
+        with open(os.path.join(self.qs_state_dir, "colors.json"), "w", encoding="utf-8") as f:
+            f.write(json_str)
+        with open(os.path.join(self.qs_state_dir, "colors.sh"), "w", encoding="utf-8") as f:
+            f.writelines(sh_lines)
+        with open(os.path.join(self.qs_state_dir, "theme"), "w", encoding="utf-8") as f:
+            f.write(pal.get("id", "custom"))
+
+    def _run_hooks(self, theme_id):
+        hooks_dir = os.path.join(self.home, ".config/zoi/hooks/theme-set.d")
+        if not os.path.isdir(hooks_dir):
+            return
+        for entry in sorted(os.listdir(hooks_dir)):
+            hook_path = os.path.join(hooks_dir, entry)
+            if os.path.isfile(hook_path) and os.access(hook_path, os.X_OK):
+                try:
+                    subprocess.run([hook_path, theme_id], timeout=5, capture_output=True)
+                except Exception as e:
+                    print(f"Error running hook {hook_path}: {e}", file=sys.stderr)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="ZOI Theme Engine & Manager")
+    subparsers = parser.add_subparsers(dest="command")
+
+    subparsers.add_parser("list", help="List available themes")
+    subparsers.add_parser("current", help="Show current theme ID")
+
+    get_p = subparsers.add_parser("get", help="Get theme palette definition")
+    get_p.add_argument("theme_id", help="Theme ID")
+
+    set_p = subparsers.add_parser("set", help="Set theme by ID")
+    set_p.add_argument("theme_id", help="Theme ID")
+
+    apply_json_p = subparsers.add_parser("apply-json", help="Apply custom palette from JSON")
+    apply_json_p.add_argument("json_str", help="Palette JSON string")
+
+    args, unknown = parser.parse_known_args()
+    mgr = ZoiThemeManager()
+
+    if not args.command:
+        if len(sys.argv) > 1 and sys.argv[1].strip().startswith("{"):
+            try:
+                raw_dict = json.loads(sys.argv[1])
+                pal = normalize_palette(raw_dict, theme_id=raw_dict.get("id", "custom"))
+                mgr.apply_palette(pal)
+                return 0
+            except Exception as e:
+                print(f"Error parsing JSON: {e}", file=sys.stderr)
+                return 1
+        else:
+            parser.print_help()
+            return 1
+
+    if args.command == "list":
+        themes = mgr.list_themes()
+        print(json.dumps(themes, indent=2))
+        return 0
+
+    elif args.command == "current":
+        state_file = os.path.join(mgr.qs_state_dir, "theme")
+        if os.path.exists(state_file):
+            with open(state_file, "r") as f:
+                print(f.read().strip())
+        else:
+            print("mocha")
+        return 0
+
+    elif args.command == "get":
+        try:
+            pal = mgr.get_theme_palette(args.theme_id)
+            print(json.dumps(pal, indent=2))
+            return 0
+        except Exception as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+
+    elif args.command == "set":
+        try:
+            pal = mgr.get_theme_palette(args.theme_id)
+            mgr.apply_palette(pal)
+            print(f"Applied theme: {pal['name']} ({args.theme_id})")
+            return 0
+        except Exception as e:
+            print(f"Error setting theme {args.theme_id}: {e}", file=sys.stderr)
+            return 1
+
+    elif args.command == "apply-json":
+        try:
+            raw_dict = json.loads(args.json_str)
+            pal = normalize_palette(raw_dict, theme_id=raw_dict.get("id", "custom"))
+            mgr.apply_palette(pal)
+            print(f"Applied palette: {pal['name']} ({pal['id']})")
+            return 0
+        except Exception as e:
+            print(f"Error applying palette JSON: {e}", file=sys.stderr)
+            return 1
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
