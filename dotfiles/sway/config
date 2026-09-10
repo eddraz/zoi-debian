@@ -188,7 +188,7 @@ default_floating_border pixel 2
     bindsym $mod+d focus mode_toggle
 
     # Move focus to the parent container
-    bindsym $mod+a focus parent
+    bindsym $mod+Shift+a focus parent
 #
 # Scratchpad:
 #

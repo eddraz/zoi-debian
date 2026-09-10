@@ -89,7 +89,7 @@ Item {
                 { "keys": "Super+Arrows", "action": "Focus" },
                 { "keys": "Super+Shift+H J K L", "action": "Move window" },
                 { "keys": "Super+Shift+Arrows", "action": "Move window" },
-                { "keys": "Super+A", "action": "Focus parent" },
+                { "keys": "Super+Shift+A", "action": "Focus parent" },
                 { "keys": "Super+D", "action": "Focus tiling/floating" },
                 { "keys": "Super+Shift+Space", "action": "Toggle floating" }
             ]
@@ -127,6 +127,7 @@ Item {
         {
             "title": "Bar panels",
             "rows": [
+                { "keys": "Super+A", "action": "Native Apps" },
                 { "keys": "Super+C", "action": "Calendar" },
                 { "keys": "Super+T", "action": "Weather" },
                 { "keys": "Super+N", "action": "Notifications" },
