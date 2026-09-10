@@ -13,6 +13,7 @@ playerctl -a pause >/dev/null 2>&1 || true
 exec mpv \
     --no-video \
     --really-quiet \
+    --load-scripts=no \
     --title=qs-lofi \
     --force-media-title="Lofi radio" \
     --no-terminal \

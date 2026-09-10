@@ -25,6 +25,15 @@ Singleton {
         probeTimer.restart();
     }
 
+    function stop() {
+        if (starting)
+            return;
+        if (playing) {
+            Quickshell.execDetached([helper]);
+            playing = false;
+        }
+    }
+
     function refresh() {
         if (!probe.running)
             probe.running = true;

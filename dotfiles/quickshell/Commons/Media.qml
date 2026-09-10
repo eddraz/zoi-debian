@@ -10,20 +10,51 @@ Singleton {
 
     property bool armed: false
     property var exclusiveKeep: null
+    property var activePlayer: null
+
+    function isIgnored(p) {
+        if (!p)
+            return true;
+        const identity = (p.identity || "").toLowerCase();
+        const title = (p.trackTitle || "").toLowerCase();
+        if (title.indexOf("lofi radio") !== -1 || title.indexOf("qs-lofi") !== -1)
+            return true;
+        if (identity === "mpv" && (title === "" || title.indexOf("lofi") !== -1 || title.indexOf("qs-lofi") !== -1))
+            return true;
+        return false;
+    }
 
     readonly property var player: {
         const values = Mpris.players ? Mpris.players.values : [];
-        let fallback = null;
+        const valid = [];
         for (let i = 0; i < values.length; i++) {
             const item = values[i];
-            if (!item)
-                continue;
-            if (item.isPlaying)
-                return item;
-            if (!fallback)
-                fallback = item;
+            if (item && !root.isIgnored(item))
+                valid.push(item);
         }
-        return fallback;
+        if (valid.length === 0)
+            return null;
+
+        for (let i = 0; i < valid.length; i++) {
+            if (valid[i].isPlaying)
+                return valid[i];
+        }
+
+        if (root.activePlayer) {
+            for (let i = 0; i < valid.length; i++) {
+                if (valid[i] === root.activePlayer)
+                    return root.activePlayer;
+            }
+        }
+
+        return valid[0];
+    }
+
+    onPlayerChanged: {
+        if (player && activePlayer !== player)
+            activePlayer = player;
+        else if (!player && activePlayer !== null)
+            activePlayer = null;
     }
 
     readonly property bool active: player !== null
@@ -78,14 +109,17 @@ Singleton {
         const values = Mpris.players ? Mpris.players.values : [];
         for (let i = 0; i < values.length; i++) {
             const item = values[i];
-            if (item && item !== keep)
+            if (item && item !== keep && !root.isIgnored(item))
                 pauseItem(item);
         }
     }
 
     function claim(keep) {
-        if (!keep || !keep.isPlaying)
+        if (!keep || !keep.isPlaying || isIgnored(keep))
             return;
+        activePlayer = keep;
+        if (Radio.playing)
+            Radio.stop();
         pauseOthers(keep);
     }
 
@@ -95,7 +129,7 @@ Singleton {
         const values = Mpris.players ? Mpris.players.values : [];
         const playing = [];
         for (let i = 0; i < values.length; i++) {
-            if (values[i] && values[i].isPlaying)
+            if (values[i] && values[i].isPlaying && !root.isIgnored(values[i]))
                 playing.push(values[i]);
         }
         if (playing.length <= 1)
@@ -116,9 +150,12 @@ Singleton {
         delegate: Connections {
             required property var modelData
             target: modelData
-            Component.onCompleted: root.claim(modelData)
+            Component.onCompleted: {
+                if (modelData && !root.isIgnored(modelData))
+                    root.claim(modelData);
+            }
             function onIsPlayingChanged() {
-                if (modelData && modelData.isPlaying)
+                if (modelData && !root.isIgnored(modelData) && modelData.isPlaying)
                     root.claim(modelData);
             }
         }
