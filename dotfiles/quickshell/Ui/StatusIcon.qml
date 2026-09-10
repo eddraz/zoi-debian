@@ -48,8 +48,10 @@ Item {
                 root.paintEthernet(ctx, w, h);
             else if (root.icon.indexOf("bluetooth") === 0)
                 root.paintBluetooth(ctx, w, h);
-            else if (root.icon === "power")
+            else if (root.icon === "power" || root.icon === "session")
                 root.paintPower(ctx, w, h);
+            else if (root.icon === "user")
+                root.paintUser(ctx, w, h);
             else if (root.icon === "bell" || root.icon === "bell-off")
                 root.paintBell(ctx, w, h);
             else if (root.icon === "play" || root.icon === "pause")
@@ -228,11 +230,21 @@ Item {
     function paintPower(ctx, w, h) {
         ctx.fillStyle = "transparent";
         ctx.beginPath();
-        ctx.moveTo(w * 0.50, h * 0.16);
-        ctx.lineTo(w * 0.50, h * 0.52);
+        ctx.moveTo(w * 0.50, h * 0.14);
+        ctx.lineTo(w * 0.50, h * 0.48);
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(w * 0.50, h * 0.56, w * 0.28, Math.PI * 0.28, Math.PI * 1.72, false);
+        ctx.arc(w * 0.50, h * 0.56, w * 0.30, -Math.PI * 0.28, Math.PI * 1.28, false);
+        ctx.stroke();
+    }
+
+    function paintUser(ctx, w, h) {
+        ctx.fillStyle = "transparent";
+        ctx.beginPath();
+        ctx.arc(w * 0.50, h * 0.32, w * 0.18, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(w * 0.50, h * 0.88, w * 0.36, Math.PI * 1.15, Math.PI * 1.85, false);
         ctx.stroke();
     }
 
