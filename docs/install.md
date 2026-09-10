@@ -90,7 +90,7 @@ Importante: el primer arranque de `qs` necesita:
 | `libqrencode4` + `qrencode` | Generación de código QR para compartir red Wi-Fi |
 | `network-manager` + `applet` | Wifi panel |
 | `bluez` + `bluez-tools` | Bluetooth panel |
-| `polkit` | Polkit overlay |
+| `polkitd` + `pkexec` | Demonio Polkit y ejecutable de autenticación |
 | `fonts-noto` + `fonts-noto-color-emoji` + `fonts-noto-cjk` | Tipografías |
 | `jq` | Parser JSON |
 | `xdg-utils` + `xdg-user-dirs` | Estándar XDG |

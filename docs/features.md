@@ -113,7 +113,9 @@ PopupCard (anchors to bar)
   - `↑` o `Shift+Tab`: Salta a la coincidencia anterior.
   - `Enter`: Ejecuta la acción del ítem seleccionado y cierra la búsqueda.
   - `Escape`: Limpia la búsqueda y restaura el foco al panel.
-- `Tab`/`Shift+Tab` cicla secciones (Theme, Audio, Session, etc.) cuando no se está en modo búsqueda de texto.
+- `Tab` / `Shift+Tab`: Navega cíclicamente entre todos los elementos de entrada y controles interactivos que existan en el panel (`inputs` de texto, contraseñas, botones, barras de progreso/deslizadores de volumen y brillo, conmutadores y listas).
+  - Si el buscador o un campo de texto está enfocado sin coincidencias activas, presionar `Tab` traslada de forma fluida el foco al panel y avanza al siguiente control interactivo.
+  - En modo búsqueda con texto filtrado, `Tab` / `Shift+Tab` cicla a través de las coincidencias.
 - `Super+Q` siempre cierra.
 
 `visiblePanel()` desenvuelve `Loader.item` para que `/`, Tab, J/K, H/L, Enter sigan andando cuando el panel es un `Loader`.
@@ -313,6 +315,7 @@ swaymsg 'output * bg "'$path'" fill'
   - Aplicaciones GTK 3 / 4 y navegadores como LibreWolf (`gtk.css` + `prefer-dark/prefer-light`)
   - Herdr (`config.toml`)
 - **Extracción de paleta desde Wallpaper**: `qs-theme-from-wallpaper` extrae los 22 colores con contraste WCAG AAA (> 7:1), tintando fondos suavemente y destacando acentos cromáticos. Al elegir un fondo de pantalla, todo el sistema adopta automáticamente su paleta derivada.
+- **Persistencia reactiva en Quickshell**: `Commons/Color.qml` cuenta con un `FileView` dedicado que observa directamente `~/.local/state/quickshell/colors.json`, garantizando que la barra, widgets y popups mantengan y carguen la paleta elegida al reiniciar el equipo o cambiar de tema de forma instantánea.
 - **Hooks de usuario**: Soporte para scripts personalizados en `~/.config/zoi/hooks/theme-set.d/*`.
 
 ---

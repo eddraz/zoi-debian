@@ -135,7 +135,8 @@ Then `import "../Commons"` gives access as `MyService.foo()`.
 
 ## Themed on wallpapers
 
-`Wallpaper.apply(path)` calls `Themes.refreshFromWallpaper(path)` → spawns `~/.local/bin/qs-theme-from-wallpaper` which extracts dominant colors via Python+Pillow and writes `Color.accent`, `Color.popupText`, etc. live. Don't restart the shell for theme changes.
+`Wallpaper.apply(path)` calls `Themes.refreshFromWallpaper(path)` → spawns `~/.local/bin/qs-theme-from-wallpaper` which extracts 22 dominant colors via Python + GdkPixbuf (gi) with 5-bit color quantization and 7-sector chroma sorting, enforcing WCAG AAA contrast (> 7:1). Palettes are dispatched across the OS via `zoi-theme`.
+`Commons/Color.qml` contains a direct `FileView` observer watching `~/.local/state/quickshell/colors.json`, keeping Quickshell instantly synced on boot and theme switches without restarting the daemon.
 
 ## Sway integration
 

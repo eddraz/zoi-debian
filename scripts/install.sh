@@ -57,7 +57,7 @@ PKGS=(
   btop
   python3-gi gir1.2-gdkpixbuf-2.0
   libqrencode4 qrencode
-  polkit
+  polkitd pkexec
   fonts-noto fonts-noto-color-emoji fonts-noto-cjk
   network-manager
   bluez bluez-tools

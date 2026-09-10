@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 0.1.3 — 2026-09-10
+
+### Features & Fixes
+- **Unified Tab / Shift+Tab Navigation Across Panels**:
+  - Implemented seamless navigation through all interactive controls (`inputs`, buttons, progress bar / volume / brightness sliders, toggles, list items) across all 14 panels and overlays.
+  - Allowed Tab to seamlessly exit search inputs (`findField`) and jump directly to panel controls when search text has no matches or is idle.
+  - Added Tab key navigation between password `TextInput` and `Join` button in `NetworkPanel.qml`.
+  - Added Tab key focus navigation in `ReminderOverlay.qml`.
+- **Quickshell Theme Boot Persistence**:
+  - Bound `Commons/Color.qml` directly to `~/.local/state/quickshell/colors.json` via a reactive `FileView` (`watchChanges: true`).
+  - Resolved lazy-loading singleton limitation where `Color.qml` stayed on static defaults on boot because `Themes.qml` was only instantiated on demand.
+  - Fixed blue channel calculation bug (`round(g)` -> `round(b)`) in `zoi-theme`'s `rgb_to_hex`.
+- **Documentation & Script Refinements**:
+  - Corrected Debian package name in `scripts/install.sh` and `docs/install.md` (`polkit` -> `polkitd pkexec`).
+  - Updated `docs/troubleshooting.md` with full details of `scripts/uninstall.sh`.
+  - Updated `docs/features.md`, `docs/shortcuts.md`, and `skills/zoi-debian/SKILL.md` with latest architecture, navigation, and GdkPixbuf color extraction specifications.
+
 ## 0.1.2 — 2026-09-10
 
 ### Features & Major Improvements

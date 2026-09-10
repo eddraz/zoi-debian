@@ -173,4 +173,9 @@ sudo apt install python3-terminaltexteffects
 ~/projects/zoi-debian/scripts/uninstall.sh
 ```
 
-(El script aún no está implementado — escribilo si lo necesitás. Por ahora: `rm -rf ~/.config/quickshell` y `pkill qs`.)
+El script `scripts/uninstall.sh` realiza una desinstalación limpia:
+- Respalda `~/.config/quickshell` con marca temporal (`quickshell.bak.<timestamp>`).
+- Elimina los ejecutables `qs-*` y `zoi-theme` de `~/.local/bin/`.
+- Limpia los directorios de estado en `~/.local/state/quickshell` y `~/.local/state/zoi`.
+- Remueve los comandos `exec_always` de `~/.config/sway/config`.
+- Mantiene los paquetes apt instalados intactos (para removerlos por completo, seguir las instrucciones que imprime al finalizar).
