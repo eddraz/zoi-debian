@@ -67,7 +67,7 @@ Item {
         }
         onContainsMouseChanged: {
             if (containsMouse)
-                HoverTip.show(root, root.tipText);
+                HoverTip.show(root, root.tipText, "Super+Ctrl+R");
             else
                 HoverTip.hide();
         }

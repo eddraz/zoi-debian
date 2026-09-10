@@ -38,7 +38,8 @@ Esta tabla lista todos los binds de Sway + atajos internos de Quickshell.
 | `Super+Minus` | Scratchpad show | `scratchpad show` |
 | `Super+Shift+Minus` | Move to scratchpad | `move scratchpad` |
 | `Super+R` | Resize mode | `mode "resize"` |
-| `Super+Shift+R` | Media arm (1/2/3) | `qs ipc call media toggleArm` |
+| `Super+Shift+R` | Lofi Radio (Play/Stop) | `qs ipc call radio toggle` |
+| `Super+Ctrl+R` | Controlar Reproductor (Media) | `qs ipc call popups toggle media` |
 | `Super+Shift+S` | Screenshot | `qs-screenshot` |
 | `Super+Shift+C` | Recargar Sway | `reload` |
 | `Super+Shift+E` | Salir de Sway | `swaynag` confirmar |
@@ -216,7 +217,8 @@ qs ipc call lock lock
 qs ipc call osd volume|brightness
 qs ipc call emojis toggle
 qs ipc call reminders toggle
-qs ipc call media toggleArm
+qs ipc call radio toggle|play|stop
+qs ipc call media toggle|next|previous|toggleArm
 ```
 
 Donde `<name>` es uno de: `media`, `audio`, `power`, `network`, `bluetooth`, `session`, `notifs`, `keys`, `wallpaper`, `theme`, `keyboard`, `weather`, `calendar`, `bar`.

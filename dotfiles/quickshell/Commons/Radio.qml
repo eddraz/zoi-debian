@@ -69,5 +69,25 @@ Singleton {
         onTriggered: root.refresh()
     }
 
+    IpcHandler {
+        target: "radio"
+
+        function toggle(): string {
+            root.toggle();
+            return "ok";
+        }
+
+        function play(): string {
+            if (!root.playing)
+                root.toggle();
+            return "ok";
+        }
+
+        function stop(): string {
+            root.stop();
+            return "ok";
+        }
+    }
+
     Component.onCompleted: root.refresh()
 }

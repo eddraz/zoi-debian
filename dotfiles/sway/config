@@ -226,7 +226,8 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
-bindsym $mod+Shift+r exec /usr/bin/qs ipc call media toggleArm
+bindsym $mod+Shift+r exec /usr/bin/qs ipc call radio toggle
+bindsym $mod+Ctrl+r exec /usr/bin/qs ipc call popups toggle media
 #
 # Utilities:
 #

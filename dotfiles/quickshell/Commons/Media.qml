@@ -164,18 +164,33 @@ Singleton {
     IpcHandler {
         target: "media"
 
+        function toggle(): string {
+            root.toggle();
+            return "ok";
+        }
+
+        function next(): string {
+            root.next();
+            return "ok";
+        }
+
+        function previous(): string {
+            root.previous();
+            return "ok";
+        }
+
         function arm(): string {
-            root.arm();
+            Popups.open("media");
             return "ok";
         }
 
         function disarm(): string {
-            root.disarm();
+            Popups.closeAll();
             return "ok";
         }
 
         function toggleArm(): string {
-            root.toggleArm();
+            Popups.toggle("media");
             return "ok";
         }
     }

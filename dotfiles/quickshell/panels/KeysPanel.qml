@@ -134,6 +134,7 @@ Item {
                 { "keys": "Right-click bell / DND chip", "action": "Do not disturb" },
                 { "keys": "Super+Shift+N", "action": "Reminder" },
                 { "keys": "Super+M", "action": "Audio / volume" },
+                { "keys": "Super+Ctrl+R", "action": "Reproductor / Media" },
                 { "keys": "Super+P", "action": "Power / battery" },
                 { "keys": "Super+I", "action": "Network / Wi-Fi" },
                 { "keys": "Super+U", "action": "Bluetooth" },
@@ -146,7 +147,8 @@ Item {
             "rows": [
                 { "keys": "Volume keys", "action": "Mute / volume" },
                 { "keys": "Media keys", "action": "Play / prev / next (MPRIS)" },
-                { "keys": "Super+Shift+R, then 1 2 3", "action": "Arm radio: prev / play / next" },
+                { "keys": "Super+Shift+R", "action": "Lofi Radio: Play / Stop" },
+                { "keys": "Super+Ctrl+R (1 2 3)", "action": "Reproductor: prev / play / next" },
                                                                 { "keys": "Brightness keys", "action": "Brightness + OSD" },
                 { "keys": "Print / Super+Shift+S", "action": "Screenshot region" },
                 { "keys": "Alt+Print", "action": "Start/stop recording" },
