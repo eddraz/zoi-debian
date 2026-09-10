@@ -11,7 +11,7 @@ PanelWindow {
     screen: modelData
     visible: HoverTip.text !== "" && HoverTip.screen === modelData
     color: "transparent"
-    implicitHeight: 24
+    implicitHeight: 26
     exclusiveZone: 0
     exclusionMode: ExclusionMode.Ignore
     mask: Region {}
@@ -28,14 +28,19 @@ PanelWindow {
     Rectangle {
         id: bubble
 
-        y: 2
-        height: 20
-        width: contentRow.implicitWidth + 12
-        x: Math.max(4, Math.min(root.width - width - 4, HoverTip.centerX - width / 2))
+        y: (HoverTip.text !== "" && HoverTip.screen === modelData) ? 3 : 0
+        Behavior on y { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutQuad } }
+
+        opacity: (HoverTip.text !== "" && HoverTip.screen === modelData) ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutQuad } }
+
+        height: 22
+        width: contentRow.implicitWidth + 14
+        x: Math.max(6, Math.min(root.width - width - 6, HoverTip.centerX - width / 2))
         color: Color.popupBackground
         radius: Style.radius
         border.width: 1
-        border.color: Color.surface
+        border.color: Color.cardBorder
 
         Row {
             id: contentRow
@@ -55,10 +60,12 @@ PanelWindow {
                 id: shortcutBadge
                 visible: HoverTip.shortcut !== ""
                 anchors.verticalCenter: parent.verticalCenter
-                height: 14
-                width: shortcutText.implicitWidth + 6
-                radius: 2
+                height: 15
+                width: shortcutText.implicitWidth + 8
+                radius: 3
                 color: Color.surface
+                border.width: 1
+                border.color: Color.subtleBorder
 
                 Text {
                     id: shortcutText

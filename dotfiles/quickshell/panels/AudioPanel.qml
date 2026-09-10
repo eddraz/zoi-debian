@@ -103,46 +103,50 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: 28
+        height: 30
         radius: Style.radius
         color: root.cursor === 0 ? Color.focusFill : Color.surface
+        border.width: root.cursor === 0 ? 1 : 0
+        border.color: Color.accent
+        Behavior on color { ColorAnimation { duration: Style.animDuration } }
 
         Row {
-        spacing: 8
-        anchors.fill: parent
-        anchors.leftMargin: 6
-        anchors.rightMargin: 6
+            spacing: 8
+            anchors.fill: parent
+            anchors.leftMargin: 8
+            anchors.rightMargin: 8
 
-        IndexBadge {
-            slot: 0
-            anchors.verticalCenter: parent.verticalCenter
-        }
+            IndexBadge {
+                slot: 0
+                anchors.verticalCenter: parent.verticalCenter
+            }
 
-        Text {
-            anchors.verticalCenter: parent.verticalCenter
-            color: Audio.muted ? Color.urgent : Color.popupText
-            font.family: Style.fontFamily
-            font.pixelSize: Style.fontCaption
-            font.bold: true
-            text: Audio.muted ? "MUTE" : "VOL"
-        }
-
-        Rectangle {
-            id: slider
-            anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - 96
-            height: 8
-            radius: 4
-            color: Color.surface
-            border.width: root.cursor === 0 ? 1 : 0
-            border.color: Color.accent
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                color: Audio.muted ? Color.urgent : Color.popupText
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption
+                font.bold: true
+                text: Audio.muted ? "MUTE" : "VOL"
+            }
 
             Rectangle {
-                height: parent.height
-                width: parent.width * (Audio.muted ? 0 : Audio.percent / 100)
+                id: slider
+                anchors.verticalCenter: parent.verticalCenter
+                width: parent.width - 96
+                height: 8
                 radius: 4
-                color: Color.accent
-            }
+                color: Color.crust
+                border.width: root.cursor === 0 ? 1 : 0
+                border.color: Color.accent
+
+                Rectangle {
+                    height: parent.height
+                    width: parent.width * (Audio.muted ? 0 : Audio.percent / 100)
+                    radius: 4
+                    color: Color.accent
+                    Behavior on width { NumberAnimation { duration: 80 } }
+                }
 
             MouseArea {
                 anchors.fill: parent
@@ -254,46 +258,50 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: 28
+        height: 30
         radius: Style.radius
         color: root.cursor === root.micVol ? Color.focusFill : Color.surface
+        border.width: root.cursor === root.micVol ? 1 : 0
+        border.color: Color.peach
+        Behavior on color { ColorAnimation { duration: Style.animDuration } }
 
         Row {
-        spacing: 8
-        anchors.fill: parent
-        anchors.leftMargin: 6
-        anchors.rightMargin: 6
+            spacing: 8
+            anchors.fill: parent
+            anchors.leftMargin: 8
+            anchors.rightMargin: 8
 
-        IndexBadge {
-            slot: root.micVol
-            anchors.verticalCenter: parent.verticalCenter
-        }
+            IndexBadge {
+                slot: root.micVol
+                anchors.verticalCenter: parent.verticalCenter
+            }
 
-        Text {
-            anchors.verticalCenter: parent.verticalCenter
-            color: Audio.sourceMuted ? Color.urgent : Color.popupText
-            font.family: Style.fontFamily
-            font.pixelSize: Style.fontCaption
-            font.bold: true
-            text: Audio.sourceMuted ? "MUTE" : "MIC"
-        }
-
-        Rectangle {
-            id: micSlider
-            anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - 96
-            height: 8
-            radius: 4
-            color: Color.surface
-            border.width: root.cursor === root.micVol ? 1 : 0
-            border.color: Color.accent
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                color: Audio.sourceMuted ? Color.urgent : Color.popupText
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption
+                font.bold: true
+                text: Audio.sourceMuted ? "MUTE" : "MIC"
+            }
 
             Rectangle {
-                height: parent.height
-                width: parent.width * (Audio.sourceMuted ? 0 : Audio.sourcePercent / 100)
+                id: micSlider
+                anchors.verticalCenter: parent.verticalCenter
+                width: parent.width - 96
+                height: 8
                 radius: 4
-                color: Color.peach
-            }
+                color: Color.crust
+                border.width: root.cursor === root.micVol ? 1 : 0
+                border.color: Color.peach
+
+                Rectangle {
+                    height: parent.height
+                    width: parent.width * (Audio.sourceMuted ? 0 : Audio.sourcePercent / 100)
+                    radius: 4
+                    color: Color.peach
+                    Behavior on width { NumberAnimation { duration: 80 } }
+                }
 
             MouseArea {
                 anchors.fill: parent

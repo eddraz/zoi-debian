@@ -148,9 +148,24 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: 26
+        height: 28
         radius: Style.radius
         color: root.cursor === 0 ? Color.focusFill : Color.surface
+        border.width: 1
+        border.color: root.cursor === 0 ? Color.accent : "transparent"
+        Behavior on color { ColorAnimation { duration: Style.animDuration } }
+        Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
+
+        Rectangle {
+            width: 3
+            height: parent.height - 10
+            radius: 1.5
+            color: Color.accent
+            anchors.left: parent.left
+            anchors.leftMargin: 2
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.cursor === 0
+        }
 
         IndexBadge {
             slot: 0
@@ -167,6 +182,7 @@ Column {
             color: Color.popupText
             font.family: Style.fontFamily
             font.pixelSize: Style.fontCaption
+            font.bold: root.cursor === 0
             elide: Text.ElideRight
             text: "Shortcuts"
         }
@@ -181,9 +197,24 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: 26
+        height: 28
         radius: Style.radius
         color: root.cursor === 1 ? Color.focusFill : Color.surface
+        border.width: 1
+        border.color: root.cursor === 1 ? Color.accent : "transparent"
+        Behavior on color { ColorAnimation { duration: Style.animDuration } }
+        Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
+
+        Rectangle {
+            width: 3
+            height: parent.height - 10
+            radius: 1.5
+            color: Color.accent
+            anchors.left: parent.left
+            anchors.leftMargin: 2
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.cursor === 1
+        }
 
         IndexBadge {
             slot: 1
@@ -200,6 +231,7 @@ Column {
             color: Color.popupText
             font.family: Style.fontFamily
             font.pixelSize: Style.fontCaption
+            font.bold: root.cursor === 1
             elide: Text.ElideRight
             text: "Bar"
         }
@@ -214,9 +246,24 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: 26
+        height: 28
         radius: Style.radius
         color: root.cursor === 2 ? Color.focusFill : Color.surface
+        border.width: 1
+        border.color: root.cursor === 2 ? Color.accent : "transparent"
+        Behavior on color { ColorAnimation { duration: Style.animDuration } }
+        Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
+
+        Rectangle {
+            width: 3
+            height: parent.height - 10
+            radius: 1.5
+            color: Color.accent
+            anchors.left: parent.left
+            anchors.leftMargin: 2
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.cursor === 2
+        }
 
         IndexBadge {
             slot: 2
@@ -233,6 +280,7 @@ Column {
             color: Color.popupText
             font.family: Style.fontFamily
             font.pixelSize: Style.fontCaption
+            font.bold: root.cursor === 2
             elide: Text.ElideRight
             text: (Idle.stayAwake ? "Stay awake on" : "Stay awake off")
         }
@@ -247,9 +295,24 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: 26
+        height: 28
         radius: Style.radius
         color: root.cursor === 3 ? Color.focusFill : Color.surface
+        border.width: 1
+        border.color: root.cursor === 3 ? Color.accent : "transparent"
+        Behavior on color { ColorAnimation { duration: Style.animDuration } }
+        Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
+
+        Rectangle {
+            width: 3
+            height: parent.height - 10
+            radius: 1.5
+            color: Color.accent
+            anchors.left: parent.left
+            anchors.leftMargin: 2
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.cursor === 3
+        }
 
         IndexBadge {
             slot: 3
@@ -266,6 +329,7 @@ Column {
             color: Color.popupText
             font.family: Style.fontFamily
             font.pixelSize: Style.fontCaption
+            font.bold: root.cursor === 3
             elide: Text.ElideRight
             text: (NightLight.enabled ? "Night light on" : "Night light off")
         }
@@ -280,9 +344,24 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: 26
+        height: 28
         radius: Style.radius
         color: root.cursor === 4 ? Color.focusFill : Color.surface
+        border.width: 1
+        border.color: root.cursor === 4 ? Color.accent : "transparent"
+        Behavior on color { ColorAnimation { duration: Style.animDuration } }
+        Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
+
+        Rectangle {
+            width: 3
+            height: parent.height - 10
+            radius: 1.5
+            color: Color.accent
+            anchors.left: parent.left
+            anchors.leftMargin: 2
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.cursor === 4
+        }
 
         IndexBadge {
             slot: 4
@@ -299,6 +378,7 @@ Column {
             color: Color.popupText
             font.family: Style.fontFamily
             font.pixelSize: Style.fontCaption
+            font.bold: root.cursor === 4
             elide: Text.ElideRight
             text: "Theme"
         }
@@ -313,9 +393,24 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: 26
+        height: 28
         radius: Style.radius
         color: root.cursor === 5 ? Color.focusFill : Color.surface
+        border.width: 1
+        border.color: root.cursor === 5 ? Color.accent : "transparent"
+        Behavior on color { ColorAnimation { duration: Style.animDuration } }
+        Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
+
+        Rectangle {
+            width: 3
+            height: parent.height - 10
+            radius: 1.5
+            color: Color.accent
+            anchors.left: parent.left
+            anchors.leftMargin: 2
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.cursor === 5
+        }
 
         IndexBadge {
             slot: 5
@@ -332,6 +427,7 @@ Column {
             color: Color.popupText
             font.family: Style.fontFamily
             font.pixelSize: Style.fontCaption
+            font.bold: root.cursor === 5
             elide: Text.ElideRight
             text: "Wallpaper"
         }
@@ -357,7 +453,7 @@ Column {
 
             Rectangle {
                 width: parent.width
-                height: 26
+                height: 28
                 radius: Style.radius
                 color: {
                     if (modelData.id === "shutdown" && selected)
@@ -367,6 +463,21 @@ Column {
                     if (modelData.id === "shutdown")
                         return Color.urgent;
                     return Color.surface;
+                }
+                border.width: 1
+                border.color: selected ? (modelData.id === "shutdown" ? Color.urgent : Color.accent) : "transparent"
+                Behavior on color { ColorAnimation { duration: Style.animDuration } }
+                Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
+
+                Rectangle {
+                    width: 3
+                    height: parent.height - 10
+                    radius: 1.5
+                    color: modelData.id === "shutdown" ? Color.background : Color.accent
+                    anchors.left: parent.left
+                    anchors.leftMargin: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: selected
                 }
 
                 IndexBadge {
@@ -384,6 +495,7 @@ Column {
                     color: modelData.id === "shutdown" ? Color.background : Color.popupText
                     font.family: Style.fontFamily
                     font.pixelSize: Style.fontCaption
+                    font.bold: selected
                     elide: Text.ElideRight
                     text: modelData.label
                 }
@@ -406,15 +518,20 @@ Column {
 
                 Rectangle {
                     width: (parent.width - 6) / 2
-                    height: 24
+                    height: 26
                     radius: Style.radius
                     color: root.confirmChoice === 0 ? Color.focusFill : Color.surface
+                    border.width: 1
+                    border.color: root.confirmChoice === 0 ? Color.accent : "transparent"
+                    Behavior on color { ColorAnimation { duration: Style.animDuration } }
+                    Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
 
                     Text {
                         anchors.centerIn: parent
                         color: Color.popupText
                         font.family: Style.fontFamily
                         font.pixelSize: Style.fontCaption
+                        font.bold: root.confirmChoice === 0
                         text: "Cancel"
                     }
 
@@ -425,17 +542,19 @@ Column {
 
                 Rectangle {
                     width: (parent.width - 6) / 2
-                    height: 24
+                    height: 26
                     radius: Style.radius
                     color: Color.urgent
                     border.width: root.confirmChoice === 1 ? 2 : 0
                     border.color: Color.foreground
+                    Behavior on color { ColorAnimation { duration: Style.animDuration } }
 
                     Text {
                         anchors.centerIn: parent
                         color: Color.background
                         font.family: Style.fontFamily
                         font.pixelSize: Style.fontCaption
+                        font.bold: true
                         text: "Confirm"
                     }
 

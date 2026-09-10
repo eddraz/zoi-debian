@@ -104,19 +104,29 @@ Item {
         const y = h * 0.28;
         const bw = w * 0.70;
         const bh = h * 0.44;
-        const r = Math.min(2.2, bh * 0.25);
+        const r = Math.min(2.5, bh * 0.25);
         ctx.beginPath();
-        ctx.rect(x, y, bw, bh);
+        if (ctx.roundRect)
+            ctx.roundRect(x, y, bw, bh, r);
+        else
+            ctx.rect(x, y, bw, bh);
         ctx.stroke();
+
         ctx.beginPath();
-        ctx.rect(x + bw + w * 0.02, y + bh * 0.28, w * 0.08, bh * 0.44);
+        if (ctx.roundRect)
+            ctx.roundRect(x + bw + w * 0.02, y + bh * 0.28, w * 0.08, bh * 0.44, 1.5);
+        else
+            ctx.rect(x + bw + w * 0.02, y + bh * 0.28, w * 0.08, bh * 0.44);
         ctx.fill();
 
         const pad = w * 0.06;
         const fillW = Math.max(0, (bw - pad * 2) * Math.max(0, Math.min(root.level, 1)));
         if (fillW > 0) {
             ctx.beginPath();
-            ctx.rect(x + pad, y + pad, fillW, bh - pad * 2);
+            if (ctx.roundRect)
+                ctx.roundRect(x + pad, y + pad, fillW, bh - pad * 2, Math.max(1, r - 1));
+            else
+                ctx.rect(x + pad, y + pad, fillW, bh - pad * 2);
             ctx.fill();
         }
 
@@ -232,11 +242,11 @@ Item {
     function paintPower(ctx, w, h) {
         ctx.fillStyle = "transparent";
         ctx.beginPath();
-        ctx.moveTo(w * 0.50, h * 0.14);
+        ctx.moveTo(w * 0.50, h * 0.16);
         ctx.lineTo(w * 0.50, h * 0.48);
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(w * 0.50, h * 0.56, w * 0.30, -Math.PI * 0.28, Math.PI * 1.28, false);
+        ctx.arc(w * 0.50, h * 0.56, w * 0.28, -Math.PI * 0.25, -Math.PI * 0.75, false);
         ctx.stroke();
     }
 

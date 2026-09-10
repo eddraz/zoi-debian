@@ -12,14 +12,15 @@ Rectangle {
     }
 
     visible: label !== ""
-    width: 18
+    width: Math.max(18, indexLabel.implicitWidth + 8)
     height: 18
-    radius: 3
+    radius: 4
     color: Color.crust
     border.width: 1
-    border.color: Color.overlay
+    border.color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.28)
 
     Text {
+        id: indexLabel
         anchors.centerIn: parent
         color: Color.accent
         font.family: Style.fontFamily

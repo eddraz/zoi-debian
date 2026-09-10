@@ -13,6 +13,7 @@ MouseArea {
         anchors.fill: parent
         radius: Style.radius
         color: Color.focusFill
-        visible: root.containsMouse
+        opacity: root.containsMouse ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Style.animDuration } }
     }
 }

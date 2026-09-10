@@ -128,26 +128,39 @@ Column {
             readonly property bool isLofiOn: isLofi && Radio.playing
 
             width: root.width
-            height: 40
+            height: 42
             radius: Style.radius
             color: isLofiOn ? Color.accent : (selected ? Color.focusFill : Color.surface)
             border.width: selected ? 1 : 0
             border.color: isLofiOn ? Color.background : Color.accent
+            Behavior on color { ColorAnimation { duration: Style.animDuration } }
+            Behavior on border.width { NumberAnimation { duration: Style.animDuration } }
+
+            Rectangle {
+                width: 3
+                height: rowBox.selected ? 20 : 0
+                radius: 1.5
+                color: rowBox.isLofiOn ? Color.background : Color.accent
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                visible: rowBox.selected
+                Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
+            }
 
             IndexBadge {
                 slot: index
                 anchors.left: parent.left
-                anchors.leftMargin: 6
+                anchors.leftMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
             }
 
             Column {
                 anchors.left: parent.left
-                anchors.leftMargin: 28
+                anchors.leftMargin: 32
                 anchors.right: statusBadge.left
                 anchors.rightMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 1
+                spacing: 2
 
                 Text {
                     width: parent.width
@@ -176,8 +189,10 @@ Column {
                 anchors.verticalCenter: parent.verticalCenter
                 height: 20
                 width: badgeText.implicitWidth + 12
-                radius: Style.radius
+                radius: 4
                 color: rowBox.isLofiOn ? Color.background : (rowBox.selected ? Color.surface : Color.background)
+                border.width: 1
+                border.color: rowBox.isLofiOn ? Color.background : (rowBox.selected ? Color.subtleBorder : "transparent")
 
                 Text {
                     id: badgeText

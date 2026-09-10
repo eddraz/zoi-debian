@@ -108,6 +108,13 @@ PanelWindow {
         Qt.callLater(() => findField.forceActiveFocus());
     }
 
+    Rectangle {
+        anchors.fill: parent
+        color: Color.dimOverlay
+        opacity: root.open ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Style.animSlow; easing.type: Easing.OutCubic } }
+    }
+
     MouseArea {
         anchors.fill: parent
         onClicked: root.dismissed()
@@ -117,17 +124,21 @@ PanelWindow {
         id: card
 
         anchors.top: parent.top
-        anchors.topMargin: 8
+        anchors.topMargin: root.open ? 8 : 0
         x: root.centerCard ? Math.round((root.width - width) / 2) : (root.width - width - Style.pad)
         width: root.resolvedWidth
         height: Math.min(column.implicitHeight + Style.pad * 2, root.availableHeight)
         color: Color.popupBackground
-        radius: Style.radius
+        radius: Style.cardRadius
         border.width: 1
-        border.color: Color.surface
+        border.color: Color.cardBorder
         focus: root.open
         activeFocusOnTab: true
         clip: true
+
+        opacity: root.open ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Style.animSlow; easing.type: Easing.OutCubic } }
+        Behavior on anchors.topMargin { NumberAnimation { duration: Style.animSlow; easing.type: Easing.OutCubic } }
 
         Keys.onPressed: event => {
             if (event.key === Qt.Key_Q && (event.modifiers & Qt.MetaModifier)) {
@@ -204,13 +215,83 @@ PanelWindow {
                 width: scroller.width
                 spacing: Style.gap
 
-                Text {
+                Item {
+                    width: parent.width
+                    height: 20
                     visible: root.title !== ""
-                    color: Color.popupText
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontBody
-                    font.bold: true
-                    text: root.title
+
+                    Row {
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 6
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 3
+                            height: 14
+                            radius: 1.5
+                            color: Color.accent
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: Color.popupText
+                            font.family: Style.fontFamily
+                            font.pixelSize: Style.fontTitle
+                            font.bold: true
+                            text: root.title
+                        }
+                    }
+
+                    Rectangle {
+                        id: searchHint
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: !root.searching
+                        height: 18
+                        width: hintRow.implicitWidth + 8
+                        radius: 3
+                        color: Color.surface
+                        border.width: 1
+                        border.color: Color.subtleBorder
+
+                        Row {
+                            id: hintRow
+                            anchors.centerIn: parent
+                            spacing: 4
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: Color.popupMuted
+                                font.family: Style.fontFamily
+                                font.pixelSize: 9
+                                text: "Buscar"
+                            }
+
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                height: 12
+                                width: 12
+                                radius: 2
+                                color: Color.mantle
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    color: Color.accent
+                                    font.family: Style.fontFamily
+                                    font.pixelSize: 8
+                                    font.bold: true
+                                    text: "/"
+                                }
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.startSearch()
+                        }
+                    }
                 }
 
                 Rectangle {
@@ -218,35 +299,91 @@ PanelWindow {
                     width: parent.width
                     height: visible ? 30 : 0
                     radius: Style.radius
-                    color: Color.surface
+                    color: Color.crust
                     border.width: 1
                     border.color: Color.accent
 
-                    TextInput {
-                        id: findField
+                    Row {
                         anchors.fill: parent
-                        anchors.leftMargin: 10
-                        anchors.rightMargin: 10
-                        verticalAlignment: Text.AlignVCenter
-                        color: Color.popupText
-                        font.family: Style.fontFamily
-                        font.pixelSize: Style.fontBody
-                        clip: true
-                        text: root.searchQuery
-                        onTextChanged: {
-                            root.searchQuery = text;
-                            root.applySearch();
+                        anchors.leftMargin: 8
+                        anchors.rightMargin: 6
+                        spacing: 6
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: Color.accent
+                            font.family: Style.fontFamily
+                            font.pixelSize: 11
+                            font.bold: true
+                            text: "/"
                         }
-                        Keys.onPressed: event => {
-                            if (event.key === Qt.Key_Escape) {
-                                root.searching = false;
-                                root.searchQuery = "";
-                                card.forceActiveFocus();
-                                event.accepted = true;
-                            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                root.searching = false;
-                                card.forceActiveFocus();
-                                event.accepted = true;
+
+                        Item {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: Math.max(50, parent.width - 60)
+                            height: parent.height
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                visible: root.searchQuery === ""
+                                color: Color.popupMuted
+                                font.family: Style.fontFamily
+                                font.pixelSize: Style.fontCaption
+                                text: "Filtrar opciones..."
+                            }
+
+                            TextInput {
+                                id: findField
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                color: Color.popupText
+                                font.family: Style.fontFamily
+                                font.pixelSize: Style.fontCaption
+                                clip: true
+                                text: root.searchQuery
+                                onTextChanged: {
+                                    root.searchQuery = text;
+                                    root.applySearch();
+                                }
+                                Keys.onPressed: event => {
+                                    if (event.key === Qt.Key_Escape) {
+                                        root.searching = false;
+                                        root.searchQuery = "";
+                                        card.forceActiveFocus();
+                                        event.accepted = true;
+                                    } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                        root.searching = false;
+                                        card.forceActiveFocus();
+                                        event.accepted = true;
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            height: 16
+                            width: escLabel.implicitWidth + 8
+                            radius: 2
+                            color: Color.surface
+
+                            Text {
+                                id: escLabel
+                                anchors.centerIn: parent
+                                color: Color.popupMuted
+                                font.family: Style.fontFamily
+                                font.pixelSize: 9
+                                text: "Esc"
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    root.searching = false;
+                                    root.searchQuery = "";
+                                    card.forceActiveFocus();
+                                }
                             }
                         }
                     }
@@ -256,6 +393,45 @@ PanelWindow {
                     id: body
                     width: parent.width
                     spacing: Style.gap
+                }
+
+                Item {
+                    width: parent.width
+                    height: 2
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: Color.surface
+                    opacity: 0.5
+                }
+
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 12
+                    opacity: 0.7
+
+                    Row {
+                        spacing: 4
+                        anchors.verticalCenter: parent.verticalCenter
+                        Text { text: "↑↓"; font.pixelSize: 9; color: Color.accent; font.bold: true }
+                        Text { text: "navegar"; font.family: Style.fontFamily; font.pixelSize: 9; color: Color.popupMuted }
+                    }
+
+                    Row {
+                        spacing: 4
+                        anchors.verticalCenter: parent.verticalCenter
+                        Text { text: "↵"; font.pixelSize: 9; color: Color.accent; font.bold: true }
+                        Text { text: "activar"; font.family: Style.fontFamily; font.pixelSize: 9; color: Color.popupMuted }
+                    }
+
+                    Row {
+                        spacing: 4
+                        anchors.verticalCenter: parent.verticalCenter
+                        Text { text: "esc"; font.pixelSize: 8; color: Color.accent; font.bold: true }
+                        Text { text: "cerrar"; font.family: Style.fontFamily; font.pixelSize: 9; color: Color.popupMuted }
+                    }
                 }
             }
         }

@@ -162,6 +162,21 @@ Column {
             height: 28
             radius: Style.radius
             color: current ? Color.accent : (selected ? Color.focusFill : Color.surface)
+            border.width: 1
+            border.color: selected ? Color.accent : (current ? Color.accent : "transparent")
+            Behavior on color { ColorAnimation { duration: Style.animDuration } }
+            Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
+
+            Rectangle {
+                width: 3
+                height: parent.height - 10
+                radius: 1.5
+                color: current ? Color.background : Color.accent
+                anchors.left: parent.left
+                anchors.leftMargin: 2
+                anchors.verticalCenter: parent.verticalCenter
+                visible: selected
+            }
 
             Row {
                 anchors.fill: parent
@@ -192,6 +207,7 @@ Column {
                     color: current ? Color.background : Color.popupText
                     font.family: Style.fontFamily
                     font.pixelSize: Style.fontCaption
+                    font.bold: selected || current
                     text: modelData.name
                 }
             }
@@ -241,9 +257,11 @@ Column {
                 width: (root.width - 8) / 2
                 height: 88
                 radius: Style.radius
-                color: Color.surface
-                border.width: selected || current ? 2 : 0
-                border.color: selected ? Color.focusFill : Color.green
+                color: selected ? Color.focusFill : Color.surface
+                border.width: selected || current ? 2 : 1
+                border.color: selected ? Color.accent : (current ? Color.green : Color.subtleBorder)
+                Behavior on color { ColorAnimation { duration: Style.animDuration } }
+                Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
 
                 IndexBadge {
                     z: 1

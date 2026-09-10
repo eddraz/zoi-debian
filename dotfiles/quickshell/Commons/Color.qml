@@ -25,4 +25,7 @@ Singleton {
     readonly property color popupText: foreground
     readonly property color popupMuted: muted
     readonly property color focusFill: Qt.rgba(accent.r, accent.g, accent.b, 0.22)
+    readonly property color cardBorder: Qt.rgba(accent.r, accent.g, accent.b, 0.25)
+    readonly property color dimOverlay: Qt.rgba(0, 0, 0, 0.38)
+    readonly property color subtleBorder: Qt.rgba(accent.r, accent.g, accent.b, 0.14)
 }

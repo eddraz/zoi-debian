@@ -56,37 +56,56 @@ Column {
         return false;
     }
 
-    Text {
+    Rectangle {
         width: parent.width
-        color: Color.popupMuted
-        font.family: Style.fontFamily
-        font.pixelSize: Style.fontCaption
-        elide: Text.ElideRight
-        text: Media.identity || "No player"
-    }
+        height: trackCol.implicitHeight + 16
+        radius: Style.radius
+        color: Color.surface
+        border.width: 1
+        border.color: Color.subtleBorder
 
-    Text {
-        width: parent.width
-        color: Color.popupText
-        font.family: Style.fontFamily
-        font.pixelSize: Style.fontBody
-        font.bold: true
-        wrapMode: Text.Wrap
-        maximumLineCount: 2
-        elide: Text.ElideRight
-        text: Media.title || "Not playing"
-    }
+        Column {
+            id: trackCol
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.margins: 10
+            spacing: 3
 
-    Text {
-        visible: Media.artist !== ""
-        width: parent.width
-        color: Color.popupMuted
-        font.family: Style.fontFamily
-        font.pixelSize: Style.fontCaption
-        wrapMode: Text.Wrap
-        maximumLineCount: 2
-        elide: Text.ElideRight
-        text: Media.artist + (Media.album ? " · " + Media.album : "")
+            Text {
+                width: parent.width
+                color: Color.accent
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontBadge
+                font.bold: true
+                elide: Text.ElideRight
+                text: (Media.identity || "NO PLAYER").toUpperCase()
+            }
+
+            Text {
+                width: parent.width
+                color: Color.popupText
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontBody
+                font.bold: true
+                wrapMode: Text.Wrap
+                maximumLineCount: 2
+                elide: Text.ElideRight
+                text: Media.title || "Not playing"
+            }
+
+            Text {
+                visible: Media.artist !== ""
+                width: parent.width
+                color: Color.popupMuted
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption
+                wrapMode: Text.Wrap
+                maximumLineCount: 2
+                elide: Text.ElideRight
+                text: Media.artist + (Media.album ? " · " + Media.album : "")
+            }
+        }
     }
 
     Row {
@@ -102,10 +121,16 @@ Column {
 
             Rectangle {
                 required property var modelData
+                readonly property bool selected: root.cursor === modelData.id
+
                 width: (root.width - 12) / 3
-                height: 26
+                height: 30
                 radius: Style.radius
-                color: root.cursor === modelData.id ? Color.focusFill : Color.surface
+                color: selected ? Color.focusFill : Color.surface
+                border.width: 1
+                border.color: selected ? Color.accent : "transparent"
+                Behavior on color { ColorAnimation { duration: Style.animDuration } }
+                Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
 
                 IndexBadge {
                     slot: modelData.id
@@ -116,12 +141,14 @@ Column {
 
                 Text {
                     anchors.fill: parent
-                    anchors.leftMargin: 28
-                    anchors.rightMargin: 8
+                    anchors.leftMargin: 26
+                    anchors.rightMargin: 6
+                    horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                     color: Color.popupText
                     font.family: Style.fontFamily
                     font.pixelSize: Style.fontCaption
+                    font.bold: selected
                     elide: Text.ElideRight
                     text: modelData.label
                 }

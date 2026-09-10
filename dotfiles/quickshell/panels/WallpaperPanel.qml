@@ -106,9 +106,11 @@ Column {
                 width: (root.width - 8) / 2
                 height: 108
                 radius: Style.radius
-                color: Color.surface
-                border.width: selected || current ? 2 : 0
-                border.color: selected ? Color.focusFill : Color.green
+                color: selected ? Color.focusFill : Color.surface
+                border.width: selected || current ? 2 : 1
+                border.color: selected ? Color.accent : (current ? Color.green : Color.subtleBorder)
+                Behavior on color { ColorAnimation { duration: Style.animDuration } }
+                Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
 
                 IndexBadge {
                     z: 1

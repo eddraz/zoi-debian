@@ -138,20 +138,33 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: 24
+        height: 28
         radius: Style.radius
         color: Networking.wifiEnabled ? Color.accent : (root.cursor === 0 ? Color.focusFill : Color.surface)
+        border.width: root.cursor === 0 ? 1 : 0
+        border.color: Networking.wifiEnabled ? Color.background : Color.accent
+        Behavior on color { ColorAnimation { duration: Style.animDuration } }
+
+        Rectangle {
+            width: 3
+            height: root.cursor === 0 ? 16 : 0
+            radius: 1.5
+            color: Networking.wifiEnabled ? Color.background : Color.accent
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.cursor === 0
+        }
 
         IndexBadge {
             slot: 0
             anchors.left: parent.left
-            anchors.leftMargin: 6
+            anchors.leftMargin: 8
             anchors.verticalCenter: parent.verticalCenter
         }
 
         Text {
             anchors.fill: parent
-            anchors.leftMargin: 28
+            anchors.leftMargin: 32
             anchors.rightMargin: 8
             verticalAlignment: Text.AlignVCenter
             color: Networking.wifiEnabled ? Color.background : Color.popupText
@@ -177,20 +190,33 @@ Column {
 
             Rectangle {
                 width: parent.width
-                height: 24
+                height: 28
                 radius: Style.radius
                 color: modelData.connected ? Color.accent : (root.cursor === index + 1 ? Color.focusFill : Color.surface)
+                border.width: root.cursor === index + 1 ? 1 : 0
+                border.color: modelData.connected ? Color.background : Color.accent
+                Behavior on color { ColorAnimation { duration: Style.animDuration } }
+
+                Rectangle {
+                    width: 3
+                    height: root.cursor === index + 1 ? 16 : 0
+                    radius: 1.5
+                    color: modelData.connected ? Color.background : Color.accent
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: root.cursor === index + 1
+                }
 
                 IndexBadge {
                     slot: index + 1
                     anchors.left: parent.left
-                    anchors.leftMargin: 6
+                    anchors.leftMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
                 Text {
                     anchors.fill: parent
-                    anchors.leftMargin: 28
+                    anchors.leftMargin: 32
                     anchors.rightMargin: 8
                     elide: Text.ElideRight
                     verticalAlignment: Text.AlignVCenter

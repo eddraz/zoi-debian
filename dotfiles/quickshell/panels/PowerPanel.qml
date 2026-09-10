@@ -141,71 +141,75 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: 28
+        height: 30
         radius: Style.radius
         color: root.cursor === 0 ? Color.focusFill : Color.surface
+        border.width: root.cursor === 0 ? 1 : 0
+        border.color: Color.accent
+        Behavior on color { ColorAnimation { duration: Style.animDuration } }
 
         Row {
-        spacing: 8
-        anchors.fill: parent
-        anchors.leftMargin: 6
-        anchors.rightMargin: 6
+            spacing: 8
+            anchors.fill: parent
+            anchors.leftMargin: 8
+            anchors.rightMargin: 8
 
-        IndexBadge {
-            slot: 0
-            anchors.verticalCenter: parent.verticalCenter
-        }
+            IndexBadge {
+                slot: 0
+                anchors.verticalCenter: parent.verticalCenter
+            }
 
-        Text {
-            anchors.verticalCenter: parent.verticalCenter
-            color: Color.popupText
-            font.family: Style.fontFamily
-            font.pixelSize: Style.fontCaption
-            font.bold: true
-            text: "BRT"
-        }
-
-        Rectangle {
-            id: slider
-            anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - 96
-            height: 8
-            radius: 4
-            color: Color.surface
-            border.width: root.cursor === 0 ? 1 : 0
-            border.color: Color.yellow
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                color: Color.popupText
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption
+                font.bold: true
+                text: "BRT"
+            }
 
             Rectangle {
-                height: parent.height
-                width: parent.width * Math.max(0, Math.min(Brightness.percent, 100)) / 100
+                id: slider
+                anchors.verticalCenter: parent.verticalCenter
+                width: parent.width - 96
+                height: 8
                 radius: 4
-                color: Color.yellow
-            }
+                color: Color.crust
+                border.width: root.cursor === 0 ? 1 : 0
+                border.color: Color.yellow
 
-            MouseArea {
-                anchors.fill: parent
-                anchors.topMargin: -8
-                anchors.bottomMargin: -8
-                cursorShape: Qt.PointingHandCursor
-                onPressed: event => {
-                    root.cursor = 0;
-                    Brightness.setPercent(event.x / slider.width * 100);
+                Rectangle {
+                    height: parent.height
+                    width: parent.width * Math.max(0, Math.min(Brightness.percent, 100)) / 100
+                    radius: 4
+                    color: Color.yellow
+                    Behavior on width { NumberAnimation { duration: 80 } }
                 }
-                onPositionChanged: event => {
-                    if (pressed)
+
+                MouseArea {
+                    anchors.fill: parent
+                    anchors.topMargin: -8
+                    anchors.bottomMargin: -8
+                    cursorShape: Qt.PointingHandCursor
+                    onPressed: event => {
+                        root.cursor = 0;
                         Brightness.setPercent(event.x / slider.width * 100);
+                    }
+                    onPositionChanged: event => {
+                        if (pressed)
+                            Brightness.setPercent(event.x / slider.width * 100);
+                    }
                 }
             }
-        }
 
-        Text {
-            anchors.verticalCenter: parent.verticalCenter
-            width: 36
-            color: Color.popupText
-            font.family: Style.fontFamily
-            font.pixelSize: Style.fontCaption
-            text: Brightness.percent + "%"
-        }
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 36
+                color: Color.popupText
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption
+                text: Brightness.percent + "%"
+            }
         }
     }
 
@@ -221,9 +225,12 @@ Column {
                 required property int index
 
                 width: (root.width - 12) / 3
-                height: 24
+                height: 28
                 radius: Style.radius
                 color: PowerProfiles.profile === modelData ? Color.accent : (root.cursor === index + 1 ? Color.focusFill : Color.surface)
+                border.width: root.cursor === index + 1 ? 1 : 0
+                border.color: PowerProfiles.profile === modelData ? Color.background : Color.accent
+                Behavior on color { ColorAnimation { duration: Style.animDuration } }
                 visible: modelData !== PowerProfile.Performance || PowerProfiles.hasPerformanceProfile
 
                 IndexBadge {
@@ -241,6 +248,7 @@ Column {
                     color: PowerProfiles.profile === modelData ? Color.background : Color.popupText
                     font.family: Style.fontFamily
                     font.pixelSize: Style.fontCaption
+                    font.bold: PowerProfiles.profile === modelData
                     elide: Text.ElideRight
                     text: root.profileLabel(modelData)
                 }
