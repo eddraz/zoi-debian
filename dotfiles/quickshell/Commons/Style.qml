@@ -5,6 +5,7 @@ import QtQuick
 
 Singleton {
     readonly property string fontFamily: "DejaVu Sans"
+    readonly property int fontBadge: 10
     readonly property int fontCaption: 11
     readonly property int fontBody: 12
     readonly property int fontTitle: 13

@@ -8,10 +8,10 @@ Column {
     id: root
 
     spacing: 6
-    width: parent ? parent.width : 252
+    width: parent ? parent.width : 320
     property int cursor: Keyboard.index
 
-    readonly property int count: Keyboard.codes.length
+    readonly property int count: Keyboard.labels.length
 
     onVisibleChanged: if (visible) {
         cursor = Keyboard.index;
@@ -30,7 +30,7 @@ Column {
     readonly property var searchEntries: {
         const e = [];
         for (let i = 0; i < count; i++)
-            e.push({ "label": Keyboard.labels[i] + " " + Keyboard.names[i], "index": i });
+            e.push({ "label": (Keyboard.labels[i] || "") + " " + (Keyboard.names[i] || ""), "index": i });
         return e;
     }
 
@@ -65,27 +65,98 @@ Column {
             readonly property bool current: Keyboard.index === index
 
             width: root.width
-            height: 26
+            height: 36
             radius: Style.radius
-            color: current ? Color.accent : (selected ? Color.focusFill : Color.surface)
+            color: selected ? Color.focusFill : Color.surface
+            border.width: 1
+            border.color: selected ? Color.accent : (current ? Color.accent : "transparent")
+            Behavior on color { ColorAnimation { duration: Style.animDuration } }
+            Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
 
+            // Active indicator pill on left (cursor)
+            Rectangle {
+                width: 3
+                height: parent.height - 10
+                radius: 1.5
+                color: Color.accent
+                anchors.left: parent.left
+                anchors.leftMargin: 2
+                anchors.verticalCenter: parent.verticalCenter
+                visible: selected
+            }
+
+            // Keycap badge [1], [2]
             IndexBadge {
+                id: badge
                 slot: index
                 anchors.left: parent.left
-                anchors.leftMargin: 6
+                anchors.leftMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
             }
 
+            // Layout short code pill (e.g. LATAM, US)
+            Rectangle {
+                id: codePill
+                anchors.left: badge.right
+                anchors.leftMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                width: Math.max(38, codeLabel.implicitWidth + 10)
+                height: 20
+                radius: 4
+                color: current ? Color.accent : Color.crust
+                border.width: 1
+                border.color: current ? Color.accent : Color.subtleBorder
+                Behavior on color { ColorAnimation { duration: Style.animDuration } }
+
+                Text {
+                    id: codeLabel
+                    anchors.centerIn: parent
+                    color: current ? Color.background : Color.popupText
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontBadge
+                    font.bold: true
+                    text: Keyboard.labels[index] || ""
+                }
+            }
+
+            // Full layout name
             Text {
-                anchors.fill: parent
-                anchors.leftMargin: 28
+                anchors.left: codePill.right
+                anchors.leftMargin: 8
+                anchors.right: radioIndicator.left
                 anchors.rightMargin: 8
-                verticalAlignment: Text.AlignVCenter
+                anchors.verticalCenter: parent.verticalCenter
                 elide: Text.ElideRight
-                color: current ? Color.background : Color.popupText
+                color: current ? Color.accent : Color.popupText
                 font.family: Style.fontFamily
                 font.pixelSize: Style.fontCaption
-                text: Keyboard.labels[index] + "  " + Keyboard.names[index]
+                font.bold: current
+                text: Keyboard.names[index] || ""
+            }
+
+            // Radio button indicator on right (single selection)
+            Rectangle {
+                id: radioIndicator
+                anchors.right: parent.right
+                anchors.rightMargin: 10
+                anchors.verticalCenter: parent.verticalCenter
+                width: 18
+                height: 18
+                radius: 9
+                color: current ? Color.accent : "transparent"
+                border.width: 1.5
+                border.color: current ? Color.accent : Color.popupMuted
+                Behavior on color { ColorAnimation { duration: Style.animDuration } }
+                Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 6
+                    height: 6
+                    radius: 3
+                    color: Color.background
+                    visible: current
+                }
             }
 
             HoverMouse {

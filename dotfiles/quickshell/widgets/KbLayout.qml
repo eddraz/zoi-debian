@@ -10,22 +10,40 @@ Item {
     implicitWidth: chip.implicitWidth + 6
     implicitHeight: Style.barHeight
 
+    readonly property string tipText: "Teclado · " + Keyboard.name
+
     Rectangle {
         id: chip
         anchors.centerIn: parent
-        implicitWidth: Math.max(28, label.implicitWidth + 10)
+        implicitWidth: contentRow.implicitWidth + 14
         implicitHeight: Style.chipHeight
         radius: Style.radius
-        color: Color.surface
+        color: mouse.containsMouse ? Color.focusFill : Color.surface
+        border.width: 1
+        border.color: mouse.containsMouse ? Color.accent : Color.subtleBorder
+        Behavior on color { ColorAnimation { duration: Style.animDuration } }
+        Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
 
-        Text {
-            id: label
+        Row {
+            id: contentRow
             anchors.centerIn: parent
-            color: Color.barText
-            font.family: Style.fontFamily
-            font.pixelSize: Style.fontCaption
-            font.bold: true
-            text: Keyboard.label
+            spacing: 5
+
+            StatusIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                icon: "keyboard"
+                stroke: Color.barText
+            }
+
+            Text {
+                id: label
+                anchors.verticalCenter: parent.verticalCenter
+                color: Color.barText
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption
+                font.bold: true
+                text: Keyboard.label
+            }
         }
     }
 
@@ -37,15 +55,18 @@ Item {
         cursorShape: Qt.PointingHandCursor
         onClicked: event => {
             if (event.button === Qt.RightButton)
-                root.togglePanel();
-            else
                 Keyboard.cycle();
+            else
+                root.togglePanel();
         }
         onContainsMouseChanged: {
             if (containsMouse)
-                HoverTip.show(root, "Keyboard · " + Keyboard.name, "Alt+Shift");
+                HoverTip.show(root, root.tipText, "Click: menú");
             else
                 HoverTip.hide();
         }
     }
+
+    onTipTextChanged: if (mouse.containsMouse)
+        HoverTip.update(root, tipText, "Click: menú")
 }

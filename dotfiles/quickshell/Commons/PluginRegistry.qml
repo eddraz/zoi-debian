@@ -75,6 +75,7 @@ Singleton {
             "popup": "keyboard",
             "panel": "../panels/KeyboardPanel.qml",
             "title": "Keyboard",
+            "cardWidth": 320,
             "defaultSection": "right"
         },
         "weather": {

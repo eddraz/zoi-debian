@@ -62,6 +62,8 @@ Item {
                 root.paintTray(ctx, w, h);
             else if (root.icon === "apps" || root.icon === "grid")
                 root.paintApps(ctx, w, h);
+            else if (root.icon === "keyboard" || root.icon === "key")
+                root.paintKeyboard(ctx, w, h);
         }
     }
 
@@ -360,5 +362,42 @@ Item {
         drawBox(x2, y1);
         drawBox(x1, y2);
         drawBox(x2, y2);
+    }
+
+    function paintKeyboard(ctx, w, h) {
+        const x = w * 0.08;
+        const y = h * 0.20;
+        const kw = w * 0.84;
+        const kh = h * 0.60;
+        const r = 2.2;
+
+        ctx.beginPath();
+        if (ctx.roundRect)
+            ctx.roundRect(x, y, kw, kh, r);
+        else
+            ctx.rect(x, y, kw, kh);
+        ctx.stroke();
+
+        const dotR = Math.max(0.9, w * 0.055);
+        const yRow1 = y + kh * 0.30;
+        const yRow2 = y + kh * 0.55;
+        const yRow3 = y + kh * 0.80;
+
+        ctx.beginPath();
+        ctx.arc(x + kw * 0.24, yRow1, dotR, 0, Math.PI * 2);
+        ctx.arc(x + kw * 0.50, yRow1, dotR, 0, Math.PI * 2);
+        ctx.arc(x + kw * 0.76, yRow1, dotR, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(x + kw * 0.24, yRow2, dotR, 0, Math.PI * 2);
+        ctx.arc(x + kw * 0.50, yRow2, dotR, 0, Math.PI * 2);
+        ctx.arc(x + kw * 0.76, yRow2, dotR, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x + kw * 0.28, yRow3);
+        ctx.lineTo(x + kw * 0.72, yRow3);
+        ctx.stroke();
     }
 }
