@@ -348,6 +348,16 @@ Geolocation por IP (default Bogotá: 4.6, -74.0). Para cambiar tu ciudad, editá
 
 ---
 
+## Calendar
+
+`CalendarPanel.qml` — calendario mensual con navegación por mes/año, día actual resaltado, fines de semana en peach, festivos nacionales en urgent (vía `qs-holidays`, que detecta el país desde `$LANG`), y ubicación actual debajo del título.
+
+- **Activación**: click en el chip del reloj o `Super+C`.
+- **Navegación**: botones chevron dibujados en Canvas (`StatusIcon`: `chev-double-left`, `chev-left`, `chev-right`, `chev-double-right`) para año/mes anterior/siguiente. Click en el título vuelve a hoy. Teclado: `←/→` mes, `↑/↓` año, `Enter` hoy.
+- **País**: muestra `Ciudad · País` (ej. "Bogotá · Colombia") usando `Weather.city` + `Weather.country`, que vienen de `qs-weather` vía ip-api. Si no hay red, la línea se oculta.
+- **Mes correcto**: `Qt.locale().monthName()` en este build de Qt es 0-indexed — se pasa `month - 1`. Si ves el mes corrido, revisá esa línea.
+- **Festivos**: `qs-holidays <año>` devuelve `{ "YYYY-MM-DD": "nombre" }`. Hover sobre un día festivo muestra el nombre en tooltip. Leyenda abajo: Hoy / Fin de semana / Festivo.
+
 ## Lofi radio
 
 `AudioPanel.qml` tiene una fila dedicada para activar o apagar "Lofi radio". Su invocación ejecuta `~/.local/bin/qs-lofi`:
