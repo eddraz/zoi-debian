@@ -1,0 +1,497 @@
+#!/usr/bin/env python3
+"""Apply ZOI theme colors across all system applications:
+- Terminal (foot)
+- Herdr AI Workspace Manager
+- Helix Editor
+- Zed Editor
+- Antigravity IDE / VS Code / Code-OSS / VSCodium
+- Sway Window Manager
+- GTK 3 & 4 / Browsers (Chromium, Chrome, LibreWolf, Brave)
+- Central State (~/.local/state/quickshell/colors.json & colors.sh)
+"""
+
+import json
+import os
+import re
+import subprocess
+import sys
+
+
+def strip_hash(color_str):
+    s = str(color_str or "").strip()
+    return s[1:] if s.startswith("#") else s
+
+
+def with_hash(color_str):
+    s = str(color_str or "").strip()
+    return s if s.startswith("#") else ("#" + s)
+
+
+def apply_foot(pal, home):
+    foot_path = os.path.join(home, ".config/foot/foot.ini")
+    os.makedirs(os.path.dirname(foot_path), exist_ok=True)
+    
+    bg = strip_hash(pal.get("background", "1e1e2e"))
+    fg = strip_hash(pal.get("foreground", "cdd6f4"))
+    crust = strip_hash(pal.get("crust", "11111b"))
+    surface = strip_hash(pal.get("surface", "313244"))
+    overlay = strip_hash(pal.get("overlay", "6c7086"))
+    muted = strip_hash(pal.get("muted", "a6adc8"))
+    accent = strip_hash(pal.get("accent", "89b4fa"))
+    urgent = strip_hash(pal.get("urgent", "f38ba8"))
+    green = strip_hash(pal.get("green", "a6e3a1"))
+    peach = strip_hash(pal.get("peach", "fab387"))
+    yellow = strip_hash(pal.get("yellow", "f9e2af"))
+
+    content = f"""[main]
+shell=/usr/bin/fish
+font=DejaVu Sans Mono:size=11
+pad=4x4
+
+[colors]
+background={bg}
+foreground={fg}
+
+## Normal / regular colors (8)
+regular0={crust}
+regular1={urgent}
+regular2={green}
+regular3={yellow}
+regular4={accent}
+regular5={peach}
+regular6={accent}
+regular7={fg}
+
+## Bright colors (8)
+bright0={overlay}
+bright1={urgent}
+bright2={green}
+bright3={yellow}
+bright4={accent}
+bright5={peach}
+bright6={accent}
+bright7={fg}
+
+## Selection
+selection-foreground={crust}
+selection-background={accent}
+"""
+    try:
+        with open(foot_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        # Also sync to repo dotfiles if it exists
+        repo_foot = os.path.join(home, "projects/zoi-debian/dotfiles/config/foot/foot.ini")
+        if os.path.isdir(os.path.dirname(repo_foot)):
+            with open(repo_foot, "w", encoding="utf-8") as f:
+                f.write(content)
+    except Exception as e:
+        print(f"Error applying foot theme: {e}", file=sys.stderr)
+
+
+def apply_herdr(pal, home, theme_id):
+    herdr_cfg = os.path.join(home, ".config/herdr/config.toml")
+    if not os.path.exists(herdr_cfg):
+        return
+
+    # Map theme_id to herdr built-in theme
+    theme_map = {
+        "mocha": "catppuccin",
+        "macchiato": "catppuccin",
+        "frappe": "catppuccin",
+        "latte": "catppuccin-latte",
+        "kanagawa": "kanagawa",
+        "nord": "nord",
+        "gruvbox": "gruvbox",
+        "dracula": "dracula",
+        "rosepine": "rose-pine",
+    }
+    herdr_theme = theme_map.get(theme_id, "catppuccin")
+
+    try:
+        with open(herdr_cfg, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        
+        new_lines = []
+        in_theme = False
+        replaced = False
+        for line in lines:
+            if line.strip().startswith("[theme]"):
+                in_theme = True
+                new_lines.append(line)
+                continue
+            if in_theme and line.strip().startswith("name ="):
+                new_lines.append(f'name = "{herdr_theme}"\n')
+                replaced = True
+                in_theme = False
+                continue
+            if in_theme and line.startswith("["):
+                if not replaced:
+                    new_lines.append(f'name = "{herdr_theme}"\n')
+                    replaced = True
+                in_theme = False
+            new_lines.append(line)
+        
+        if not replaced and "[theme]" not in "".join(lines):
+            new_lines.append(f'\n[theme]\nname = "{herdr_theme}"\nauto_switch = false\n')
+
+        with open(herdr_cfg, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+
+        # Notify running herdr server
+        subprocess.run(["herdr", "server", "reload-config"], capture_output=True, timeout=1)
+    except Exception:
+        pass
+
+
+def apply_helix(pal, home):
+    themes_dir = os.path.join(home, ".config/helix/themes")
+    os.makedirs(themes_dir, exist_ok=True)
+    zoi_theme_path = os.path.join(themes_dir, "zoi.toml")
+
+    bg = with_hash(pal.get("background", "#1e1e2e"))
+    mantle = with_hash(pal.get("mantle", "#181825"))
+    crust = with_hash(pal.get("crust", "#11111b"))
+    surface = with_hash(pal.get("surface", "#313244"))
+    overlay = with_hash(pal.get("overlay", "#6c7086"))
+    fg = with_hash(pal.get("foreground", "#cdd6f4"))
+    muted = with_hash(pal.get("muted", "#a6adc8"))
+    accent = with_hash(pal.get("accent", "#89b4fa"))
+    urgent = with_hash(pal.get("urgent", "#f38ba8"))
+    green = with_hash(pal.get("green", "#a6e3a1"))
+    peach = with_hash(pal.get("peach", "#fab387"))
+    yellow = with_hash(pal.get("yellow", "#f9e2af"))
+
+    theme_content = f"""# Generated by ZOI Theme Manager
+"ui.background" = {{ bg = "{bg}" }}
+"ui.background.separator" = {{ fg = "{overlay}" }}
+"ui.cursor" = {{ fg = "{crust}", bg = "{accent}" }}
+"ui.cursor.match" = {{ fg = "{crust}", bg = "{peach}" }}
+"ui.cursor.primary" = {{ fg = "{crust}", bg = "{accent}" }}
+"ui.selection" = {{ bg = "{surface}" }}
+"ui.selection.primary" = {{ bg = "{surface}" }}
+"ui.statusline" = {{ fg = "{fg}", bg = "{mantle}" }}
+"ui.statusline.inactive" = {{ fg = "{muted}", bg = "{crust}" }}
+"ui.text" = {{ fg = "{fg}" }}
+"ui.text.focus" = {{ fg = "{fg}", bg = "{surface}" }}
+"ui.text.inactive" = {{ fg = "{muted}" }}
+"ui.virtual.ruler" = {{ bg = "{surface}" }}
+"ui.virtual.indent-guide" = {{ fg = "{overlay}" }}
+"ui.window" = {{ bg = "{crust}", fg = "{overlay}" }}
+"ui.help" = {{ bg = "{mantle}", fg = "{fg}" }}
+"ui.popup" = {{ bg = "{surface}", fg = "{fg}" }}
+"ui.menu" = {{ bg = "{surface}", fg = "{fg}" }}
+"ui.menu.selected" = {{ bg = "{accent}", fg = "{crust}" }}
+
+"comment" = {{ fg = "{muted}", modifiers = ["italic"] }}
+"constant" = {{ fg = "{peach}" }}
+"constant.numeric" = {{ fg = "{peach}" }}
+"constant.character.escape" = {{ fg = "{urgent}" }}
+"string" = {{ fg = "{green}" }}
+"string.regexp" = {{ fg = "{peach}" }}
+"keyword" = {{ fg = "{urgent}" }}
+"keyword.control" = {{ fg = "{urgent}" }}
+"function" = {{ fg = "{accent}" }}
+"function.method" = {{ fg = "{accent}" }}
+"type" = {{ fg = "{yellow}" }}
+"variable" = {{ fg = "{fg}" }}
+"variable.other.member" = {{ fg = "{accent}" }}
+"variable.parameter" = {{ fg = "{fg}" }}
+"operator" = {{ fg = "{accent}" }}
+"special" = {{ fg = "{peach}" }}
+
+"diagnostic.error" = {{ underline = {{ color = "{urgent}", style = "curl" }} }}
+"diagnostic.warning" = {{ underline = {{ color = "{yellow}", style = "curl" }} }}
+"diagnostic.info" = {{ underline = {{ color = "{accent}", style = "curl" }} }}
+"diagnostic.hint" = {{ underline = {{ color = "{green}", style = "curl" }} }}
+
+"error" = "{urgent}"
+"warning" = "{yellow}"
+"info" = "{accent}"
+"hint" = "{green}"
+"""
+    try:
+        with open(zoi_theme_path, "w", encoding="utf-8") as f:
+            f.write(theme_content)
+
+        helix_cfg = os.path.join(home, ".config/helix/config.toml")
+        if os.path.exists(helix_cfg):
+            with open(helix_cfg, "r", encoding="utf-8") as f:
+                h_lines = f.readlines()
+            new_h_lines = []
+            theme_set = False
+            for line in h_lines:
+                if line.strip().startswith("theme ="):
+                    new_h_lines.append('theme = "zoi"\n')
+                    theme_set = True
+                else:
+                    new_h_lines.append(line)
+            if not theme_set:
+                new_h_lines.insert(0, 'theme = "zoi"\n')
+            with open(helix_cfg, "w", encoding="utf-8") as f:
+                f.writelines(new_h_lines)
+    except Exception as e:
+        print(f"Error applying helix theme: {e}", file=sys.stderr)
+
+
+def apply_zed(pal, home):
+    themes_dir = os.path.join(home, ".config/zed/themes")
+    os.makedirs(themes_dir, exist_ok=True)
+    zoi_theme_path = os.path.join(themes_dir, "zoi.json")
+
+    bg = with_hash(pal.get("background", "#1e1e2e"))
+    mantle = with_hash(pal.get("mantle", "#181825"))
+    crust = with_hash(pal.get("crust", "#11111b"))
+    surface = with_hash(pal.get("surface", "#313244"))
+    overlay = with_hash(pal.get("overlay", "#6c7086"))
+    fg = with_hash(pal.get("foreground", "#cdd6f4"))
+    muted = with_hash(pal.get("muted", "#a6adc8"))
+    accent = with_hash(pal.get("accent", "#89b4fa"))
+    urgent = with_hash(pal.get("urgent", "#f38ba8"))
+    green = with_hash(pal.get("green", "#a6e3a1"))
+    peach = with_hash(pal.get("peach", "#fab387"))
+    yellow = with_hash(pal.get("yellow", "#f9e2af"))
+
+    zed_theme = {
+        "$schema": "https://zed.dev/schema/themes/v0.1.0.json",
+        "name": "ZOI Theme",
+        "author": "ZOI Debian",
+        "themes": [
+            {
+                "name": "ZOI Active",
+                "appearance": "dark",
+                "style": {
+                    "background": bg,
+                    "surface.background": surface,
+                    "elevated_surface.background": mantle,
+                    "border": overlay,
+                    "border.focused": accent,
+                    "text": fg,
+                    "text.muted": muted,
+                    "text.accent": accent,
+                    "element.active": accent,
+                    "element.selected": surface,
+                    "tab_bar.background": crust,
+                    "tab.inactive_background": crust,
+                    "tab.active_background": bg,
+                    "status_bar.background": mantle,
+                    "title_bar.background": crust,
+                    "toolbar.background": bg,
+                    "editor.background": bg,
+                    "editor.foreground": fg,
+                    "editor.gutter.background": bg,
+                    "editor.active_line.background": surface,
+                    "editor.highlighted_line.background": surface,
+                    "editor.line_number": overlay,
+                    "editor.active_line_number": accent,
+                    "syntax": {
+                        "comment": { "color": muted, "font_style": "italic" },
+                        "string": { "color": green },
+                        "keyword": { "color": urgent },
+                        "function": { "color": accent },
+                        "type": { "color": yellow },
+                        "number": { "color": peach },
+                        "boolean": { "color": peach },
+                        "operator": { "color": accent },
+                        "variable": { "color": fg },
+                        "property": { "color": accent }
+                    }
+                }
+            }
+        ]
+    }
+
+    try:
+        with open(zoi_theme_path, "w", encoding="utf-8") as f:
+            json.dump(zed_theme, f, indent=2)
+
+        zed_settings = os.path.join(home, ".config/zed/settings.json")
+        if os.path.exists(zed_settings):
+            with open(zed_settings, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            data["theme"] = {
+                "mode": "dark",
+                "light": "One Light",
+                "dark": "ZOI Active"
+            }
+            with open(zed_settings, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"Error applying zed theme: {e}", file=sys.stderr)
+
+
+def apply_vscode_family(pal, home):
+    paths = [
+        os.path.join(home, ".config/Antigravity IDE/User/settings.json"),
+        os.path.join(home, ".config/Code/User/settings.json"),
+        os.path.join(home, ".config/Code - OSS/User/settings.json"),
+        os.path.join(home, ".config/VSCodium/User/settings.json"),
+    ]
+
+    bg = with_hash(pal.get("background", "#1e1e2e"))
+    mantle = with_hash(pal.get("mantle", "#181825"))
+    crust = with_hash(pal.get("crust", "#11111b"))
+    surface = with_hash(pal.get("surface", "#313244"))
+    overlay = with_hash(pal.get("overlay", "#6c7086"))
+    fg = with_hash(pal.get("foreground", "#cdd6f4"))
+    muted = with_hash(pal.get("muted", "#a6adc8"))
+    accent = with_hash(pal.get("accent", "#89b4fa"))
+    urgent = with_hash(pal.get("urgent", "#f38ba8"))
+    green = with_hash(pal.get("green", "#a6e3a1"))
+    peach = with_hash(pal.get("peach", "#fab387"))
+    yellow = with_hash(pal.get("yellow", "#f9e2af"))
+
+    color_customizations = {
+        "editor.background": bg,
+        "editor.foreground": fg,
+        "activityBar.background": crust,
+        "activityBar.foreground": accent,
+        "sideBar.background": mantle,
+        "sideBar.foreground": fg,
+        "sideBarTitle.foreground": accent,
+        "sideBarSectionHeader.background": surface,
+        "statusBar.background": crust,
+        "statusBar.foreground": fg,
+        "titleBar.activeBackground": crust,
+        "titleBar.activeForeground": fg,
+        "tab.activeBackground": bg,
+        "tab.activeForeground": accent,
+        "tab.inactiveBackground": crust,
+        "tab.inactiveForeground": muted,
+        "editorGroupHeader.tabsBackground": crust,
+        "terminal.background": bg,
+        "terminal.foreground": fg,
+        "terminal.ansiBlack": crust,
+        "terminal.ansiRed": urgent,
+        "terminal.ansiGreen": green,
+        "terminal.ansiYellow": yellow,
+        "terminal.ansiBlue": accent,
+        "terminal.ansiMagenta": peach,
+        "terminal.ansiCyan": accent,
+        "terminal.ansiWhite": fg,
+        "focusBorder": accent,
+        "input.background": surface,
+        "input.foreground": fg,
+        "input.border": overlay,
+        "list.activeSelectionBackground": surface,
+        "list.activeSelectionForeground": accent,
+        "list.hoverBackground": surface,
+        "badge.background": accent,
+        "badge.foreground": crust
+    }
+
+    for p in paths:
+        if not os.path.exists(p):
+            continue
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            data["workbench.colorCustomizations"] = color_customizations
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4)
+        except Exception as e:
+            print(f"Error updating {p}: {e}", file=sys.stderr)
+
+
+def apply_sway(pal, home):
+    bg = with_hash(pal.get("background", "#1e1e2e"))
+    crust = with_hash(pal.get("crust", "#11111b"))
+    surface = with_hash(pal.get("surface", "#313244"))
+    fg = with_hash(pal.get("foreground", "#cdd6f4"))
+    muted = with_hash(pal.get("muted", "#a6adc8"))
+    accent = with_hash(pal.get("accent", "#89b4fa"))
+    urgent = with_hash(pal.get("urgent", "#f38ba8"))
+
+    # Live Sway client colors
+    cmd = [
+        "swaymsg",
+        f"client.focused '{accent}' '{accent}' '{crust}' '{accent}' '{accent}'; "
+        f"client.focused_inactive '{surface}' '{surface}' '{fg}' '{surface}' '{surface}'; "
+        f"client.unfocused '{crust}' '{crust}' '{muted}' '{crust}' '{crust}'; "
+        f"client.urgent '{urgent}' '{urgent}' '{crust}' '{urgent}' '{urgent}'"
+    ]
+    subprocess.run(cmd, capture_output=True, timeout=1)
+
+
+def apply_gtk_browsers(pal, home, theme_id):
+    # Set GNOME color scheme for browsers & GTK4 apps (dark vs light)
+    scheme = "prefer-light" if theme_id == "latte" else "prefer-dark"
+    subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme], capture_output=True)
+
+    bg = with_hash(pal.get("background", "#1e1e2e"))
+    mantle = with_hash(pal.get("mantle", "#181825"))
+    surface = with_hash(pal.get("surface", "#313244"))
+    fg = with_hash(pal.get("foreground", "#cdd6f4"))
+    accent = with_hash(pal.get("accent", "#89b4fa"))
+    crust = with_hash(pal.get("crust", "#11111b"))
+
+    css_content = f"""/* Generated by ZOI Theme Manager */
+@define-color accent_color {accent};
+@define-color accent_bg_color {accent};
+@define-color accent_fg_color {crust};
+@define-color window_bg_color {bg};
+@define-color window_fg_color {fg};
+@define-color view_bg_color {bg};
+@define-color view_fg_color {fg};
+@define-color headerbar_bg_color {mantle};
+@define-color headerbar_fg_color {fg};
+@define-color card_bg_color {surface};
+@define-color card_fg_color {fg};
+@define-color popover_bg_color {surface};
+@define-color popover_fg_color {fg};
+"""
+    for gtk_ver in ["gtk-3.0", "gtk-4.0"]:
+        d = os.path.join(home, ".config", gtk_ver)
+        os.makedirs(d, exist_ok=True)
+        css_file = os.path.join(d, "gtk.css")
+        try:
+            with open(css_file, "w", encoding="utf-8") as f:
+                f.write(css_content)
+        except Exception:
+            pass
+
+
+def apply_state_files(pal, home, theme_id):
+    state_dir = os.path.join(home, ".local/state/quickshell")
+    os.makedirs(state_dir, exist_ok=True)
+
+    # 1. colors.json
+    with open(os.path.join(state_dir, "colors.json"), "w", encoding="utf-8") as f:
+        json.dump(pal, f, indent=2)
+
+    # 2. colors.sh (sourceable in bash/zsh/fish)
+    lines = [f'export ZOI_THEME="{theme_id}"\n']
+    for k, v in pal.items():
+        lines.append(f'export ZOI_COLOR_{k.upper()}="{with_hash(v)}"\n')
+    with open(os.path.join(state_dir, "colors.sh"), "w", encoding="utf-8") as f:
+        f.writelines(lines)
+
+
+def main():
+    if len(sys.argv) < 2:
+        return 2
+    raw = sys.argv[1]
+    home = os.path.expanduser("~")
+
+    try:
+        pal = json.loads(raw)
+    except Exception as e:
+        print(f"Invalid JSON palette: {e}", file=sys.stderr)
+        return 1
+
+    theme_id = pal.get("id", "mocha")
+
+    # Apply across all supported apps
+    apply_foot(pal, home)
+    apply_herdr(pal, home, theme_id)
+    apply_helix(pal, home)
+    apply_zed(pal, home)
+    apply_vscode_family(pal, home)
+    apply_sway(pal, home)
+    apply_gtk_browsers(pal, home, theme_id)
+    apply_state_files(pal, home, theme_id)
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

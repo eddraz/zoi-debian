@@ -15,6 +15,7 @@ Singleton {
     readonly property string screensaverColorsPath: stateDir + "/screensaver-colors"
     readonly property string defaultScreensaver: "ZOI"
     readonly property string paletteHelper: Quickshell.env("HOME") + "/.local/bin/qs-theme-from-wallpaper"
+    readonly property string applyHelper: Quickshell.env("HOME") + "/.local/bin/qs-theme-apply"
     property string pendingWallpaper: ""
     property string wallpaperPath: ""
     property var wallpaperColors: ({
@@ -259,6 +260,7 @@ Singleton {
         Color.yellow = pal.yellow;
         persist();
         writeScreensaverColors(pal);
+        Quickshell.execDetached([applyHelper, JSON.stringify(pal)]);
     }
 
     function persist() {
