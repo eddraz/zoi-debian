@@ -1,7 +1,9 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import Quickshell
 import Quickshell.Networking
+import Quickshell.Io
 import "../Commons"
 import "../Ui"
 
@@ -35,6 +37,24 @@ Column {
         for (let i = 0; i < networks.length; i++)
             e.push({ "label": String(networks[i].name || "network"), "index": i + 1 });
         return e;
+    }
+
+    // Tab focus cycling among interactive elements
+    property int wifiTabFocus: -1   // -1 = list mode, 0 = wifi toggle, 1 = test button
+    readonly property var tabTargets: ["wifiToggleBtn", "wifiTestBtn"]
+
+    function focusTabItem(direction) {
+        const n = tabTargets.length;
+        if (n === 0) return false;
+        if (wifiTabFocus < 0) {
+            wifiTabFocus = direction > 0 ? 0 : n - 1;
+        } else {
+            wifiTabFocus = (wifiTabFocus + (direction > 0 ? 1 : -1) + n) % n;
+        }
+        const id = tabTargets[wifiTabFocus];
+        if (id === "wifiToggleBtn") wifiToggleBtn.forceActiveFocus();
+        else if (id === "wifiTestBtn") wifiTestBtn.forceActiveFocus();
+        return true;
     }
 
     function handleKey(event) {
@@ -74,6 +94,45 @@ Column {
     property string passwordSsid: ""
     property string password: ""
 
+    // WiFi quality
+    readonly property string wifiQualityHelper: Quickshell.env("HOME") + "/.local/bin/qs-wifi-quality"
+    property int wifiQuality: 0
+    property int wifiSignal: 0
+    property string wifiSsid: ""
+    property bool wifiTesting: false
+    property string wifiQualityError: ""
+    property var wifiTabOrder: ["wifiToggle", "wifiTest", "listEnd"]
+
+    function refreshWifi() {
+        if (wifiTesting)
+            return;
+        wifiTesting = true;
+        wifiQualityError = "";
+        wifiProc.running = true;
+    }
+
+    function parseWifi(text) {
+        try {
+            const d = JSON.parse(String(text || "{}"));
+            wifiQuality = Number(d.quality || 0);
+            wifiSignal = Number(d.signal || 0);
+            wifiSsid = String(d.ssid || "");
+            wifiTesting = false;
+        } catch (e) {
+            wifiQualityError = String(text || "").slice(0, 60);
+            wifiTesting = false;
+        }
+    }
+
+    Process {
+        id: wifiProc
+        command: [root.wifiQualityHelper]
+        stdout: StdioCollector {
+            onStreamFinished: root.parseWifi(text)
+        }
+    }
+
+
     readonly property var wifiDevice: {
         const devices = Networking.devices ? Networking.devices.values : [];
         for (let i = 0; i < devices.length; i++) {
@@ -109,6 +168,10 @@ Column {
     }
 
     onVisibleChanged: {
+        if (visible) {
+            root.wifiTabFocus = -1;
+            refreshWifi();
+        }
         if (wifiDevice)
             wifiDevice.scannerEnabled = visible;
         if (!visible) {
@@ -137,12 +200,14 @@ Column {
     }
 
     Rectangle {
+        id: wifiToggleBtn
         width: parent.width
         height: 42
         radius: Style.radius
         color: Networking.wifiEnabled ? Color.accent : (root.cursor === 0 ? Color.focusFill : Color.surface)
         border.width: root.cursor === 0 ? 1 : 0
         border.color: Networking.wifiEnabled ? Color.background : Color.accent
+        activeFocusOnTab: true
         Behavior on color { ColorAnimation { duration: Style.animDuration } }
 
         Rectangle {
@@ -216,6 +281,101 @@ Column {
 
         HoverMouse {
             onClicked: Networking.wifiEnabled = !Networking.wifiEnabled
+        }
+    }
+
+    // WiFi quality card
+    Column {
+        width: parent.width
+        spacing: 4
+
+        Rectangle {
+            id: wifiTestBtn
+            width: parent.width
+            height: 28
+            radius: Style.radius
+            color: root.wifiTabFocus === 1 ? Color.focusFill : Color.surface
+            border.width: 1
+            border.color: root.wifiTabFocus === 1 ? Color.accent : Color.subtleBorder
+            activeFocusOnTab: true
+
+            Row {
+                anchors.fill: parent
+                anchors.leftMargin: 10
+                anchors.rightMargin: 10
+                spacing: 8
+
+                StatusIcon {
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon: root.wifiTesting ? "tray" : "wifi"
+                    stroke: Color.popupText
+                    level: root.wifiSignal / 100
+                    width: 14
+                    height: 14
+                    visible: !root.wifiTesting
+                }
+
+                Text {
+                    id: leftText
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: Color.popupText
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption
+                    font.bold: true
+                    text: root.wifiTesting ? "Midiendo Wi-Fi..." : "Probar calidad de Wi-Fi"
+                }
+
+                Item {
+                    width: Math.max(8, parent.width - leftText.implicitWidth - rightText.implicitWidth - 36)
+                    height: 1
+                }
+
+                Text {
+                    id: rightText
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: root.wifiQuality >= 70 ? Color.green : (root.wifiQuality >= 40 ? Color.yellow : Color.urgent)
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption - 1
+                    font.bold: true
+                    visible: !root.wifiTesting && root.wifiQuality > 0
+                    text: root.wifiQuality + "%"
+                }
+            }
+
+            HoverMouse {
+                onClicked: root.refreshWifi()
+            }
+        }
+
+        // Quality bar
+        Rectangle {
+            visible: root.wifiQuality > 0 || root.wifiTesting
+            width: parent.width
+            height: 6
+            radius: 3
+            color: Color.surface
+
+            Rectangle {
+                width: parent.width * (root.wifiQuality / 100)
+                height: parent.height
+                radius: 3
+                color: root.wifiQuality >= 70 ? Color.green : (root.wifiQuality >= 40 ? Color.yellow : Color.urgent)
+                Behavior on width { NumberAnimation { duration: Style.animSlow; easing.type: Easing.OutCubic } }
+            }
+        }
+
+        Text {
+            visible: root.wifiSsid !== "" && !root.wifiTesting
+            width: parent.width
+            color: Color.popupMuted
+            font.family: Style.fontFamily
+            font.pixelSize: Style.fontBadge
+            text: {
+                if (root.wifiQualityError !== "")
+                    return "Error: " + root.wifiQualityError;
+                const sig = root.wifiSignal;
+                return "SSID: " + root.wifiSsid + " · Señal " + sig + "%";
+            }
         }
     }
 
