@@ -68,6 +68,8 @@ Item {
                 root.paintTrash(ctx, w, h);
             else if (root.icon === "search")
                 root.paintSearch(ctx, w, h);
+            else if (root.icon === "qr" || root.icon === "qrcode")
+                root.paintQr(ctx, w, h);
             else if (root.icon === "clipboard")
                 root.paintClipboard(ctx, w, h);
             else if (root.icon === "chev-left" || root.icon === "chev-right"
@@ -499,5 +501,36 @@ Item {
         ctx.moveTo(w * 0.34, h * 0.74);
         ctx.lineTo(w * 0.54, h * 0.74);
         ctx.stroke();
+    }
+
+    function paintQr(ctx, w, h) {
+        ctx.fillStyle = root.stroke;
+        ctx.strokeStyle = root.stroke;
+        ctx.lineWidth = Math.max(1.0, w * 0.08);
+
+        const s = w * 0.34;
+        const pad = w * 0.12;
+        const rightX = w - pad - s;
+        const botY = h - pad - s;
+
+        const drawFinder = (x, y) => {
+            ctx.strokeRect(x, y, s, s);
+            const innerPad = s * 0.28;
+            ctx.fillRect(x + innerPad, y + innerPad, s - innerPad * 2, s - innerPad * 2);
+        };
+
+        // Top-Left Finder Pattern
+        drawFinder(pad, pad);
+        // Top-Right Finder Pattern
+        drawFinder(rightX, pad);
+        // Bottom-Left Finder Pattern
+        drawFinder(pad, botY);
+
+        // Bottom-Right modules / dots
+        const modSize = s * 0.36;
+        ctx.fillRect(rightX, botY, modSize, modSize);
+        ctx.fillRect(rightX + s - modSize, botY, modSize, modSize);
+        ctx.fillRect(rightX, botY + s - modSize, modSize, modSize);
+        ctx.fillRect(rightX + s - modSize, botY + s - modSize, modSize, modSize);
     }
 }

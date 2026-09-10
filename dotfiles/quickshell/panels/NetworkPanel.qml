@@ -41,7 +41,7 @@ Column {
 
     // Tab focus cycling among interactive elements
     property int wifiTabFocus: -1   // -1 = list mode, 0 = wifi toggle, 1 = test button
-    readonly property var tabTargets: ["wifiToggleBtn", "wifiTestBtn", "wifiShareBtn"]
+    readonly property var tabTargets: ["wifiToggleBtn", "wifiTestBtn"]
 
     function focusTabItem(direction) {
         const n = tabTargets.length;
@@ -54,13 +54,16 @@ Column {
         const id = tabTargets[wifiTabFocus];
         if (id === "wifiToggleBtn") wifiToggleBtn.forceActiveFocus();
         else if (id === "wifiTestBtn") wifiTestBtn.forceActiveFocus();
-        else if (id === "wifiShareBtn") wifiShareBtn.forceActiveFocus();
         return true;
     }
 
     function handleKey(event) {
         if (passwordSsid !== "")
             return false;
+        if (event.key === Qt.Key_Q || event.text === "q" || event.text === "Q") {
+            root.openWifiQr();
+            return true;
+        }
         const jump = KeyNav.jump(event, 1 + networks.length);
         if (jump >= 0) {
             cursor = jump;
@@ -380,44 +383,6 @@ Column {
                     return "Error: " + root.wifiQualityError;
                 const sig = root.wifiSignal;
                 return "SSID: " + root.wifiSsid + " · Señal " + sig + "%";
-            }
-        }
-
-        Rectangle {
-            id: wifiShareBtn
-            width: parent.width
-            height: 24
-            radius: Style.radius
-            color: root.wifiTabFocus === 2 ? Color.focusFill : Color.surface
-            border.width: 1
-            border.color: root.wifiTabFocus === 2 ? Color.accent : Color.subtleBorder
-            activeFocusOnTab: true
-            visible: root.wifiSsid !== "" && root.wifiQuality > 0
-
-            Row {
-                anchors.fill: parent
-                anchors.leftMargin: 10
-                spacing: 6
-
-                StatusIcon {
-                    anchors.verticalCenter: parent.verticalCenter
-                    icon: "search"
-                    stroke: Color.popupText
-                    width: 12
-                    height: 12
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: Color.popupText
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption
-                    text: "Compartir con QR"
-                }
-            }
-
-            HoverMouse {
-                onClicked: root.openWifiQr()
             }
         }
     }

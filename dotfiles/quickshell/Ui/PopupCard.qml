@@ -151,6 +151,15 @@ PanelWindow {
         Qt.callLater(() => findField.forceActiveFocus());
     }
 
+    function triggerQr() {
+        const panel = visiblePanel();
+        if (panel && typeof panel.openWifiQr === "function") {
+            panel.openWifiQr();
+        } else {
+            Quickshell.execDetached(["/usr/bin/qs", "ipc", "call", "wifiqr", "toggle"]);
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         color: Color.dimOverlay
@@ -249,6 +258,11 @@ PanelWindow {
                 event.accepted = true;
                 return;
             }
+            if (Popups.requested === "network" && (event.key === Qt.Key_Q || event.text === "q" || event.text === "Q")) {
+                root.triggerQr();
+                event.accepted = true;
+                return;
+            }
             const panel = root.visiblePanel();
             if (panel && typeof panel.handleKey === "function" && panel.handleKey(event)) {
                 event.accepted = true;
@@ -314,53 +328,105 @@ PanelWindow {
                         }
                     }
 
-                    Rectangle {
-                        id: searchHint
+                    Row {
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
+                        spacing: 6
                         visible: !root.searching
-                        height: 18
-                        width: hintRow.implicitWidth + 8
-                        radius: 3
-                        color: Color.surface
-                        border.width: 1
-                        border.color: Color.subtleBorder
 
-                        Row {
-                            id: hintRow
-                            anchors.centerIn: parent
-                            spacing: 4
+                        Rectangle {
+                            id: qrHint
+                            visible: Popups.requested === "network"
+                            height: 18
+                            width: qrHintRow.implicitWidth + 8
+                            radius: 3
+                            color: Color.surface
+                            border.width: 1
+                            border.color: Color.subtleBorder
 
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                color: Color.popupMuted
-                                font.family: Style.fontFamily
-                                font.pixelSize: 9
-                                text: "Buscar"
+                            Row {
+                                id: qrHintRow
+                                anchors.centerIn: parent
+                                spacing: 4
+
+                                StatusIcon {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    icon: "qr"
+                                    stroke: Color.popupMuted
+                                    width: 11
+                                    height: 11
+                                }
+
+                                Rectangle {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    height: 12
+                                    width: 12
+                                    radius: 2
+                                    color: Color.mantle
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        color: Color.accent
+                                        font.family: Style.fontFamily
+                                        font.pixelSize: 8
+                                        font.bold: true
+                                        text: "Q"
+                                    }
+                                }
                             }
 
-                            Rectangle {
-                                anchors.verticalCenter: parent.verticalCenter
-                                height: 12
-                                width: 12
-                                radius: 2
-                                color: Color.mantle
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    color: Color.accent
-                                    font.family: Style.fontFamily
-                                    font.pixelSize: 8
-                                    font.bold: true
-                                    text: "/"
-                                }
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.triggerQr()
                             }
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.startSearch()
+                        Rectangle {
+                            id: searchHint
+                            height: 18
+                            width: hintRow.implicitWidth + 8
+                            radius: 3
+                            color: Color.surface
+                            border.width: 1
+                            border.color: Color.subtleBorder
+
+                            Row {
+                                id: hintRow
+                                anchors.centerIn: parent
+                                spacing: 4
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: Color.popupMuted
+                                    font.family: Style.fontFamily
+                                    font.pixelSize: 9
+                                    text: "Buscar"
+                                }
+
+                                Rectangle {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    height: 12
+                                    width: 12
+                                    radius: 2
+                                    color: Color.mantle
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        color: Color.accent
+                                        font.family: Style.fontFamily
+                                        font.pixelSize: 8
+                                        font.bold: true
+                                        text: "/"
+                                    }
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.startSearch()
+                            }
                         }
                     }
                 }
