@@ -10,36 +10,59 @@ Column {
     spacing: 8
     width: parent ? parent.width : 252
 
+    property int cursor: 0
+    readonly property int count: 1 + Notifs.history.length
+
     function nextSection(back) {}
 
-    function focusItem(entry) {}
+    function focusItem(entry) {
+        cursor = Math.max(0, Math.min(count - 1, entry.index));
+    }
 
-    readonly property var searchEntries: [
-        { "label": "do not disturb dnd mute", "index": 0 }
-    ]
+    readonly property var searchEntries: {
+        const e = [{ "label": "do not disturb dnd mute", "index": 0 }];
+        for (let i = 0; i < Notifs.history.length; i++) {
+            const n = Notifs.history[i];
+            e.push({ "label": String(n.summary || n.app || "notification"), "index": 1 + i });
+        }
+        return e;
+    }
+
+    onVisibleChanged: {
+        if (visible) {
+            cursor = 0;
+            Notifs.clearUnread();
+        }
+    }
 
     function handleKey(event) {
-        if (KeyNav.jump(event, 1) === 0) {
-            Notifs.toggleDnd();
+        const jump = KeyNav.jump(event, count);
+        if (jump >= 0) {
+            cursor = jump;
             return true;
         }
-        if (KeyNav.isActivate(event)) {
+        if (KeyNav.isNext(event) || KeyNav.isDown(event)) {
+            cursor = Math.min(count - 1, cursor + 1);
+            return true;
+        }
+        if (KeyNav.isPrev(event) || KeyNav.isUp(event)) {
+            cursor = Math.max(0, cursor - 1);
+            return true;
+        }
+        if (KeyNav.isActivate(event) && cursor === 0) {
             Notifs.toggleDnd();
             return true;
         }
         return false;
     }
 
-    onVisibleChanged: if (visible)
-        Notifs.clearUnread()
-
     Rectangle {
         width: parent.width
         height: 42
         radius: Style.radius
-        color: Notifs.dnd ? Color.urgent : Color.surface
+        color: Notifs.dnd ? Color.urgent : (root.cursor === 0 ? Color.focusFill : Color.surface)
         border.width: 1
-        border.color: Notifs.dnd ? Color.urgent : "transparent"
+        border.color: Notifs.dnd ? Color.urgent : (root.cursor === 0 ? Color.accent : "transparent")
         Behavior on color { ColorAnimation { duration: Style.animDuration } }
 
         Rectangle {
@@ -111,7 +134,10 @@ Column {
         }
 
         HoverMouse {
-            onClicked: Notifs.toggleDnd()
+            onClicked: {
+                root.cursor = 0;
+                Notifs.toggleDnd();
+            }
         }
     }
 
@@ -128,12 +154,13 @@ Column {
 
         Rectangle {
             required property var modelData
+            required property int index
             width: root.width
             implicitHeight: notifCol.implicitHeight + 16
             radius: Style.radius
-            color: Color.surface
+            color: root.cursor === index + 1 ? Color.focusFill : Color.surface
             border.width: 1
-            border.color: Color.subtleBorder
+            border.color: root.cursor === index + 1 ? Color.accent : Color.subtleBorder
 
             Column {
                 id: notifCol

@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import "../Commons"
+import "../Ui"
 
 Item {
     id: root
@@ -15,6 +16,8 @@ Item {
         findOpen = true;
         Qt.callLater(() => searchField.forceActiveFocus());
     }
+
+    property int cursor: 0
 
     function nextSection(back) {
     }
@@ -32,7 +35,58 @@ Item {
         if (visible) {
             query = "";
             findOpen = false;
+            cursor = 0;
         }
+    }
+
+    readonly property int flatCount: {
+        let n = 0;
+        for (let s = 0; s < filteredSections.length; s++)
+            n += (filteredSections[s].rows || []).length;
+        return n;
+    }
+
+    function flatIndex(sectionIdx, rowIdx) {
+        let n = 0;
+        for (let s = 0; s < sectionIdx; s++)
+            n += (filteredSections[s].rows || []).length;
+        return n + rowIdx;
+    }
+
+    function focusItem(entry) {
+        cursor = Math.max(0, Math.min(Math.max(0, flatCount - 1), entry.index));
+    }
+
+    readonly property var searchEntries: {
+        const e = [];
+        let n = 0;
+        for (let s = 0; s < filteredSections.length; s++) {
+            const rows = filteredSections[s].rows || [];
+            for (let r = 0; r < rows.length; r++) {
+                e.push({ "label": String(rows[r].keys || "") + " " + String(rows[r].action || ""), "index": n });
+                n++;
+            }
+        }
+        return e;
+    }
+
+    function handleKey(event) {
+        if (searchField.activeFocus)
+            return false;
+        const jump = KeyNav.jump(event, flatCount);
+        if (jump >= 0) {
+            cursor = jump;
+            return true;
+        }
+        if (KeyNav.isNext(event) || KeyNav.isDown(event)) {
+            cursor = Math.min(Math.max(0, flatCount - 1), cursor + 1);
+            return true;
+        }
+        if (KeyNav.isPrev(event) || KeyNav.isUp(event)) {
+            cursor = Math.max(0, cursor - 1);
+            return true;
+        }
+        return false;
     }
 
     readonly property var filteredSections: {
@@ -211,6 +265,8 @@ Item {
 
             Column {
                 required property var modelData
+                required property int index
+                readonly property int sectionIdx: index
                 width: column.width
                 spacing: 4
 
@@ -225,27 +281,49 @@ Item {
                 Repeater {
                     model: modelData.rows
 
-                    Row {
+                    Rectangle {
                         required property var modelData
+                        required property int index
+                        readonly property int flat: root.flatIndex(sectionIdx, index)
                         width: column.width
-                        spacing: 8
+                        height: Math.max(keysText.implicitHeight, actionText.implicitHeight) + 6
+                        radius: Style.radius
+                        color: root.cursor === flat ? Color.focusFill : "transparent"
+                        border.width: root.cursor === flat ? 1 : 0
+                        border.color: Color.accent
 
-                        Text {
-                            width: column.width * 0.48
-                            color: Color.accent
-                            font.family: Style.fontFamily
-                            font.pixelSize: Style.fontCaption
-                            text: modelData.keys
-                            wrapMode: Text.WordWrap
+                        Row {
+                            anchors.fill: parent
+                            anchors.leftMargin: 6
+                            anchors.rightMargin: 6
+                            spacing: 8
+
+                            Text {
+                                id: keysText
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: (column.width - 12) * 0.48
+                                color: Color.accent
+                                font.family: Style.fontFamily
+                                font.pixelSize: Style.fontCaption
+                                text: modelData.keys
+                                wrapMode: Text.WordWrap
+                            }
+
+                            Text {
+                                id: actionText
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: (column.width - 12) * 0.48
+                                color: Color.popupText
+                                font.family: Style.fontFamily
+                                font.pixelSize: Style.fontCaption
+                                text: modelData.action
+                                wrapMode: Text.WordWrap
+                            }
                         }
 
-                        Text {
-                            width: column.width * 0.48
-                            color: Color.popupText
-                            font.family: Style.fontFamily
-                            font.pixelSize: Style.fontCaption
-                            text: modelData.action
-                            wrapMode: Text.WordWrap
+                        HoverMouse {
+                            z: -1
+                            onClicked: root.cursor = flat
                         }
                     }
                 }

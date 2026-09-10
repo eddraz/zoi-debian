@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import "../Commons"
+import "../Ui"
 
 Column {
     id: root
@@ -9,15 +10,41 @@ Column {
     spacing: 8
     width: parent ? parent.width : 252
 
+    property int cursor: 0
+    readonly property int count: 1 + Weather.days.length
+
     function nextSection(back) {}
 
-    function focusItem(entry) {}
+    function focusItem(entry) {
+        cursor = Math.max(0, Math.min(count - 1, entry.index));
+    }
 
-    readonly property var searchEntries: [
-        { "label": "refresh weather", "index": 0 }
-    ]
+    readonly property var searchEntries: {
+        const e = [{ "label": "refresh weather", "index": 0 }];
+        for (let i = 0; i < Weather.days.length; i++)
+            e.push({ "label": String(Weather.weekday(Weather.days[i].date) || "day"), "index": 1 + i });
+        return e;
+    }
+
+    onVisibleChanged: {
+        if (visible)
+            cursor = 0;
+    }
 
     function handleKey(event) {
+        const jump = KeyNav.jump(event, count);
+        if (jump >= 0) {
+            cursor = jump;
+            return true;
+        }
+        if (KeyNav.isNext(event) || KeyNav.isDown(event)) {
+            cursor = Math.min(count - 1, cursor + 1);
+            return true;
+        }
+        if (KeyNav.isPrev(event) || KeyNav.isUp(event)) {
+            cursor = Math.max(0, cursor - 1);
+            return true;
+        }
         if (KeyNav.isActivate(event)) {
             Weather.refresh();
             return true;
@@ -55,12 +82,18 @@ Column {
 
         Rectangle {
             required property var modelData
+            required property int index
             width: root.width
             height: 42
             radius: Style.radius
-            color: Color.surface
+            color: root.cursor === index + 1 ? Color.focusFill : Color.surface
             border.width: 1
-            border.color: Color.subtleBorder
+            border.color: root.cursor === index + 1 ? Color.accent : Color.subtleBorder
+
+            HoverMouse {
+                z: -1
+                onClicked: root.cursor = index + 1
+            }
 
             Column {
                 anchors.left: parent.left
