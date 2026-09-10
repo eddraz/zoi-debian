@@ -324,6 +324,11 @@ Scope {
                             anchors.centerIn: parent
                             spacing: 5
 
+                            IndexBadge {
+                                slot: 9
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
                             StatusIcon {
                                 icon: "trash"
                                 stroke: clearMouse.containsMouse ? Color.urgent : Color.popupMuted
