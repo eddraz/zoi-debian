@@ -512,6 +512,8 @@ Scope {
                             width: confLabel.implicitWidth + 14
                             radius: 3
                             color: Color.urgent
+                            border.width: root.clearConfirmFocused ? 2 : 0
+                            border.color: Color.foreground
 
                             Text {
                                 id: confLabel
@@ -535,9 +537,9 @@ Scope {
                             height: 22
                             width: cancLabel.implicitWidth + 14
                             radius: 3
-                            color: Color.mantle
-                            border.width: 1
-                            border.color: Color.subtleBorder
+                            color: !root.clearConfirmFocused ? Color.focusFill : Color.mantle
+                            border.width: !root.clearConfirmFocused ? 2 : 1
+                            border.color: !root.clearConfirmFocused ? Color.accent : Color.subtleBorder
 
                             Text {
                                 id: cancLabel
