@@ -9,11 +9,12 @@ Column {
     id: root
 
     spacing: 6
-    width: parent ? parent.width : 280
+    width: parent ? parent.width : 320
     property int cursor: 0
 
     signal openBar
     signal openKeys
+    signal openTheme
 
     readonly property var items: [
         {
@@ -24,10 +25,24 @@ Column {
             "active": Radio.playing
         },
         {
-            "id": "clipboard",
-            "name": "Portapapeles",
-            "desc": "Historial de texto y recortes",
-            "status": "Super+V",
+            "id": "stayawake",
+            "name": "Modo Vigilia",
+            "desc": Idle.stayAwake ? "Evita suspensión y bloqueo" : "Comportamiento normal de reposo",
+            "status": Idle.stayAwake ? "ON" : "OFF",
+            "active": Idle.stayAwake
+        },
+        {
+            "id": "nightlight",
+            "name": "Luz Nocturna",
+            "desc": NightLight.enabled ? "Filtro cálido de pantalla activo" : "Temperatura de color estándar",
+            "status": NightLight.enabled ? "ON" : "OFF",
+            "active": NightLight.enabled
+        },
+        {
+            "id": "theme",
+            "name": "Selector de Temas",
+            "desc": "Paleta de colores y estilos",
+            "status": "Tema",
             "active": false
         },
         {
@@ -35,6 +50,13 @@ Column {
             "name": "Plugin Registry",
             "desc": "Organizar barra y widgets",
             "status": "Super+Shift+B",
+            "active": false
+        },
+        {
+            "id": "clipboard",
+            "name": "Portapapeles",
+            "desc": "Historial de texto y recortes",
+            "status": "Super+V",
             "active": false
         },
         {
@@ -80,11 +102,17 @@ Column {
         const it = items[index];
         if (it.id === "lofi") {
             Radio.toggle();
+        } else if (it.id === "stayawake") {
+            Idle.toggle();
+        } else if (it.id === "nightlight") {
+            NightLight.toggle();
+        } else if (it.id === "theme") {
+            root.openTheme();
+        } else if (it.id === "bar") {
+            root.openBar();
         } else if (it.id === "clipboard") {
             Popups.closeAll();
             Quickshell.execDetached(["/usr/bin/qs", "ipc", "call", "clipboard", "toggle"]);
-        } else if (it.id === "bar") {
-            root.openBar();
         } else if (it.id === "emojis") {
             Popups.closeAll();
             Quickshell.execDetached(["/usr/bin/qs", "ipc", "call", "emojis", "toggle"]);
@@ -190,9 +218,9 @@ Column {
                 height: 20
                 width: badgeText.implicitWidth + 12
                 radius: 4
-                color: rowBox.isLofiOn ? Color.background : (rowBox.selected ? Color.surface : Color.background)
+                color: rowBox.isLofiOn ? Color.background : (modelData.active ? Color.focusFill : (rowBox.selected ? Color.surface : Color.background))
                 border.width: 1
-                border.color: rowBox.isLofiOn ? Color.background : (rowBox.selected ? Color.subtleBorder : "transparent")
+                border.color: rowBox.isLofiOn ? Color.background : (modelData.active ? Color.accent : (rowBox.selected ? Color.subtleBorder : "transparent"))
 
                 Text {
                     id: badgeText

@@ -65,20 +65,21 @@ Item {
             "title": "Apps",
             "rows": [
                 { "keys": "Super+Return", "action": "Terminal" },
-                    { "keys": "Super+Shift+Return", "action": "LibreWolf" },
+                { "keys": "Super+Shift+Return", "action": "LibreWolf" },
                 { "keys": "Super+Space", "action": "App launcher" },
-                    { "keys": "Super+V", "action": "Clipboard history" },
-                    { "keys": "Super+.", "action": "Emoji picker (latam: Super+Shift+,)" },
-                    { "keys": "Alt+Shift / LATAM chip", "action": "Cycle keyboard layout" },
+                { "keys": "Super+A", "action": "Native Apps panel" },
+                { "keys": "Super+V", "action": "Clipboard history" },
+                { "keys": "Super+.", "action": "Emoji picker (latam: Super+Shift+,)" },
+                { "keys": "Alt+Shift / LATAM chip", "action": "Cycle keyboard layout" },
                 { "keys": "Super+Shift+W", "action": "Close window" },
                 { "keys": "Super+Shift+C", "action": "Reload Sway" },
                 { "keys": "Super+Shift+E", "action": "Exit Sway" },
                 { "keys": "Super+Escape", "action": "Session menu" },
-                { "keys": "Stay awake", "action": "Session: inhibit idle/lock" },
-                    { "keys": "Screensaver", "action": "TTE ZOI after 2.5 min idle" },
-                { "keys": "Night light", "action": "Session: warm display 4000K" },
-                    { "keys": "pkexec", "action": "Polkit: themed password dialog" },
-                    { "keys": "Theme", "action": "Session: colors, wallpaper, screensaver text" }
+                { "keys": "Stay awake", "action": "Apps: inhibit idle/lock" },
+                { "keys": "Screensaver", "action": "TTE ZOI after 2.5 min idle" },
+                { "keys": "Night light", "action": "Apps: warm display 4000K" },
+                { "keys": "pkexec", "action": "Polkit: themed password dialog" },
+                { "keys": "Theme", "action": "Apps: colors, wallpaper, screensaver text" }
             ]
         },
         {

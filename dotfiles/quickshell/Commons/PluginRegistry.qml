@@ -39,7 +39,7 @@ Singleton {
             "panel": "../panels/AppsPanel.qml",
             "title": "Native Apps",
             "defaultSection": "left",
-            "cardWidth": 300
+            "cardWidth": 320
         },
         "workspaces": {
             "kinds": ["bar-widget"],
@@ -161,7 +161,8 @@ Singleton {
             "popup": "session",
             "panel": "../panels/SessionPanel.qml",
             "title": "Session",
-            "defaultSection": "left"
+            "defaultSection": "left",
+            "cardWidth": 240
         },
         "bar": {
             "kinds": ["panel"],
