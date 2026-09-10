@@ -56,6 +56,8 @@ Item {
                 root.paintTransport(ctx, w, h);
             else if (root.icon === "alarm")
                 root.paintAlarm(ctx, w, h);
+            else if (root.icon === "tray")
+                root.paintTray(ctx, w, h);
         }
     }
 
@@ -272,6 +274,28 @@ Item {
         ctx.stroke();
         ctx.beginPath();
         ctx.arc(w * 0.72, h * 0.22, w * 0.10, Math.PI * -0.05, Math.PI * 0.85);
+        ctx.stroke();
+    }
+
+    function paintTray(ctx, w, h) {
+        ctx.beginPath();
+        ctx.moveTo(w * 0.16, h * 0.50);
+        ctx.lineTo(w * 0.36, h * 0.50);
+        ctx.lineTo(w * 0.42, h * 0.62);
+        ctx.lineTo(w * 0.58, h * 0.62);
+        ctx.lineTo(w * 0.64, h * 0.50);
+        ctx.lineTo(w * 0.84, h * 0.50);
+        ctx.lineTo(w * 0.78, h * 0.78);
+        ctx.lineTo(w * 0.22, h * 0.78);
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(w * 0.50, h * 0.18);
+        ctx.lineTo(w * 0.50, h * 0.44);
+        ctx.moveTo(w * 0.38, h * 0.32);
+        ctx.lineTo(w * 0.50, h * 0.44);
+        ctx.lineTo(w * 0.62, h * 0.32);
         ctx.stroke();
     }
 }
