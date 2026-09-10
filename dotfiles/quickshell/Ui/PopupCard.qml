@@ -25,6 +25,11 @@ PanelWindow {
     default property alias content: body.children
 
     signal dismissed
+    signal headerActionTriggered()
+
+    property string headerAction: ""
+    property string headerActionKey: ""
+    property string headerActionIcon: ""
 
     readonly property bool barVertical: barEdge === "left" || barEdge === "right"
 

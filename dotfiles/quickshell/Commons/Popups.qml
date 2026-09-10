@@ -45,6 +45,11 @@ Singleton {
             return "ok";
         }
 
+        function closeAll(): string {
+            root.closeAll();
+            return "ok";
+        }
+
         function toggle(name: string): string {
             if (!name)
                 root.closeAll();

@@ -365,6 +365,14 @@ Variants {
             cardWidth: PluginRegistry.panelMeta(screenRoot.popup).cardWidth || 268
             title: String(PluginRegistry.panelMeta(screenRoot.popup).title || "")
             barEdge: screenRoot.edge
+            // Header action button: only the Network panel shows a QR button.
+            headerAction: screenRoot.popup === "network" ? "Compartir" : ""
+            headerActionKey: screenRoot.popup === "network" ? "Q" : ""
+            headerActionIcon: screenRoot.popup === "network" ? "qr" : ""
+            onHeaderActionTriggered: {
+                if (screenRoot.popup === "network")
+                    Quickshell.execDetached(["/usr/bin/qs", "ipc", "call", "wifiqr", "toggle"]);
+            }
             onDismissed: Popups.closeAll()
 
             Loader {
