@@ -8,15 +8,10 @@ PanelWindow {
 
     required property var modelData
 
-    readonly property string edge: PluginRegistry.barEdge
-    readonly property bool barVertical: edge === "left" || edge === "right"
-    readonly property bool tipVisible: HoverTip.text !== "" && HoverTip.screen === modelData
-
     screen: modelData
-    visible: tipVisible
+    visible: HoverTip.text !== "" && HoverTip.screen === modelData
     color: "transparent"
-    implicitHeight: barVertical ? modelData.height : 26
-    implicitWidth: barVertical ? (bubble.width + 12) : modelData.width
+    implicitHeight: 26
     exclusiveZone: 0
     exclusionMode: ExclusionMode.Ignore
     mask: Region {}
@@ -25,45 +20,23 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
     anchors {
-        top: edge === "top" || barVertical
-        bottom: edge === "bottom" || barVertical
-        left: edge === "left" || !barVertical
-        right: edge === "right" || !barVertical
+        top: true
+        left: true
+        right: true
     }
 
     Rectangle {
         id: bubble
 
-        // Position based on bar edge
-        x: {
-            if (root.barVertical) {
-                // For vertical bars, appear beside the bar
-                if (root.edge === "left")
-                    return root.tipVisible ? 3 : 0;
-                else
-                    return root.tipVisible ? (root.width - width - 3) : root.width;
-            }
-            return Math.max(6, Math.min(root.width - width - 6, HoverTip.centerX - width / 2));
-        }
-
-        y: {
-            if (root.barVertical) {
-                // Use centerX as centerY for vertical bars
-                return Math.max(6, Math.min(root.height - height - 6, HoverTip.centerX - height / 2));
-            }
-            if (root.edge === "bottom")
-                return root.tipVisible ? (root.height - height - 3) : root.height;
-            return root.tipVisible ? 3 : 0;
-        }
-
-        Behavior on x { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutQuad } }
+        y: (HoverTip.text !== "" && HoverTip.screen === modelData) ? 3 : 0
         Behavior on y { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutQuad } }
 
-        opacity: root.tipVisible ? 1 : 0
+        opacity: (HoverTip.text !== "" && HoverTip.screen === modelData) ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutQuad } }
 
         height: 22
         width: contentRow.implicitWidth + 14
+        x: Math.max(6, Math.min(root.width - width - 6, HoverTip.centerX - width / 2))
         color: Color.popupBackground
         radius: Style.radius
         border.width: 1

@@ -21,35 +21,25 @@ PanelWindow {
     property real anchorRightX: 0
     property real anchorCenterX: 0
     property bool allowSlideAnimation: false
-    property string barEdge: "top"
     default property alias content: body.children
 
     signal dismissed
-    signal headerActionTriggered()
-
-    property string headerAction: ""
-    property string headerActionKey: ""
-    property string headerActionIcon: ""
-
-    readonly property bool barVertical: barEdge === "left" || barEdge === "right"
 
     screen: modelData
     visible: open
     color: "transparent"
     exclusiveZone: 0
     exclusionMode: ExclusionMode.Ignore
-    implicitWidth: modelData.width
-    implicitHeight: modelData.height
+    implicitHeight: modelData.height - Style.barHeight
     WlrLayershell.namespace: "quickshell-popup"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
-    readonly property int availableWidth: Math.max(200, root.width - Style.pad * 2 - (barVertical ? Style.barHeight : 0))
-    readonly property int availableHeight: Math.max(120, root.height - Style.pad * 2 - (!barVertical ? Style.barHeight : 0))
+    readonly property int availableWidth: Math.max(200, root.width - Style.pad * 2)
+    readonly property int availableHeight: Math.max(120, root.height - Style.pad * 2)
     readonly property int resolvedWidth: Math.min(root.cardWidth, Style.popupMaxWidth, availableWidth)
 
     anchors {
-        top: true
         left: true
         right: true
         bottom: true
@@ -147,14 +137,6 @@ PanelWindow {
         id: card
 
         function targetCardX() {
-            if (root.barVertical) {
-                // For left/right bars, the popup appears beside the bar
-                if (root.barEdge === "left")
-                    return Style.barHeight + Style.pad;
-                else
-                    return root.width - root.resolvedWidth - Style.barHeight - Style.pad;
-            }
-
             if (root.centerCard || !root.hasAnchor) {
                 return root.centerCard ? Math.round((root.width - width) / 2) : (root.width - width - Style.pad);
             }
@@ -175,36 +157,9 @@ PanelWindow {
             return Math.max(minX, Math.min(maxX, tx));
         }
 
-        function targetCardY() {
-            if (!root.barVertical) {
-                // For top/bottom bars
-                if (root.barEdge === "bottom")
-                    return root.open ? (root.height - card.height - Style.barHeight - 8) : (root.height - Style.barHeight);
-                else
-                    return root.open ? (Style.barHeight + 8) : Style.barHeight;
-            }
-            // For vertical bars, center the popup vertically (or align to anchor)
-            if (root.centerCard || !root.hasAnchor) {
-                return Math.round((root.height - card.height) / 2);
-            }
-            // Use anchor Y (stored in anchorLeftX/anchorCenterX for vertical)
-            let ty = 0;
-            if (root.anchorSection === "left") {
-                ty = root.anchorLeftX;
-            } else if (root.anchorSection === "center") {
-                ty = Math.round(root.anchorCenterX - card.height / 2);
-            } else {
-                ty = root.anchorRightX - card.height;
-            }
-            const minY = Style.pad;
-            const maxY = root.height - card.height - Style.pad;
-            if (maxY <= minY)
-                return minY;
-            return Math.max(minY, Math.min(maxY, ty));
-        }
-
+        anchors.top: parent.top
+        anchors.topMargin: root.open ? 8 : 0
         x: targetCardX()
-        y: targetCardY()
         width: root.resolvedWidth
         height: Math.min(column.implicitHeight + Style.pad * 2, root.availableHeight)
         color: Color.popupBackground
@@ -217,7 +172,7 @@ PanelWindow {
 
         opacity: root.open ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Style.animSlow; easing.type: Easing.OutCubic } }
-        Behavior on y { enabled: root.open; NumberAnimation { duration: Style.animSlow; easing.type: Easing.OutCubic } }
+        Behavior on anchors.topMargin { NumberAnimation { duration: Style.animSlow; easing.type: Easing.OutCubic } }
         Behavior on x {
             enabled: root.open && root.allowSlideAnimation
             NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic }
