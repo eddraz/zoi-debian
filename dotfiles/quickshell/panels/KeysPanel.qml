@@ -78,8 +78,7 @@ Item {
                     { "keys": "Screensaver", "action": "TTE ZOI after 2.5 min idle" },
                 { "keys": "Night light", "action": "Session: warm display 4000K" },
                     { "keys": "pkexec", "action": "Polkit: themed password dialog" },
-                    { "keys": "Theme", "action": "Session: colors, wallpaper, screensaver text" },
-                    { "keys": "Wallpaper", "action": "Session: pick image from ~/Imágenes" }
+                    { "keys": "Theme", "action": "Session: colors, wallpaper, screensaver text" }
             ]
         },
         {

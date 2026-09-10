@@ -23,11 +23,10 @@ Column {
         { "id": "shutdown", "label": "Shut down", "command": ["systemctl", "poweroff"], "confirm": true }
     ]
 
-    readonly property int count: 6 + actions.length
+    readonly property int count: 5 + actions.length
 
     signal openKeys
     signal openBar
-    signal openWallpaper
     signal openTheme
 
     onVisibleChanged: {
@@ -66,11 +65,7 @@ Column {
             openTheme();
             return;
         }
-        if (cursor === 5) {
-            openWallpaper();
-            return;
-        }
-        const action = actions[cursor - 6];
+        const action = actions[cursor - 5];
         if (action.confirm)
             pendingId = pendingId === action.id ? "" : action.id;
         else
@@ -86,7 +81,7 @@ Column {
     }
 
     function nextSection(back) {
-        cursor = KeyNav.nextStart([0, 6], cursor, back);
+        cursor = KeyNav.nextStart([0, 5], cursor, back);
     }
 
     function focusItem(entry) {
@@ -99,11 +94,10 @@ Column {
             { "label": "bar", "index": 1 },
             { "label": "stay awake", "index": 2 },
             { "label": "night light", "index": 3 },
-            { "label": "theme", "index": 4 },
-            { "label": "wallpaper", "index": 5 }
+            { "label": "theme", "index": 4 }
         ];
         for (let i = 0; i < actions.length; i++)
-            e.push({ "label": String(actions[i].label || actions[i].id), "index": 6 + i });
+            e.push({ "label": String(actions[i].label || actions[i].id), "index": 5 + i });
         return e;
     }
 
@@ -119,7 +113,7 @@ Column {
             }
             if (KeyNav.isActivate(event)) {
                 if (confirmChoice === 1)
-                    run(actions[cursor - 6].command);
+                    run(actions[cursor - 5].command);
                 else
                     pendingId = "";
                 return true;
@@ -391,55 +385,6 @@ Column {
         }
     }
 
-    Rectangle {
-        width: parent.width
-        height: 28
-        radius: Style.radius
-        color: root.cursor === 5 ? Color.focusFill : Color.surface
-        border.width: 1
-        border.color: root.cursor === 5 ? Color.accent : "transparent"
-        Behavior on color { ColorAnimation { duration: Style.animDuration } }
-        Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
-
-        Rectangle {
-            width: 3
-            height: parent.height - 10
-            radius: 1.5
-            color: Color.accent
-            anchors.left: parent.left
-            anchors.leftMargin: 2
-            anchors.verticalCenter: parent.verticalCenter
-            visible: root.cursor === 5
-        }
-
-        IndexBadge {
-            slot: 5
-            anchors.left: parent.left
-            anchors.leftMargin: 6
-            anchors.verticalCenter: parent.verticalCenter
-        }
-
-        Text {
-            anchors.fill: parent
-            anchors.leftMargin: 28
-            anchors.rightMargin: 8
-            verticalAlignment: Text.AlignVCenter
-            color: Color.popupText
-            font.family: Style.fontFamily
-            font.pixelSize: Style.fontCaption
-            font.bold: root.cursor === 5
-            elide: Text.ElideRight
-            text: "Wallpaper"
-        }
-
-        HoverMouse {
-            onClicked: {
-                root.cursor = 5;
-                root.openWallpaper();
-            }
-        }
-    }
-
     Repeater {
         model: root.actions
 
@@ -449,7 +394,7 @@ Column {
             width: root.width
             spacing: 4
 
-            readonly property bool selected: root.cursor === index + 6
+            readonly property bool selected: root.cursor === index + 5
 
             Rectangle {
                 width: parent.width
@@ -481,7 +426,7 @@ Column {
                 }
 
                 IndexBadge {
-                    slot: index + 6
+                    slot: index + 5
                     anchors.left: parent.left
                     anchors.leftMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
@@ -502,7 +447,7 @@ Column {
 
                 HoverMouse {
                     onClicked: {
-                        root.cursor = index + 6;
+                        root.cursor = index + 5;
                         if (modelData.confirm)
                             root.pendingId = root.pendingId === modelData.id ? "" : modelData.id;
                         else

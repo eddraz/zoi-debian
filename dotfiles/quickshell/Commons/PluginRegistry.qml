@@ -178,14 +178,6 @@ Singleton {
             "centerCard": true,
             "cardWidth": 420
         },
-        "wallpaper": {
-            "kinds": ["panel"],
-            "popup": "wallpaper",
-            "panel": "../panels/WallpaperPanel.qml",
-            "title": "Wallpaper",
-            "centerCard": true,
-            "cardWidth": 420
-        },
         "theme": {
             "kinds": ["panel"],
             "popup": "theme",

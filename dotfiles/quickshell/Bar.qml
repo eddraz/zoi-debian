@@ -39,8 +39,6 @@ Variants {
                 return;
             if (item.openKeys !== undefined)
                 item.openKeys.connect(() => Popups.open("keys"));
-            if (item.openWallpaper !== undefined)
-                item.openWallpaper.connect(() => Popups.open("wallpaper"));
             if (item.openTheme !== undefined)
                 item.openTheme.connect(() => Popups.open("theme"));
             if (item.openBar !== undefined)
