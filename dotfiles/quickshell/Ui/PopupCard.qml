@@ -240,18 +240,27 @@ PanelWindow {
                 event.accepted = true;
                 return;
             }
+            if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+                const back = event.key === Qt.Key_Backtab || !!(event.modifiers & Qt.ShiftModifier);
+                if (findField.activeFocus) {
+                    if (searchMatches && searchMatches.length > 0) {
+                        root.navigateSearch(back ? -1 : 1);
+                        event.accepted = true;
+                        return;
+                    }
+                    card.forceActiveFocus();
+                }
+                const panel = root.visiblePanel();
+                if (panel && typeof panel.nextSection === "function") {
+                    panel.nextSection(back);
+                    event.accepted = true;
+                    return;
+                }
+            }
             if (root.searching || findField.activeFocus) {
                 // When search bar is active, all hotkeys / quick keys are strictly blocked
                 event.accepted = true;
                 return;
-            }
-            if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
-                const panel = root.visiblePanel();
-                if (panel && typeof panel.nextSection === "function") {
-                    panel.nextSection(event.key === Qt.Key_Backtab || !!(event.modifiers & Qt.ShiftModifier));
-                    event.accepted = true;
-                    return;
-                }
             }
             if (event.key === Qt.Key_Slash || event.text === "/") {
                 root.startSearch();
@@ -505,12 +514,28 @@ PanelWindow {
                                         return;
                                     }
                                     if (event.key === Qt.Key_Down || (event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))) {
-                                        root.navigateSearch(1);
+                                        if (root.searchMatches && root.searchMatches.length > 0) {
+                                            root.navigateSearch(1);
+                                        } else {
+                                            card.forceActiveFocus();
+                                            const panel = root.visiblePanel();
+                                            if (panel && typeof panel.nextSection === "function") {
+                                                panel.nextSection(false);
+                                            }
+                                        }
                                         event.accepted = true;
                                         return;
                                     }
                                     if (event.key === Qt.Key_Up || event.key === Qt.Key_Backtab || (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier))) {
-                                        root.navigateSearch(-1);
+                                        if (root.searchMatches && root.searchMatches.length > 0) {
+                                            root.navigateSearch(-1);
+                                        } else {
+                                            card.forceActiveFocus();
+                                            const panel = root.visiblePanel();
+                                            if (panel && typeof panel.nextSection === "function") {
+                                                panel.nextSection(true);
+                                            }
+                                        }
                                         event.accepted = true;
                                         return;
                                     }

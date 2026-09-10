@@ -117,8 +117,19 @@ Scope {
             border.width: 1
             border.color: Color.surface
 
+            Keys.onPressed: event => {
+                if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+                    input.forceActiveFocus();
+                    event.accepted = true;
+                } else if (event.key === Qt.Key_Escape) {
+                    root.close();
+                    event.accepted = true;
+                }
+            }
+
             MouseArea {
                 anchors.fill: parent
+                onClicked: input.forceActiveFocus()
             }
 
             Column {
@@ -168,6 +179,9 @@ Scope {
                         Keys.onPressed: event => {
                             if (event.key === Qt.Key_Escape) {
                                 root.close();
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+                                card.forceActiveFocus();
                                 event.accepted = true;
                             }
                         }

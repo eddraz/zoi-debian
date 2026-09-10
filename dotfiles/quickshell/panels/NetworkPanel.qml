@@ -24,7 +24,13 @@ Column {
         return false;
     }
 
+    property int passFocusIndex: 0
+
     function nextSection(back) {
+        if (passwordSsid !== "") {
+            passFocusIndex = passFocusIndex === 0 ? 1 : 0;
+            return;
+        }
         const count = 2 + networks.length;
         if (count <= 0) return;
         cursor = back ? (cursor - 1 + count) % count : (cursor + 1) % count;
@@ -503,10 +509,11 @@ Column {
                     height: 24
                     radius: Style.radius
                     color: Color.surface
-                    border.width: 1
-                    border.color: Color.overlay
+                    border.width: root.passFocusIndex === 0 ? 2 : 1
+                    border.color: root.passFocusIndex === 0 ? Color.accent : Color.overlay
 
                     TextInput {
+                        id: passInput
                         anchors.fill: parent
                         anchors.leftMargin: 8
                         anchors.rightMargin: 8
@@ -515,6 +522,7 @@ Column {
                         font.family: Style.fontFamily
                         font.pixelSize: Style.fontCaption
                         echoMode: TextInput.Password
+                        focus: root.passwordSsid === modelData.name && root.passFocusIndex === 0
                         text: root.password
                         onTextChanged: root.password = text
                         onAccepted: {
@@ -526,10 +534,13 @@ Column {
                 }
 
                 Rectangle {
+                    id: joinBtn
                     width: 52
                     height: 24
                     radius: Style.radius
                     color: Color.accent
+                    border.width: root.passFocusIndex === 1 ? 2 : 0
+                    border.color: Color.foreground
 
                     Text {
                         anchors.centerIn: parent
