@@ -142,32 +142,47 @@ Item {
 
     function paintWifi(ctx, w, h) {
         const cx = w * 0.50;
-        const cy = h * 0.72;
+        const cy = h * 0.84;
+        const isOff = root.icon === "wifi-off";
+
+        const rings = isOff ? 0 : (root.level > 0.66 ? 3 : (root.level > 0.33 ? 2 : 1));
+
+        // Dot at bottom
+        ctx.fillStyle = isOff ? Qt.rgba(root.stroke.r, root.stroke.g, root.stroke.b, 0.35) : root.stroke;
         ctx.beginPath();
-        ctx.arc(cx, cy, w * 0.06, 0, Math.PI * 2);
+        ctx.arc(cx, cy - w * 0.03, w * 0.08, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = "transparent";
-        const rings = root.icon === "wifi-off" ? 1 : (root.level > 0.66 ? 3 : (root.level > 0.33 ? 2 : 1));
-        if (rings >= 1) {
+        const startAngle = Math.PI * 1.25; // 225 deg
+        const endAngle = Math.PI * 1.75;   // 315 deg
+
+        const activeStroke = root.stroke;
+        const inactiveStroke = Qt.rgba(root.stroke.r, root.stroke.g, root.stroke.b, 0.25);
+
+        // Ring 1 (inner wave)
+        ctx.strokeStyle = (rings >= 1) ? activeStroke : inactiveStroke;
+        ctx.beginPath();
+        ctx.arc(cx, cy, w * 0.28, startAngle, endAngle);
+        ctx.stroke();
+
+        // Ring 2 (middle wave)
+        ctx.strokeStyle = (rings >= 2) ? activeStroke : inactiveStroke;
+        ctx.beginPath();
+        ctx.arc(cx, cy, w * 0.44, startAngle, endAngle);
+        ctx.stroke();
+
+        // Ring 3 (outer wave)
+        ctx.strokeStyle = (rings >= 3) ? activeStroke : inactiveStroke;
+        ctx.beginPath();
+        ctx.arc(cx, cy, w * 0.60, startAngle, endAngle);
+        ctx.stroke();
+
+        if (isOff) {
+            ctx.strokeStyle = root.stroke;
             ctx.beginPath();
-            ctx.arc(cx, cy, w * 0.18, Math.PI * 1.15, Math.PI * 1.85);
-            ctx.stroke();
-        }
-        if (rings >= 2) {
-            ctx.beginPath();
-            ctx.arc(cx, cy, w * 0.32, Math.PI * 1.18, Math.PI * 1.82);
-            ctx.stroke();
-        }
-        if (rings >= 3) {
-            ctx.beginPath();
-            ctx.arc(cx, cy, w * 0.44, Math.PI * 1.20, Math.PI * 1.80);
-            ctx.stroke();
-        }
-        if (root.icon === "wifi-off") {
-            ctx.beginPath();
-            ctx.moveTo(w * 0.22, h * 0.78);
-            ctx.lineTo(w * 0.78, h * 0.22);
+            ctx.moveTo(w * 0.20, h * 0.80);
+            ctx.lineTo(w * 0.80, h * 0.20);
             ctx.stroke();
         }
     }

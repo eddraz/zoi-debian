@@ -62,9 +62,17 @@ Item {
     StatusIcon {
         anchors.centerIn: parent
         icon: root.iconName
-        level: connectedWifi ? (connectedWifi.signalStrength || 0) / 100 : (Networking.wifiEnabled ? 1 : 0)
+        level: {
+            if (connectedWifi && typeof connectedWifi.signalStrength === "number" && connectedWifi.signalStrength > 0)
+                return connectedWifi.signalStrength / 100;
+            if (root.wifiDevice && root.wifiDevice.connected)
+                return 1.0;
+            if (Networking.wifiEnabled)
+                return 1.0;
+            return 0;
+        }
         stroke: {
-            if (root.wiredDevice || root.connectedWifi)
+            if (root.wiredDevice || (root.wifiDevice && root.wifiDevice.connected) || root.connectedWifi)
                 return Color.barText;
             if (!Networking.wifiEnabled)
                 return Color.muted;

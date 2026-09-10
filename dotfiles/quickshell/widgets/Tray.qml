@@ -90,7 +90,7 @@ Item {
                     anchors.centerIn: parent
                     visible: trayImg.status !== Image.Ready
                     icon: "tray"
-                    stroke: Color.barMuted
+                    stroke: Color.muted
                 }
             }
         }
