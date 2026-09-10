@@ -59,8 +59,8 @@ Singleton {
             "source": "../widgets/Clock.qml",
             "popup": "calendar",
             "panel": "../panels/CalendarPanel.qml",
-            "centerCard": true,
-            "defaultSection": "center"
+            "defaultSection": "center",
+            "cardWidth": 268
         },
         "tray": {
             "kinds": ["bar-widget"],
@@ -320,6 +320,21 @@ Singleton {
             return entry;
         }
         return null;
+    }
+
+    function widgetIdByPopup(popup) {
+        const name = String(popup || "");
+        if (!name)
+            return "";
+        for (const id in catalog) {
+            const entry = catalog[id];
+            if (entry && entry.popup === name && (entry.kinds || []).indexOf("bar-widget") !== -1) {
+                if (root.isDisabled(id))
+                    return "";
+                return id;
+            }
+        }
+        return "";
     }
 
     function panelUrl(popup) {

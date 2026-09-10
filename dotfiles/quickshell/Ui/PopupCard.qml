@@ -15,6 +15,12 @@ PanelWindow {
     property int cardWidth: 268
     property bool searching: false
     property string searchQuery: ""
+    property bool hasAnchor: false
+    property string anchorSection: ""
+    property real anchorLeftX: 0
+    property real anchorRightX: 0
+    property real anchorCenterX: 0
+    property bool allowSlideAnimation: false
     default property alias content: body.children
 
     signal dismissed
@@ -43,8 +49,15 @@ PanelWindow {
         scroller.contentY = 0;
         searching = false;
         searchQuery = "";
-        if (open)
-            Qt.callLater(() => card.forceActiveFocus());
+        if (open) {
+            Qt.callLater(() => {
+                if (root.open)
+                    root.allowSlideAnimation = true;
+                card.forceActiveFocus();
+            });
+        } else {
+            root.allowSlideAnimation = false;
+        }
     }
 
     onTitleChanged: {
@@ -123,9 +136,30 @@ PanelWindow {
     Rectangle {
         id: card
 
+        function targetCardX() {
+            if (root.centerCard || !root.hasAnchor) {
+                return root.centerCard ? Math.round((root.width - width) / 2) : (root.width - width - Style.pad);
+            }
+
+            let tx = 0;
+            if (root.anchorSection === "left") {
+                tx = root.anchorLeftX;
+            } else if (root.anchorSection === "center") {
+                tx = Math.round(root.anchorCenterX - width / 2);
+            } else {
+                tx = root.anchorRightX - width;
+            }
+
+            const minX = Style.pad;
+            const maxX = root.width - width - Style.pad;
+            if (maxX <= minX)
+                return minX;
+            return Math.max(minX, Math.min(maxX, tx));
+        }
+
         anchors.top: parent.top
         anchors.topMargin: root.open ? 8 : 0
-        x: root.centerCard ? Math.round((root.width - width) / 2) : (root.width - width - Style.pad)
+        x: targetCardX()
         width: root.resolvedWidth
         height: Math.min(column.implicitHeight + Style.pad * 2, root.availableHeight)
         color: Color.popupBackground
@@ -139,6 +173,10 @@ PanelWindow {
         opacity: root.open ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Style.animSlow; easing.type: Easing.OutCubic } }
         Behavior on anchors.topMargin { NumberAnimation { duration: Style.animSlow; easing.type: Easing.OutCubic } }
+        Behavior on x {
+            enabled: root.open && root.allowSlideAnimation
+            NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic }
+        }
 
         Keys.onPressed: event => {
             if (event.key === Qt.Key_Q && (event.modifiers & Qt.MetaModifier)) {
