@@ -7,44 +7,15 @@ Item {
 
     signal togglePanel
 
-    implicitWidth: chip.implicitWidth + 6
+    implicitWidth: Style.iconSize + 6
     implicitHeight: Style.barHeight
 
-    readonly property string tipText: "Teclado · " + Keyboard.name
+    readonly property string tipText: "Teclado · " + Keyboard.label + " (" + Keyboard.name + ")"
 
-    Rectangle {
-        id: chip
+    StatusIcon {
         anchors.centerIn: parent
-        implicitWidth: contentRow.implicitWidth + 14
-        implicitHeight: Style.chipHeight
-        radius: Style.radius
-        color: mouse.containsMouse ? Color.focusFill : Color.surface
-        border.width: 1
-        border.color: mouse.containsMouse ? Color.accent : Color.subtleBorder
-        Behavior on color { ColorAnimation { duration: Style.animDuration } }
-        Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
-
-        Row {
-            id: contentRow
-            anchors.centerIn: parent
-            spacing: 5
-
-            StatusIcon {
-                anchors.verticalCenter: parent.verticalCenter
-                icon: "keyboard"
-                stroke: Color.barText
-            }
-
-            Text {
-                id: label
-                anchors.verticalCenter: parent.verticalCenter
-                color: Color.barText
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption
-                font.bold: true
-                text: Keyboard.label
-            }
-        }
+        icon: "keyboard"
+        stroke: mouse.containsMouse ? Color.accent : Color.barText
     }
 
     MouseArea {
