@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import "Commons"
+import "Ui"
 
 Scope {
     id: root
@@ -12,19 +13,28 @@ Scope {
     property bool opened: false
     property string query: ""
     property int selectedIndex: 0
-        property bool deleteFocused: false
+    property bool deleteFocused: false
+    property bool confirmingClear: false
     property var entries: []
+
+    readonly property string pasteHelper: Quickshell.env("HOME") + "/.local/bin/qs-clip-paste"
+    readonly property string deleteHelper: Quickshell.env("HOME") + "/.local/bin/qs-clip-delete"
+    readonly property string wipeHelper: Quickshell.env("HOME") + "/.local/bin/qs-clip-wipe"
 
     readonly property var filtered: {
         if (!opened)
             return [];
         const needle = query.trim().toLowerCase();
         if (needle === "")
-            return entries.slice(0, 24);
+            return entries.slice(0, 50);
         const out = [];
-        for (let i = 0; i < entries.length && out.length < 24; i++) {
-            if (String(entries[i].preview).toLowerCase().indexOf(needle) >= 0)
-                out.push(entries[i]);
+        for (let i = 0; i < entries.length && out.length < 50; i++) {
+            const item = entries[i];
+            const title = String(item.title || "").toLowerCase();
+            const sub = String(item.sub || "").toLowerCase();
+            const preview = String(item.preview || "").toLowerCase();
+            if (title.indexOf(needle) >= 0 || sub.indexOf(needle) >= 0 || preview.indexOf(needle) >= 0)
+                out.push(item);
         }
         return out;
     }
@@ -45,10 +55,57 @@ Scope {
             if (!line)
                 continue;
             const tab = line.indexOf("\t");
-            const preview = tab >= 0 ? line.slice(tab + 1) : line;
+            const id = tab >= 0 ? line.slice(0, tab) : "";
+            let preview = tab >= 0 ? line.slice(tab + 1) : line;
+
+            const isBinary = preview.indexOf("[[ binary") === 0 || preview.indexOf("[binary") === 0;
+            let isFile = false;
+            let kind = "text";
+            let displayTitle = preview;
+            let displaySub = "";
+
+            if (isBinary) {
+                kind = "image";
+                const clean = preview.replace(/^\[\[?\s*binary data\s*/, "").replace(/\s*\]\]?$/, "");
+                displayTitle = "Imagen copiada";
+                displaySub = clean || "Datos binarios";
+            } else if (preview.indexOf("file://") === 0 || preview.indexOf("copy\nfile://") === 0) {
+                kind = "file";
+                isFile = true;
+                let uri = preview.indexOf("copy\n") === 0 ? preview.slice(5) : preview;
+                const firstLine = uri.split("\n")[0].trim();
+                let path = firstLine.replace(/^file:\/\//, "");
+                try {
+                    path = decodeURIComponent(path);
+                } catch (e) {}
+                if (!path.startsWith("/"))
+                    path = "/" + path;
+
+                const lastSlash = path.lastIndexOf("/");
+                const fileName = lastSlash >= 0 ? path.slice(lastSlash + 1) : path;
+                displayTitle = fileName || path;
+                displaySub = path;
+            } else if (preview.startsWith("/") && preview.indexOf("\n") === -1 && preview.length < 256) {
+                kind = "file";
+                isFile = true;
+                const lastSlash = preview.lastIndexOf("/");
+                displayTitle = preview.slice(lastSlash + 1);
+                displaySub = preview;
+            } else {
+                kind = "text";
+                displayTitle = preview.replace(/\s+/g, " ");
+                displaySub = "";
+            }
+
             list.push({
                 "line": line,
-                "preview": preview.indexOf("[binary") === 0 ? "Image" : preview
+                "id": id,
+                "kind": kind,
+                "title": displayTitle,
+                "sub": displaySub,
+                "preview": preview,
+                "isFile": isFile,
+                "isImage": isBinary
             });
         }
         entries = list;
@@ -57,6 +114,8 @@ Scope {
     function open(): void {
         query = "";
         selectedIndex = 0;
+        deleteFocused = false;
+        confirmingClear = false;
         opened = true;
         listProc.running = true;
         Qt.callLater(() => searchField.forceActiveFocus());
@@ -65,6 +124,7 @@ Scope {
     function close(): void {
         opened = false;
         query = "";
+        confirmingClear = false;
     }
 
     function toggle(): void {
@@ -73,9 +133,6 @@ Scope {
         else
             open();
     }
-
-    readonly property string pasteHelper: Quickshell.env("HOME") + "/.local/bin/qs-clip-paste"
-    readonly property string deleteHelper: Quickshell.env("HOME") + "/.local/bin/qs-clip-delete"
 
     function paste(entry): void {
         if (!entry)
@@ -89,6 +146,11 @@ Scope {
             return;
         deleteProc.command = [root.deleteHelper, entry.line];
         deleteProc.running = true;
+    }
+
+    function clearAll(): void {
+        confirmingClear = false;
+        wipeProc.running = true;
     }
 
     Connections {
@@ -111,6 +173,16 @@ Scope {
         onExited: listProc.running = true
     }
 
+    Process {
+        id: wipeProc
+        command: [root.wipeHelper]
+        onExited: {
+            root.entries = [];
+            root.selectedIndex = 0;
+            listProc.running = true;
+        }
+    }
+
     IpcHandler {
         target: "clipboard"
 
@@ -131,6 +203,7 @@ Scope {
     }
 
     PanelWindow {
+        id: win
         visible: root.opened
         color: "transparent"
         exclusiveZone: 0
@@ -146,21 +219,34 @@ Scope {
             right: true
         }
 
+        Rectangle {
+            anchors.fill: parent
+            color: Color.dimOverlay
+            opacity: root.opened ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: Style.animSlow; easing.type: Easing.OutCubic } }
+        }
+
         MouseArea {
             anchors.fill: parent
             onClicked: root.close()
         }
 
         Rectangle {
+            id: card
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
-            anchors.topMargin: 72
-            width: 420
-            implicitHeight: column.implicitHeight + Style.pad * 2
+            anchors.topMargin: root.opened ? 72 : 60
+            width: 460
+            implicitHeight: Math.min(column.implicitHeight + Style.pad * 2, (win.height > 200 ? win.height - 100 : 560))
             color: Color.popupBackground
-            radius: Style.radius
+            radius: Style.cardRadius
             border.width: 1
-            border.color: Color.surface
+            border.color: Color.cardBorder
+            clip: true
+
+            opacity: root.opened ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: Style.animSlow; easing.type: Easing.OutCubic } }
+            Behavior on anchors.topMargin { NumberAnimation { duration: Style.animSlow; easing.type: Easing.OutCubic } }
 
             MouseArea {
                 anchors.fill: parent
@@ -174,139 +260,542 @@ Scope {
                 anchors.margins: Style.pad
                 spacing: 8
 
-                Rectangle {
+                // Header
+                Item {
                     width: parent.width
-                    height: 30
+                    height: 26
+
+                    Row {
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 8
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 3
+                            height: 14
+                            radius: 1.5
+                            color: Color.accent
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: Color.popupText
+                            font.family: Style.fontFamily
+                            font.pixelSize: Style.fontTitle
+                            font.bold: true
+                            text: "Portapapeles"
+                        }
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            height: 16
+                            width: countLabel.implicitWidth + 10
+                            radius: 3
+                            color: Color.surface
+                            border.width: 1
+                            border.color: Color.subtleBorder
+
+                            Text {
+                                id: countLabel
+                                anchors.centerIn: parent
+                                color: Color.popupMuted
+                                font.family: Style.fontFamily
+                                font.pixelSize: 9
+                                text: root.entries.length + (root.entries.length === 1 ? " elemento" : " elementos")
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        id: clearBtn
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: root.entries.length > 0 && !root.confirmingClear
+                        height: 22
+                        width: clearRow.implicitWidth + 14
+                        radius: Style.radius
+                        color: clearMouse.containsMouse ? Color.surface : "transparent"
+                        border.width: 1
+                        border.color: clearMouse.containsMouse ? Color.subtleBorder : "transparent"
+
+                        Row {
+                            id: clearRow
+                            anchors.centerIn: parent
+                            spacing: 5
+
+                            StatusIcon {
+                                icon: "trash"
+                                stroke: clearMouse.containsMouse ? Color.urgent : Color.popupMuted
+                                width: 12
+                                height: 12
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: clearMouse.containsMouse ? Color.urgent : Color.popupMuted
+                                font.family: Style.fontFamily
+                                font.pixelSize: 9
+                                font.bold: true
+                                text: "Vaciar historial"
+                            }
+                        }
+
+                        MouseArea {
+                            id: clearMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.confirmingClear = true
+                        }
+                    }
+                }
+
+                // Confirmation banner
+                Rectangle {
+                    visible: root.confirmingClear
+                    width: parent.width
+                    height: visible ? 34 : 0
                     radius: Style.radius
                     color: Color.surface
                     border.width: 1
-                    border.color: Color.overlay
+                    border.color: Color.urgent
 
-                    TextInput {
-                        id: searchField
+                    Row {
                         anchors.fill: parent
                         anchors.leftMargin: 10
-                        anchors.rightMargin: 10
-                        verticalAlignment: Text.AlignVCenter
-                        color: Color.popupText
-                        font.family: Style.fontFamily
-                        font.pixelSize: Style.fontBody
-                        clip: true
-                        text: root.query
-                        onTextChanged: {
-                            root.query = text;
-                            root.selectedIndex = 0;
+                        anchors.rightMargin: 8
+                        spacing: 8
+
+                        StatusIcon {
+                            icon: "trash"
+                            stroke: Color.urgent
+                            width: 14
+                            height: 14
+                            anchors.verticalCenter: parent.verticalCenter
                         }
-                        Keys.onPressed: event => {
-                            if (event.key === Qt.Key_Escape) {
-                                root.close();
-                                event.accepted = true;
-                            } else if (event.key === Qt.Key_Down) {
-                                root.selectedIndex = Math.min(root.selectedIndex + 1, Math.max(0, root.filtered.length - 1));
-                                event.accepted = true;
-                            } else if (event.key === Qt.Key_Up) {
-                                root.selectedIndex = Math.max(0, root.selectedIndex - 1);
-                                event.accepted = true;
-                            } else if (event.key === Qt.Key_Right) {
-                                root.deleteFocused = true;
-                                event.accepted = true;
-                            } else if (event.key === Qt.Key_Left) {
-                                root.deleteFocused = false;
-                                event.accepted = true;
-                            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                if (root.filtered.length > 0) {
-                                    if (root.deleteFocused)
-                                        root.remove(root.filtered[root.selectedIndex]);
-                                    else
-                                        root.paste(root.filtered[root.selectedIndex]);
-                                }
-                                event.accepted = true;
-                            } else if (event.key === Qt.Key_Delete) {
-                                if (root.filtered.length > 0)
-                                    root.remove(root.filtered[root.selectedIndex]);
-                                event.accepted = true;
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: Color.popupText
+                            font.family: Style.fontFamily
+                            font.pixelSize: Style.fontCaption
+                            font.bold: true
+                            text: "¿Vaciar todo el historial?"
+                        }
+
+                        Item {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 1
+                            height: 1
+                        }
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            height: 22
+                            width: confLabel.implicitWidth + 14
+                            radius: 3
+                            color: Color.urgent
+
+                            Text {
+                                id: confLabel
+                                anchors.centerIn: parent
+                                color: Color.crust
+                                font.family: Style.fontFamily
+                                font.pixelSize: 9
+                                font.bold: true
+                                text: "Confirmar"
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.clearAll()
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            height: 22
+                            width: cancLabel.implicitWidth + 14
+                            radius: 3
+                            color: Color.mantle
+                            border.width: 1
+                            border.color: Color.subtleBorder
+
+                            Text {
+                                id: cancLabel
+                                anchors.centerIn: parent
+                                color: Color.popupMuted
+                                font.family: Style.fontFamily
+                                font.pixelSize: 9
+                                text: "Cancelar"
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.confirmingClear = false
                             }
                         }
                     }
                 }
 
-                Text {
-                    visible: root.filtered.length === 0
-                    color: Color.popupMuted
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption
-                    text: "Clipboard empty"
-                }
-
-                Repeater {
-                    model: root.filtered
+                // Search Input Box
+                Rectangle {
+                    width: parent.width
+                    height: 32
+                    radius: Style.radius
+                    color: Color.crust
+                    border.width: 1
+                    border.color: searchField.activeFocus ? Color.accent : Color.subtleBorder
 
                     Row {
-                        required property var modelData
-                        required property int index
-                        width: column.width
-                        height: 32
+                        anchors.fill: parent
+                        anchors.leftMargin: 8
+                        anchors.rightMargin: 8
                         spacing: 6
 
-                        Rectangle {
-                            width: parent.width - 38
-                            height: 32
-                            radius: Style.radius
-                            color: index === root.selectedIndex && !root.deleteFocused ? Color.focusFill : Color.surface
+                        StatusIcon {
+                            icon: "search"
+                            stroke: searchField.activeFocus ? Color.accent : Color.popupMuted
+                            width: 13
+                            height: 13
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Item {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width - 24 - (root.query !== "" ? 20 : 0)
+                            height: parent.height
 
                             Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                visible: root.query === ""
+                                color: Color.popupMuted
+                                font.family: Style.fontFamily
+                                font.pixelSize: Style.fontCaption
+                                text: "Buscar en historial de portapapeles..."
+                            }
+
+                            TextInput {
+                                id: searchField
                                 anchors.fill: parent
-                                anchors.leftMargin: 10
-                                anchors.rightMargin: 8
-                                elide: Text.ElideRight
                                 verticalAlignment: Text.AlignVCenter
                                 color: Color.popupText
                                 font.family: Style.fontFamily
-                                font.pixelSize: Style.fontCaption
-                                text: modelData.preview
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onEntered: {
-                                    root.selectedIndex = index;
-                                    root.deleteFocused = false;
+                                font.pixelSize: Style.fontBody
+                                clip: true
+                                text: root.query
+                                onTextChanged: {
+                                    root.query = text;
+                                    root.selectedIndex = 0;
                                 }
-                                onClicked: root.paste(modelData)
+                                Keys.onPressed: event => {
+                                    if (event.key === Qt.Key_Escape) {
+                                        if (root.confirmingClear) {
+                                            root.confirmingClear = false;
+                                        } else if (root.query !== "") {
+                                            root.query = "";
+                                        } else {
+                                            root.close();
+                                        }
+                                        event.accepted = true;
+                                    } else if (event.key === Qt.Key_Down) {
+                                        root.selectedIndex = Math.min(root.selectedIndex + 1, Math.max(0, root.filtered.length - 1));
+                                        event.accepted = true;
+                                    } else if (event.key === Qt.Key_Up) {
+                                        root.selectedIndex = Math.max(0, root.selectedIndex - 1);
+                                        event.accepted = true;
+                                    } else if (event.key === Qt.Key_PageDown) {
+                                        root.selectedIndex = Math.min(root.selectedIndex + 5, Math.max(0, root.filtered.length - 1));
+                                        event.accepted = true;
+                                    } else if (event.key === Qt.Key_PageUp) {
+                                        root.selectedIndex = Math.max(0, root.selectedIndex - 5);
+                                        event.accepted = true;
+                                    } else if (event.key === Qt.Key_Right) {
+                                        root.deleteFocused = true;
+                                        event.accepted = true;
+                                    } else if (event.key === Qt.Key_Left) {
+                                        root.deleteFocused = false;
+                                        event.accepted = true;
+                                    } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                        if (root.filtered.length > 0) {
+                                            if (root.deleteFocused)
+                                                root.remove(root.filtered[root.selectedIndex]);
+                                            else
+                                                root.paste(root.filtered[root.selectedIndex]);
+                                        }
+                                        event.accepted = true;
+                                    } else if (event.key === Qt.Key_Delete) {
+                                        if (root.filtered.length > 0)
+                                            root.remove(root.filtered[root.selectedIndex]);
+                                        event.accepted = true;
+                                    }
+                                }
                             }
                         }
 
                         Rectangle {
-                            width: 32
-                            height: 32
-                            radius: Style.radius
-                            color: index === root.selectedIndex && root.deleteFocused ? Color.urgent : Color.surface
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: root.query !== ""
+                            width: 16
+                            height: 16
+                            radius: 8
+                            color: clearQueryMouse.containsMouse ? Color.surface : "transparent"
 
                             Text {
                                 anchors.centerIn: parent
-                                color: index === root.selectedIndex && root.deleteFocused ? Color.background : Color.muted
+                                color: Color.popupMuted
                                 font.family: Style.fontFamily
-                                font.pixelSize: Style.fontCaption
-                                font.bold: true
-                                text: "x"
+                                font.pixelSize: 11
+                                text: "×"
                             }
 
                             MouseArea {
+                                id: clearQueryMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onEntered: {
-                                    root.selectedIndex = index;
-                                    root.deleteFocused = true;
+                                onClicked: {
+                                    root.query = "";
+                                    searchField.forceActiveFocus();
                                 }
-                                onClicked: root.remove(modelData)
                             }
                         }
+                    }
+                }
+
+                // Empty state
+                Rectangle {
+                    visible: root.filtered.length === 0
+                    width: parent.width
+                    height: 72
+                    radius: Style.radius
+                    color: Color.crust
+                    border.width: 1
+                    border.color: Color.subtleBorder
+
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: 4
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            color: Color.popupMuted
+                            font.family: Style.fontFamily
+                            font.pixelSize: Style.fontCaption
+                            font.bold: true
+                            text: root.query === "" ? "El historial de portapapeles está vacío" : "Sin coincidencias"
+                        }
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            visible: root.query !== ""
+                            color: Color.popupMuted
+                            font.family: Style.fontFamily
+                            font.pixelSize: 9
+                            text: "No se encontraron elementos para \"" + root.query + "\""
+                        }
+                    }
+                }
+
+                // Scrollable ListView with max-height
+                ListView {
+                    id: listView
+                    visible: root.filtered.length > 0
+                    width: parent.width
+                    height: Math.min(contentHeight, 380)
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    spacing: 4
+                    model: root.filtered
+                    currentIndex: root.selectedIndex
+                    onCurrentIndexChanged: listView.positionViewAtIndex(currentIndex, ListView.Contain)
+
+                    delegate: Rectangle {
+                        id: itemRow
+                        required property var modelData
+                        required property int index
+
+                        readonly property bool isSelected: index === root.selectedIndex
+                        readonly property bool isDeleteActive: isSelected && root.deleteFocused
+
+                        width: listView.width
+                        height: 42
+                        radius: Style.radius
+                        color: isSelected
+                               ? (isDeleteActive ? Qt.rgba(Color.urgent.r, Color.urgent.g, Color.urgent.b, 0.15) : Color.focusFill)
+                               : (rowMouse.containsMouse ? Color.surface : Color.crust)
+                        border.width: 1
+                        border.color: isSelected
+                                      ? (isDeleteActive ? Color.urgent : Color.accent)
+                                      : (rowMouse.containsMouse ? Color.subtleBorder : "transparent")
+
+                        // Left vertical accent bar
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 2
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: isSelected && !isDeleteActive ? 3 : 0
+                            height: 24
+                            radius: 1.5
+                            color: Color.accent
+                            Behavior on width { NumberAnimation { duration: Style.animFast } }
+                        }
+
+                        Row {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 6
+                            spacing: 8
+
+                            // Index / Type Badge
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: modelData.isImage || modelData.isFile ? 32 : 20
+                                height: 20
+                                radius: 3
+                                color: modelData.isImage
+                                       ? Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.2)
+                                       : (modelData.isFile ? Qt.rgba(Color.barText.r, Color.barText.g, Color.barText.b, 0.15) : Color.surface)
+                                border.width: 1
+                                border.color: modelData.isImage ? Color.accent : Color.subtleBorder
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    color: modelData.isImage ? Color.accent : (isSelected ? Color.popupText : Color.popupMuted)
+                                    font.family: Style.fontFamily
+                                    font.pixelSize: 8
+                                    font.bold: true
+                                    text: modelData.isImage ? "IMG" : (modelData.isFile ? "DOC" : String(index + 1))
+                                }
+                            }
+
+                            // Texts (Title + Subtitle)
+                            Column {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: parent.width - (modelData.isImage || modelData.isFile ? 32 : 20) - 8 - 32 - 6
+                                spacing: 1
+
+                                Text {
+                                    width: parent.width
+                                    elide: Text.ElideRight
+                                    color: Color.popupText
+                                    font.family: Style.fontFamily
+                                    font.pixelSize: Style.fontCaption
+                                    font.bold: isSelected
+                                    text: modelData.title
+                                }
+
+                                Text {
+                                    visible: modelData.sub !== ""
+                                    width: parent.width
+                                    elide: Text.ElideMiddle
+                                    color: isSelected ? Color.popupText : Color.popupMuted
+                                    font.family: Style.fontFamily
+                                    font.pixelSize: 9
+                                    text: modelData.sub
+                                }
+                            }
+
+                            // Delete button with StatusIcon trash
+                            Rectangle {
+                                id: delBtn
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 28
+                                height: 28
+                                radius: Style.radius
+                                color: isDeleteActive
+                                       ? Color.urgent
+                                       : (delMouse.containsMouse ? Qt.rgba(Color.urgent.r, Color.urgent.g, Color.urgent.b, 0.2) : "transparent")
+                                border.width: (delMouse.containsMouse || isDeleteActive) ? 1 : 0
+                                border.color: Color.urgent
+
+                                StatusIcon {
+                                    anchors.centerIn: parent
+                                    icon: "trash"
+                                    width: 13
+                                    height: 13
+                                    stroke: isDeleteActive
+                                            ? Color.crust
+                                            : (delMouse.containsMouse ? Color.urgent : Color.popupMuted)
+                                }
+
+                                MouseArea {
+                                    id: delMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onEntered: {
+                                        root.selectedIndex = index;
+                                        root.deleteFocused = true;
+                                    }
+                                    onClicked: root.remove(modelData)
+                                }
+                            }
+                        }
+
+                        MouseArea {
+                            id: rowMouse
+                            anchors.fill: parent
+                            anchors.rightMargin: 34
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onEntered: {
+                                root.selectedIndex = index;
+                                root.deleteFocused = false;
+                            }
+                            onClicked: root.paste(modelData)
+                        }
+                    }
+                }
+
+                // Footer divider
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: Color.surface
+                    opacity: 0.5
+                }
+
+                // Footer hints
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 12
+                    opacity: 0.75
+
+                    Row {
+                        spacing: 4
+                        anchors.verticalCenter: parent.verticalCenter
+                        Text { text: "↑↓"; font.pixelSize: 9; color: Color.accent; font.bold: true }
+                        Text { text: "navegar"; font.family: Style.fontFamily; font.pixelSize: 9; color: Color.popupMuted }
+                    }
+
+                    Row {
+                        spacing: 4
+                        anchors.verticalCenter: parent.verticalCenter
+                        Text { text: "↵"; font.pixelSize: 9; color: Color.accent; font.bold: true }
+                        Text { text: "pegar"; font.family: Style.fontFamily; font.pixelSize: 9; color: Color.popupMuted }
+                    }
+
+                    Row {
+                        spacing: 4
+                        anchors.verticalCenter: parent.verticalCenter
+                        Text { text: "→ / del"; font.pixelSize: 9; color: Color.urgent; font.bold: true }
+                        Text { text: "eliminar"; font.family: Style.fontFamily; font.pixelSize: 9; color: Color.popupMuted }
+                    }
+
+                    Row {
+                        spacing: 4
+                        anchors.verticalCenter: parent.verticalCenter
+                        Text { text: "esc"; font.pixelSize: 8; color: Color.accent; font.bold: true }
+                        Text { text: "cerrar"; font.family: Style.fontFamily; font.pixelSize: 9; color: Color.popupMuted }
                     }
                 }
             }
         }
     }
 }
+

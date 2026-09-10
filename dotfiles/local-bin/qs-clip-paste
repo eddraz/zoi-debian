@@ -2,12 +2,54 @@
 set -eu
 
 tmp=$(mktemp)
-trap 'rm -f "$tmp"' EXIT
+clean_tmp=$(mktemp)
+trap 'rm -f "$tmp" "$clean_tmp"' EXIT
 
 printf '%s\n' "$1" | cliphist decode >"$tmp"
 
-wl-copy <"$tmp"
-wl-copy --primary <"$tmp"
+# Check if decoded data contains file URIs or paths
+if python3 -c '
+import sys, urllib.parse
+
+try:
+    with open(sys.argv[1], "rb") as f:
+        raw = f.read()
+    text = raw.decode("utf-8")
+    lines = [l.strip() for l in text.splitlines() if l.strip() and l.strip() not in ("copy", "cut")]
+    file_uris = [l for l in lines if l.startswith("file://")]
+    if file_uris and len(file_uris) == len(lines):
+        paths = []
+        for u in file_uris:
+            p = urllib.parse.unquote(u[7:])
+            if not p.startswith("/"):
+                p = "/" + p
+            paths.append(p)
+        out = paths[0] if len(paths) == 1 else " ".join(f"\"{p}\"" if " " in p else p for p in paths)
+        with open(sys.argv[2], "w", encoding="utf-8") as out_f:
+            out_f.write(out)
+        sys.exit(0)
+except Exception:
+    pass
+sys.exit(1)
+' "$tmp" "$clean_tmp" 2>/dev/null; then
+    # Decoded file path successfully: copy the clean path to clipboard!
+    wl-copy <"$clean_tmp"
+    wl-copy --primary <"$clean_tmp"
+    # Also maintain the original file URI list for file managers
+    wl-copy -t text/uri-list <"$tmp" 2>/dev/null || true
+else
+    # Regular text or binary/image
+    mime=$(file -b --mime-type "$tmp" 2>/dev/null || echo "text/plain")
+    case "$mime" in
+        image/*)
+            wl-copy -t "$mime" <"$tmp"
+            ;;
+        *)
+            wl-copy <"$tmp"
+            wl-copy --primary <"$tmp"
+            ;;
+    esac
+fi
 
 # Overlay must drop keyboard focus before we synthesize paste.
 sleep 0.25

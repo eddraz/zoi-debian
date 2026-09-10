@@ -64,6 +64,12 @@ Item {
                 root.paintApps(ctx, w, h);
             else if (root.icon === "keyboard" || root.icon === "key")
                 root.paintKeyboard(ctx, w, h);
+            else if (root.icon === "trash" || root.icon === "delete")
+                root.paintTrash(ctx, w, h);
+            else if (root.icon === "search")
+                root.paintSearch(ctx, w, h);
+            else if (root.icon === "clipboard")
+                root.paintClipboard(ctx, w, h);
         }
     }
 
@@ -398,6 +404,78 @@ Item {
         ctx.beginPath();
         ctx.moveTo(x + kw * 0.28, yRow3);
         ctx.lineTo(x + kw * 0.72, yRow3);
+        ctx.stroke();
+    }
+
+    function paintTrash(ctx, w, h) {
+        ctx.fillStyle = "transparent";
+        ctx.beginPath();
+        ctx.moveTo(w * 0.18, h * 0.28);
+        ctx.lineTo(w * 0.82, h * 0.28);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(w * 0.36, h * 0.28);
+        ctx.lineTo(w * 0.36, h * 0.16);
+        ctx.lineTo(w * 0.64, h * 0.16);
+        ctx.lineTo(w * 0.64, h * 0.28);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(w * 0.26, h * 0.28);
+        ctx.lineTo(w * 0.30, h * 0.80);
+        ctx.quadraticCurveTo(w * 0.31, h * 0.86, w * 0.38, h * 0.86);
+        ctx.lineTo(w * 0.62, h * 0.86);
+        ctx.quadraticCurveTo(w * 0.69, h * 0.86, w * 0.70, h * 0.80);
+        ctx.lineTo(w * 0.74, h * 0.28);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(w * 0.42, h * 0.40);
+        ctx.lineTo(w * 0.42, h * 0.72);
+        ctx.moveTo(w * 0.58, h * 0.40);
+        ctx.lineTo(w * 0.58, h * 0.72);
+        ctx.stroke();
+    }
+
+    function paintSearch(ctx, w, h) {
+        ctx.fillStyle = "transparent";
+        const r = w * 0.25;
+        const cx = w * 0.42;
+        const cy = h * 0.42;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(cx + r * 0.707, cy + r * 0.707);
+        ctx.lineTo(w * 0.82, h * 0.82);
+        ctx.stroke();
+    }
+
+    function paintClipboard(ctx, w, h) {
+        ctx.fillStyle = "transparent";
+        ctx.beginPath();
+        if (ctx.roundRect)
+            ctx.roundRect(w * 0.20, h * 0.22, w * 0.60, h * 0.68, 2.5);
+        else
+            ctx.rect(w * 0.20, h * 0.22, w * 0.60, h * 0.68);
+        ctx.stroke();
+
+        ctx.beginPath();
+        if (ctx.roundRect)
+            ctx.roundRect(w * 0.34, h * 0.12, w * 0.32, h * 0.18, 1.5);
+        else
+            ctx.rect(w * 0.34, h * 0.12, w * 0.32, h * 0.18);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(w * 0.34, h * 0.46);
+        ctx.lineTo(w * 0.66, h * 0.46);
+        ctx.moveTo(w * 0.34, h * 0.60);
+        ctx.lineTo(w * 0.66, h * 0.60);
+        ctx.moveTo(w * 0.34, h * 0.74);
+        ctx.lineTo(w * 0.54, h * 0.74);
         ctx.stroke();
     }
 }

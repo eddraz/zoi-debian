@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+cliphist wipe
+wl-copy -c 2>/dev/null || true
