@@ -131,14 +131,14 @@ Lista de apps: `Quickshell.DesktopEntries.applications` (todo lo que esté en `~
 
 ## Lock screen
 
-`Lock.qml` usa `Quickshell.Wayland.WlSessionLock` + `Quickshell.Services.Pam` con `config: "swaylock"` (en realidad NO — sólo como placeholder, el agente PAM real es `pam_unix.so`).
+`Lock.qml` usa `Quickshell.Wayland.WlSessionLock` para tomar el control exclusivo de las pantallas y `Quickshell.Services.Pam` para autenticar vía PAM (módulo `pam_unix.so` por debajo).
 
 **Wallpaper como fondo**: `Wallpaper.current` se lee y se aplica con `swaybg -i <path>` detrás del lock. Una capa negra al 55% le da opacidad.
 
 **Cómo se activa**:
 - `Session → Lock` (el chip "Lock" del panel).
 - `qs ipc call lock lock`.
-- `swayidle` después de 300s (configurable en `Idle.qml`).
+- `swayidle` después de 300s (configurable en `qs-idle`).
 
 **Importante**: `Super+L` queda como `focus right` (vim nav). `Super+Escape` abre Session, no Lock. Si presionás Lock desde Session, ejecutás `qs ipc call lock lock`.
 
@@ -146,18 +146,23 @@ Lista de apps: `Quickshell.DesktopEntries.applications` (todo lo que esté en `~
 
 ## Idle / screensaver
 
-`swayidle` se lanza en `sway/config`:
+`swayidle` lo arranca `~/.local/bin/qs-idle`, que se llama desde `sway/config` con `exec_always`:
 
 ```
-exec_always swayidle -w \
-    timeout 150 ~/.local/bin/qs-screensaver \
-    timeout 300 swaymsg 'output * power off'; qs ipc call lock lock \
-    timeout 330 swaymsg 'output * power off' \
-    resume ~/.local/bin/qs-screensaver stop; swaymsg 'output * power on' \
-    before-sleep qs-screensaver stop; qs ipc call lock lock
+exec_always /home/eddraz/.local/bin/qs-idle
 ```
 
-(Los valores exactos están en `dotfiles/sway/config`.)
+El script `qs-idle`:
+
+```sh
+pkill -x swayidle 2>/dev/null || true
+exec swayidle -w \
+    timeout 150 '/home/eddraz/.local/bin/qs-screensaver' \
+    timeout 300 '/home/eddraz/.local/bin/qs-screensaver stop; /usr/bin/qs ipc call lock lock' \
+    timeout 330 'swaymsg "output * power off"' \
+    resume '/home/eddraz/.local/bin/qs-screensaver stop; swaymsg "output * power on"' \
+    before-sleep '/home/eddraz/.local/bin/qs-screensaver stop; /usr/bin/qs ipc call lock lock'
+```
 
 **Flujo:**
 
@@ -166,7 +171,7 @@ exec_always swayidle -w \
 3. **300s**: lock + DPMS off.
 4. **330s**: DPMS off forzado.
 
-**Stay awake** cancela todo: si `Idle.stayAwake === true`, el screensaver no se dispara (swayidle recibe un inhibit signal).
+**Stay awake** cancela todo: si `Idle.stayAwake === true`, el screensaver no se dispara (swayidle recibe un inhibit signal vía `WlIdleInhibitor`).
 
 ---
 

@@ -80,9 +80,9 @@ Importante: el primer arranque de `qs` necesita:
 | `python3-terminaltexteffects` | TTE effects para el screensaver |
 | `brightnessctl` | Brillo (Power panel) |
 | `light` | Brillo de teclado |
-| `lightdm` + `lightdm-gtk-greeter` | Display manager |
+| `lightdm` | Display manager |
 | `librewolf` | Browser default |
-| `libreoffice` | Suite ofimática (opcional) |
+| `libreoffice` | Suite ofimática (opcional — la instalación actual no la incluye) |
 | `fish` | Default shell |
 | `network-manager` + `applet` | Wifi panel |
 | `bluez` + `bluez-tools` | Bluetooth panel |
@@ -182,8 +182,7 @@ Importante: el primer arranque de `qs` necesita:
 ├── wallpaper                # path absoluto
 ├── dnd                      # on/off
 ├── stay-awake               # on/off
-├── theme                    # id de paleta
-└── screensaver-colors       # cache de colores derivados
+└── theme                    # id de paleta
 
 ~/.config/quickshell/screensaver.txt   # texto del banner (default: ZOI)
 ```

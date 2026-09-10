@@ -101,16 +101,20 @@ Column {
     }
 
     function _moveTo(s, idx, dstSec, dstIdx) {
+        if (s === dstSec) {
+            return (typeof dstIdx === "number") ? _swapWithin(s, idx, dstIdx - idx) : false;
+        }
         const ids = sectionIds[s];
-        if (idx < 0 || idx >= ids.length)
+        if (!ids || idx < 0 || idx >= ids.length)
             return false;
         const id = ids[idx];
         const fromSec = ["left","center","right"][s];
         const toSec = ["left","center","right"][dstSec];
         const dstIds = sectionIds[dstSec];
-        let insertAt = (typeof dstIdx === "number") ? dstIdx : dstIds.length;
-        insertAt = Math.max(0, Math.min(dstIds.length, insertAt));
+        let insertAt = (typeof dstIdx === "number") ? dstIdx : (dstIds ? dstIds.length : 0);
+        insertAt = Math.max(0, Math.min(dstIds ? dstIds.length : 0, insertAt));
         PluginRegistry.moveToSection(id, fromSec, toSec, insertAt);
+        dirty = true;
         return true;
     }
 
@@ -162,21 +166,8 @@ Column {
         const cur = _getCursor(s);
         const count = _count(s);
         const onAddRow = cur === count;
-        const shift = event.modifiers & Qt.ShiftModifier;
 
-        // Shift alone: toggle pick on current chip
-        if (shift && (KeyNav.isLeft(event) || KeyNav.isRight(event) || KeyNav.isUp(event) || KeyNav.isDown(event) || event.key === Qt.Key_Shift)) {
-            if (!onAddRow) {
-                if (pickedKey === _keyFor(s, cur))
-                    _drop();
-                else
-                    _setPicked(s, cur);
-                dirty = true;
-                return true;
-            }
-        }
-
-        // Pure shift keypress (no arrow) just toggles pick
+        // Shift keypress toggles pick
         if (event.key === Qt.Key_Shift) {
             if (!onAddRow) {
                 if (pickedKey === _keyFor(s, cur))
@@ -205,10 +196,10 @@ Column {
                     }
                     return true;
                 }
-                // move picked down within current column at cur position
                 if (cur < count) {
                     if (_moveTo(ps, pi, s, cur + 1)) {
                         _setCursor(s, cur + 1);
+                        pickedKey = _keyFor(s, cur + 1);
                         dirty = true;
                     }
                     return true;
@@ -233,6 +224,7 @@ Column {
                 if (cur > 0) {
                     if (_moveTo(ps, pi, s, cur - 1)) {
                         _setCursor(s, cur - 1);
+                        pickedKey = _keyFor(s, cur - 1);
                         dirty = true;
                     }
                     return true;
@@ -247,10 +239,13 @@ Column {
             if (pickedKey !== -1) {
                 const ps = _sectionOf(pickedKey);
                 const pi = _indexOf(pickedKey);
-                if (s < 2) {
-                    if (_moveTo(ps, pi, s + 1, Math.min(pi, _count(s + 1)))) {
-                        _setCursor(s + 1, Math.min(pi, _count(s + 1)));
-                        section = s + 1;
+                if (ps < 2) {
+                    const targetSec = ps + 1;
+                    const targetIdx = Math.min(pi, _count(targetSec));
+                    if (_moveTo(ps, pi, targetSec, targetIdx)) {
+                        section = targetSec;
+                        _setCursor(targetSec, targetIdx);
+                        pickedKey = _keyFor(targetSec, targetIdx);
                         dirty = true;
                     }
                     return true;
@@ -269,10 +264,13 @@ Column {
             if (pickedKey !== -1) {
                 const ps = _sectionOf(pickedKey);
                 const pi = _indexOf(pickedKey);
-                if (s > 0) {
-                    if (_moveTo(ps, pi, s - 1, Math.min(pi, _count(s - 1)))) {
-                        _setCursor(s - 1, Math.min(pi, _count(s - 1)));
-                        section = s - 1;
+                if (ps > 0) {
+                    const targetSec = ps - 1;
+                    const targetIdx = Math.min(pi, _count(targetSec));
+                    if (_moveTo(ps, pi, targetSec, targetIdx)) {
+                        section = targetSec;
+                        _setCursor(targetSec, targetIdx);
+                        pickedKey = _keyFor(targetSec, targetIdx);
                         dirty = true;
                     }
                     return true;
@@ -294,6 +292,11 @@ Column {
             }
             if (pickedKey !== -1) {
                 _drop();
+                dirty = true;
+                return true;
+            }
+            if (!onAddRow && cur < count) {
+                _setPicked(s, cur);
                 dirty = true;
                 return true;
             }
@@ -395,85 +398,193 @@ Column {
             model: 3
 
             Column {
+                id: sectionCol
                 required property int modelData
+                readonly property int secIndex: modelData
+
                 width: (parent.width - 16) / 3
                 spacing: 4
 
-                Text {
-                    color: root.section === modelData ? Color.accent : Color.popupMuted
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption
-                    font.bold: true
-                    text: root.sectionNames[modelData]
+                Rectangle {
+                    width: parent.width
+                    height: 24
+                    color: "transparent"
 
-                    HoverMouse {
-                        z: -1
+                    Text {
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: root.section === sectionCol.secIndex ? Color.accent : Color.popupMuted
+                        font.family: Style.fontFamily
+                        font.pixelSize: Style.fontCaption
+                        font.bold: true
+                        text: root.sectionNames[sectionCol.secIndex]
+                    }
+
+                    MouseArea {
                         anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            root.section = modelData;
-                            root._setCursor(modelData, Math.min(root._getCursor(modelData), root._max(modelData)));
-                            if (root.pickedKey !== -1)
-                                root._drop();
+                            if (root.pickedKey !== -1) {
+                                const ps = root._sectionOf(root.pickedKey);
+                                const pi = root._indexOf(root.pickedKey);
+                                if (ps !== sectionCol.secIndex) {
+                                    const targetIdx = root._count(sectionCol.secIndex);
+                                    root._moveTo(ps, pi, sectionCol.secIndex, targetIdx);
+                                    root.section = sectionCol.secIndex;
+                                    root._setCursor(sectionCol.secIndex, targetIdx);
+                                    root.pickedKey = root._keyFor(sectionCol.secIndex, targetIdx);
+                                    root.dirty = true;
+                                    return;
+                                }
+                            }
+                            root.section = sectionCol.secIndex;
+                            root._setCursor(sectionCol.secIndex, Math.min(root._getCursor(sectionCol.secIndex), root._max(sectionCol.secIndex)));
                         }
                     }
                 }
 
                 Rectangle {
-                    visible: root.section === modelData
+                    visible: root.section === sectionCol.secIndex
                     width: parent.width
                     height: 2
                     color: Color.accent
                 }
 
                 Repeater {
-                    model: root.sectionIds[modelData]
+                    model: root.sectionIds[sectionCol.secIndex]
 
                     Rectangle {
                         id: chipRect
                         required property var modelData
                         required property int index
+                        readonly property string widgetId: String(modelData)
+                        readonly property int chipIndex: index
+                        readonly property int chipSec: sectionCol.secIndex
+
                         width: parent.width
-                        height: 24
+                        height: 26
                         radius: Style.radius
-                        color: root._isPicked(modelData, index) ? Color.accent
-                              : (root.section === modelData && root._cursorArr[modelData] === index) ? Color.focusFill
-                              : Color.surface
-                        border.width: (root.section === modelData && root._cursorArr[modelData] === index) ? 2 : 0
+                        color: {
+                            if (root._isPicked(chipSec, chipIndex))
+                                return Color.accent;
+                            if (chipMouse.containsMouse)
+                                return Color.focusFill;
+                            if (root.section === chipSec && root._cursorArr[chipSec] === chipIndex)
+                                return Color.focusFill;
+                            return Color.surface;
+                        }
+                        border.width: (root.section === chipSec && root._cursorArr[chipSec] === chipIndex) ? 2 : 0
                         border.color: Color.accent
 
-                        Text {
+                        Row {
                             anchors.fill: parent
-                            anchors.leftMargin: 8
-                            anchors.rightMargin: 8
-                            verticalAlignment: Text.AlignVCenter
-                            color: root._isPicked(parent.modelData, parent.index) ? Color.background : Color.popupText
-                            font.family: Style.fontFamily
-                            font.pixelSize: Style.fontCaption
-                            elide: Text.ElideRight
-                            text: root.nameFor(parent.modelData)
+                            anchors.leftMargin: 4
+                            anchors.rightMargin: 4
+                            spacing: 4
+
+                            Rectangle {
+                                visible: chipRect.chipSec > 0
+                                width: 18
+                                height: 18
+                                anchors.verticalCenter: parent.verticalCenter
+                                radius: 3
+                                color: leftBtnMouse.containsMouse ? Color.focusFill : "transparent"
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "◀"
+                                    font.pixelSize: 10
+                                    color: root._isPicked(chipRect.chipSec, chipRect.chipIndex) ? Color.background : Color.accent
+                                }
+
+                                MouseArea {
+                                    id: leftBtnMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        root._moveTo(chipRect.chipSec, chipRect.chipIndex, chipRect.chipSec - 1, undefined);
+                                        root.section = chipRect.chipSec - 1;
+                                        root._setCursor(chipRect.chipSec - 1, root._count(chipRect.chipSec - 1) - 1);
+                                        if (root.pickedKey !== -1)
+                                            root._drop();
+                                        root.dirty = true;
+                                    }
+                                }
+                            }
+
+                            Text {
+                                width: parent.width - (chipRect.chipSec > 0 ? 22 : 0) - (chipRect.chipSec < 2 ? 22 : 0)
+                                anchors.verticalCenter: parent.verticalCenter
+                                elide: Text.ElideRight
+                                color: root._isPicked(chipRect.chipSec, chipRect.chipIndex) ? Color.background : Color.popupText
+                                font.family: Style.fontFamily
+                                font.pixelSize: Style.fontCaption
+                                font.bold: root._isPicked(chipRect.chipSec, chipRect.chipIndex)
+                                text: root.nameFor(chipRect.widgetId)
+                            }
+
+                            Rectangle {
+                                visible: chipRect.chipSec < 2
+                                width: 18
+                                height: 18
+                                anchors.verticalCenter: parent.verticalCenter
+                                radius: 3
+                                color: rightBtnMouse.containsMouse ? Color.focusFill : "transparent"
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "▶"
+                                    font.pixelSize: 10
+                                    color: root._isPicked(chipRect.chipSec, chipRect.chipIndex) ? Color.background : Color.accent
+                                }
+
+                                MouseArea {
+                                    id: rightBtnMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        root._moveTo(chipRect.chipSec, chipRect.chipIndex, chipRect.chipSec + 1, undefined);
+                                        root.section = chipRect.chipSec + 1;
+                                        root._setCursor(chipRect.chipSec + 1, root._count(chipRect.chipSec + 1) - 1);
+                                        if (root.pickedKey !== -1)
+                                            root._drop();
+                                        root.dirty = true;
+                                    }
+                                }
+                            }
                         }
 
                         MouseArea {
-                            id: chipHover
+                            id: chipMouse
+                            z: -1
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             acceptedButtons: Qt.LeftButton
-                            onEntered: {
-                                chipRect.color = Color.focusFill;
-                            }
-                            onExited: {
-                                chipRect.color = Qt.binding(function() {
-                                    return root._isPicked(chipRect.modelData, chipRect.index) ? Color.accent
-                                           : (root.section === chipRect.modelData && root._cursorArr[chipRect.modelData] === chipRect.index) ? Color.focusFill
-                                           : Color.surface;
-                                });
-                            }
                             onClicked: {
-                                root.section = chipRect.modelData;
-                                root._setCursor(chipRect.modelData, chipRect.index);
-                                if (root.pickedKey !== -1)
+                                if (root.pickedKey !== -1) {
+                                    const ps = root._sectionOf(root.pickedKey);
+                                    const pi = root._indexOf(root.pickedKey);
+                                    if (ps !== chipRect.chipSec) {
+                                        root._moveTo(ps, pi, chipRect.chipSec, chipRect.chipIndex);
+                                        root.section = chipRect.chipSec;
+                                        root._setCursor(chipRect.chipSec, chipRect.chipIndex);
+                                        root.pickedKey = root._keyFor(chipRect.chipSec, chipRect.chipIndex);
+                                        root.dirty = true;
+                                        return;
+                                    }
+                                }
+                                if (root.pickedKey === root._keyFor(chipRect.chipSec, chipRect.chipIndex)) {
                                     root._drop();
+                                } else {
+                                    root.section = chipRect.chipSec;
+                                    root._setCursor(chipRect.chipSec, chipRect.chipIndex);
+                                    root._setPicked(chipRect.chipSec, chipRect.chipIndex);
+                                }
+                                root.dirty = true;
                             }
                         }
                     }
@@ -481,10 +592,10 @@ Column {
 
                 Rectangle {
                     width: parent.width
-                    visible: root.sectionAvailable[modelData].length > 0
+                    visible: root.sectionAvailable[sectionCol.secIndex].length > 0
                     height: 22
                     radius: Style.radius
-                    color: (root.section === modelData && root._cursorArr[modelData] === root.sectionIds[modelData].length) ? Color.focusFill : "transparent"
+                    color: availMouse.containsMouse ? Color.focusFill : ((root.section === sectionCol.secIndex && root._cursorArr[sectionCol.secIndex] === root.sectionIds[sectionCol.secIndex].length) ? Color.focusFill : "transparent")
                     border.width: 1
                     border.color: Color.overlay
 
@@ -495,7 +606,19 @@ Column {
                         color: Color.popupMuted
                         font.family: Style.fontFamily
                         font.pixelSize: Style.fontCaption
-                        text: "+ " + root.sectionAvailable[modelData].length + " available"
+                        text: "+ " + root.sectionAvailable[sectionCol.secIndex].length + " available"
+                    }
+
+                    MouseArea {
+                        id: availMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            root.section = sectionCol.secIndex;
+                            root._addFromAvailable(sectionCol.secIndex);
+                            root.dirty = true;
+                        }
                     }
                 }
             }

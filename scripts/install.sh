@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # zoi-debian install script
-# Usage: curl -fsSL https://...install.sh | sh
+# Usage: curl -fsSL https://raw.githubusercontent.com/<owner>/zoi-debian/main/scripts/install.sh | sh
 # Idempotent: safe to re-run.
 
 set -euo pipefail
@@ -9,20 +9,23 @@ ZOI_REPO="${ZOI_REPO:-https://github.com/<owner>/zoi-debian.git}"
 ZOI_BRANCH="${ZOI_BRANCH:-main}"
 ZOI_DIR="${ZOI_DIR:-$HOME/projects/zoi-debian}"
 QS_DOT="$HOME/.config/quickshell"
-ASSETS_DIR_DEFAULT="/usr/share/backgrounds/zoi-debian"
 
 log()  { printf '\033[1;35m[zoi]\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[warn]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31m[fail]\033[0m %s\n' "$*" >&2; exit 1; }
 
-[ "$(id -u)" -ne 0 ] && SUDO=sudo || SUDO=""
+if [ "$(id -u)" -ne 0 ]; then
+  SUDO=sudo
+else
+  SUDO=""
+fi
 
 # ---------------------------------------------------------------- distro guard
 . /etc/os-release
 if [ "${ID:-}" != "debian" ]; then
   die "Esto está pensado para Debian (detectado: ${ID:-unknown})."
 fi
-log "Debian ${VERSION_ID} detectado."
+log "Debian ${VERSION_ID:-unknown} detectado."
 
 # ---------------------------------------------------------------- apt
 log "Asegurando apt sources + backports."
@@ -37,36 +40,34 @@ fi
 
 # ---------------------------------------------------------------- packages
 PKGS=(
-  sway swaybg swaylock swayidle sway-launcher
+  sway swaybg swaylock swayidle
   foot foot-themes
   quickshell
-  waybar                 # opcional, no se usa pero algunos lo esperan
-  pipewire pipewire-audio-client-libraries wireplumber
+  pipewire wireplumber
   wlsunset wtype wl-clipboard grim slurp wf-recorder swaymsg
   playerctl mpv mpv-mpris yt-dlp
   cliphist
   figlet python3-terminaltexteffects
-  brightnessctl light
-  lightdm lightdm-gtk-greeter
-  librewolf              # default browser
-  libreoffice            # opcional
+  brightnessctl
+  lightdm
+  librewolf
   fish
   jq
-  polkit polkitd
+  polkit
   fonts-noto fonts-noto-color-emoji fonts-noto-cjk
-  network-manager network-manager-gnome
+  network-manager
   bluez bluez-tools
-  pulseaudio-utils       # pactl
+  pulseaudio-utils
   xdg-utils xdg-user-dirs
   pavucontrol
 )
 
-# backports-only
+# quickshell 0.3+ está en backports
 BP_PKGS=(quickshell)
 
-log "Instalando paquetes base (~300 MB)."
+log "Instalando paquetes base (puede tardar 1-3 min)."
 $SUDO apt-get install -y --no-install-recommends "${PKGS[@]}"
-log "Instalando paquetes de backports."
+log "Asegurando paquetes de backports."
 $SUDO apt-get install -y --no-install-recommends -t trixie-backports "${BP_PKGS[@]}"
 
 # ---------------------------------------------------------------- user dirs
@@ -96,13 +97,17 @@ chmod -R u+rwX "$QS_DOT"
 # ---------------------------------------------------------------- sway
 log "Instalando config de Sway."
 mkdir -p "$HOME/.config/sway"
+if [ -f "$HOME/.config/sway/config" ] && [ ! -L "$HOME/.config/sway/config" ]; then
+  cp "$HOME/.config/sway/config" "$HOME/.config/sway/config.bak.$(date +%s)"
+fi
 cp "$ZOI_DIR/dotfiles/sway/config" "$HOME/.config/sway/config"
 
 # ---------------------------------------------------------------- foot
 log "Instalando config de foot."
 mkdir -p "$HOME/.config/foot"
-[ -f "$ZOI_DIR/dotfiles/config/foot/foot.ini" ] && \
+if [ -f "$ZOI_DIR/dotfiles/config/foot/foot.ini" ]; then
   cp "$ZOI_DIR/dotfiles/config/foot/foot.ini" "$HOME/.config/foot/foot.ini"
+fi
 
 # ---------------------------------------------------------------- local-bin
 log "Instalando scripts auxiliares en ~/.local/bin."
@@ -128,39 +133,35 @@ if [ ! -f "$HOME/.config/quickshell/shell.json" ]; then
 fi
 
 # ---------------------------------------------------------------- fish as default
-if command -v fish >/dev/null && ! grep -q "$(command -v fish)$" /etc/shells; then
+if command -v fish >/dev/null && ! grep -qE "^/.*/fish$" /etc/shells 2>/dev/null; then
   $SUDO sh -c "command -v fish >> /etc/shells"
 fi
 if [ -n "${SUDO}" ] && [ "$(getent passwd "$USER" | cut -d: -f7)" != "$(command -v fish)" ]; then
   $SUDO chsh -s "$(command -v fish)" "$USER" || warn "Cambiar shell por defecto falló; hacelo a mano."
 fi
 
-# ---------------------------------------------------------------- qs as default bar
-log "Asegurando que sway ejecute qs en lugar de waybar."
+# ---------------------------------------------------------------- exec_always in sway
+log "Asegurando que sway ejecute qs + qs-idle."
 if ! grep -q "qs -n --daemonize" "$HOME/.config/sway/config"; then
   cat >> "$HOME/.config/sway/config" <<'EOF'
 
 # zoi-debian: arrancar qs (si no lo está)
 exec_always /usr/bin/qs -n --daemonize
+exec_always /home/eddraz/.local/bin/qs-idle
 EOF
-fi
-
-# ---------------------------------------------------------------- sway-launcher
-log "Verificando sway-launcher para Super+Space."
-if ! command -v $menu >/dev/null 2>&1; then
-  cat > "$HOME/.local/bin/zoi-launcher" <<'EOF'
-#!/usr/bin/env bash
-exec /usr/bin/qs -p /usr/share/zoi-debian/launcher-loader.qml
-EOF
-  chmod +x "$HOME/.local/bin/zoi-launcher"
 fi
 
 # ---------------------------------------------------------------- sanity
 log "Verificando binarios clave."
-for b in sway qs swaymsg playerctl wlsunset foot cliphist wl-copy wtype grim slurp wf-recorder; do
-  command -v "$b" >/dev/null || warn "Falta binario: $b"
+MISSING=0
+for b in sway qs swaymsg playerctl wlsunset foot cliphist wl-copy wtype grim slurp wf-recorder wireplumber; do
+  command -v "$b" >/dev/null || { warn "Falta binario: $b"; MISSING=$((MISSING+1)); }
 done
 
-log "Listo. Cerrá sesión y volvé a entrar (o reiniciá)."
+log "Listo."
+if [ "$MISSING" -gt 0 ]; then
+  warn "Faltan $MISSING binarios — instalá los paquetes correspondientes y corré de nuevo."
+fi
+log "Cerrá sesión y volvé a entrar (o corré: swaymsg reload && pkill qs && swaymsg exec /usr/bin/qs -n --daemonize)."
 log "Atajos: ver docs/shortcuts.md"
 log "Si algo falla: docs/troubleshooting.md"

@@ -26,10 +26,10 @@ Después de instalar, cerrá sesión y volvé a entrar (para que `systemd --user
 
 ## Qué se instala
 
-- **Sway** (WM) + **foot** (terminal) + **waybar** queda deshabilitado (lo reemplaza qs).
+- **Sway** (WM) + **foot** (terminal). El bar por defecto es **Quickshell** (no waybar).
 - **Quickshell 0.3.0** desde trixie-backports.
 - **PipeWire** implícito vía los servicios de QS.
-- Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `light` `libreoffice` (opcional) `librewolf` (default browser).
+- Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `librewolf` (default browser).
 - **Fish** shell (default interactive shell).
 - Fuente: **Noto Color Emoji** para el picker de emojis. No instalamos Nerd Font (los íconos del bar son Canvas / QPainter).
 

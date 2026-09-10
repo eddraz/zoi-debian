@@ -323,6 +323,11 @@ Singleton {
         return -1;
     }
 
+    function sectionOf(id) {
+        const idx = sectionIndexOf(id);
+        return idx >= 0 ? sections[idx] : null;
+    }
+
     function orderedIds(section) {
         const arr = (layout && Array.isArray(layout[section])) ? layout[section] : [];
         return arr.slice();
@@ -344,8 +349,6 @@ Singleton {
             if ((entry.kinds || []).indexOf("bar-widget") === -1)
                 continue;
             if (current.has(id))
-                continue;
-            if (entry.defaultSection !== section)
                 continue;
             out.push(id);
         }
@@ -369,7 +372,7 @@ Singleton {
     function moveWithinSection(section, fromIdx, toIdx) {
         return _mutateLayout(function (next) {
             const arr = next[section];
-            if (fromIdx < 0 || fromIdx >= arr.length)
+            if (!Array.isArray(arr) || fromIdx < 0 || fromIdx >= arr.length)
                 return;
             toIdx = Math.max(0, Math.min(arr.length - 1, toIdx));
             if (fromIdx === toIdx)
@@ -380,17 +383,39 @@ Singleton {
     }
 
     function moveToSection(id, fromSection, toSection, toIdx) {
+        if (!toSection)
+            return false;
+        togglePlugin(id, true);
         return _mutateLayout(function (next) {
-            const src = next[fromSection];
-            const i = src.indexOf(id);
-            if (i < 0)
-                return;
-            src.splice(i, 1);
+            for (let s = 0; s < sections.length; s++) {
+                const secList = next[sections[s]];
+                if (Array.isArray(secList)) {
+                    const i = secList.indexOf(id);
+                    if (i >= 0)
+                        secList.splice(i, 1);
+                }
+            }
             const dst = next[toSection];
+            if (!Array.isArray(dst))
+                return;
             let idx = (typeof toIdx === "number") ? toIdx : dst.length;
             idx = Math.max(0, Math.min(dst.length, idx));
             dst.splice(idx, 0, id);
         });
+    }
+
+    function moveWidget(id, toSection, toIdx) {
+        return moveToSection(id, null, toSection, toIdx);
+    }
+
+    function shiftWidgetSection(id, dir) {
+        const curIdx = sectionIndexOf(id);
+        if (curIdx < 0)
+            return false;
+        const targetIdx = Math.max(0, Math.min(sections.length - 1, curIdx + dir));
+        if (targetIdx === curIdx)
+            return false;
+        return moveToSection(id, sections[curIdx], sections[targetIdx]);
     }
 
     function togglePlugin(id, enabled) {
