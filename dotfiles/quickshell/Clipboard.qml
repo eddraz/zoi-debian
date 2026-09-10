@@ -418,6 +418,59 @@ Scope {
                     }
 
                     Rectangle {
+                        id: searchBtn
+                        anchors.right: clearBtn.left
+                        anchors.rightMargin: 6
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: !root.findOpen
+                        height: 22
+                        width: searchHintRow.implicitWidth + 12
+                        radius: Style.radius
+                        color: searchBtnMouse.containsMouse ? Color.surface : "transparent"
+                        border.width: 1
+                        border.color: searchBtnMouse.containsMouse ? Color.subtleBorder : "transparent"
+
+                        Row {
+                            id: searchHintRow
+                            anchors.centerIn: parent
+                            spacing: 4
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: Color.popupMuted
+                                font.family: Style.fontFamily
+                                font.pixelSize: 9
+                                text: "Buscar"
+                            }
+
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                height: 12
+                                width: 12
+                                radius: 2
+                                color: Color.mantle
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    color: Color.accent
+                                    font.family: Style.fontFamily
+                                    font.pixelSize: 8
+                                    font.bold: true
+                                    text: "/"
+                                }
+                            }
+                        }
+
+                        MouseArea {
+                            id: searchBtnMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.beginSearch()
+                        }
+                    }
+
+                    Rectangle {
                         id: clearBtn
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
