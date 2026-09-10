@@ -48,6 +48,7 @@ Scope {
     }
 
     onSelectedIndexChanged: deleteFocused = false
+    onFindOpenChanged: Popups.isSearching = findOpen
 
     function parseList(raw) {
         const lines = String(raw || "").split("\n");
@@ -133,6 +134,8 @@ Scope {
     function close(): void {
         opened = false;
         query = "";
+        findOpen = false;
+        Popups.isSearching = false;
         confirmingClear = false;
     }
 
@@ -670,8 +673,34 @@ Scope {
                                     root.selectedIndex = 0;
                                 }
                                 Keys.onPressed: event => {
-                                        event.accepted = root.handleKey(event);
+                                    if (event.key === Qt.Key_Escape) {
+                                        if (root.query !== "") {
+                                            root.query = "";
+                                        } else {
+                                            root.findOpen = false;
+                                            card.forceActiveFocus();
+                                        }
+                                        event.accepted = true;
+                                        return;
                                     }
+                                    if (event.key === Qt.Key_Down) {
+                                        root.selectedIndex = Math.min(root.selectedIndex + 1, Math.max(0, root.filtered.length - 1));
+                                        event.accepted = true;
+                                        return;
+                                    }
+                                    if (event.key === Qt.Key_Up) {
+                                        root.selectedIndex = Math.max(0, root.selectedIndex - 1);
+                                        event.accepted = true;
+                                        return;
+                                    }
+                                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                        if (root.filtered.length > 0) {
+                                            root.paste(root.filtered[root.selectedIndex]);
+                                        }
+                                        event.accepted = true;
+                                        return;
+                                    }
+                                }
                             }
                         }
 

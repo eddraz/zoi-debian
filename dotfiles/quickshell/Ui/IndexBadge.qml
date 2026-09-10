@@ -11,7 +11,7 @@ Rectangle {
         return slot === 9 ? "0" : String(slot + 1);
     }
 
-    visible: label !== ""
+    visible: label !== "" && !Popups.isSearching
     width: Math.max(18, indexLabel.implicitWidth + 8)
     height: 18
     radius: 4

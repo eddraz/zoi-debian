@@ -31,11 +31,14 @@ Item {
         return false;
     }
 
+    onFindOpenChanged: Popups.isSearching = findOpen
+
     onVisibleChanged: {
         if (visible) {
             query = "";
             findOpen = false;
             cursor = 0;
+            Popups.isSearching = false;
         }
     }
 
@@ -252,9 +255,21 @@ Item {
                 text: root.query
                 onTextChanged: root.query = text
                 Keys.onPressed: event => {
-                    if (event.key === Qt.Key_Escape && root.query !== "") {
+                    if (event.key === Qt.Key_Escape) {
+                        root.findOpen = false;
                         root.query = "";
                         event.accepted = true;
+                        return;
+                    }
+                    if (event.key === Qt.Key_Down) {
+                        root.cursor = Math.min(Math.max(0, root.flatCount - 1), root.cursor + 1);
+                        event.accepted = true;
+                        return;
+                    }
+                    if (event.key === Qt.Key_Up) {
+                        root.cursor = Math.max(0, root.cursor - 1);
+                        event.accepted = true;
+                        return;
                     }
                 }
             }

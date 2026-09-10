@@ -15,6 +15,17 @@ PanelWindow {
     property int cardWidth: 268
     property bool searching: false
     property string searchQuery: ""
+    property var searchMatches: []
+    property int searchMatchIndex: 0
+
+    onSearchingChanged: {
+        Popups.isSearching = searching;
+        if (!searching) {
+            searchQuery = "";
+            searchMatches = [];
+            searchMatchIndex = 0;
+        }
+    }
     property bool hasAnchor: false
     property string anchorSection: ""
     property real anchorLeftX: 0
@@ -94,6 +105,8 @@ PanelWindow {
         if (!panel)
             return;
         const needle = searchQuery.trim().toLowerCase();
+        searchMatches = [];
+        searchMatchIndex = 0;
         if (!needle || typeof panel.searchEntries === "undefined")
             return;
         const entries = panel.searchEntries;
@@ -101,13 +114,30 @@ PanelWindow {
             const entry = entries[i];
             const label = String(entry.label || "").toLowerCase();
             if (label.indexOf(needle) >= 0) {
-                if (typeof panel.focusItem === "function")
-                    panel.focusItem(entry);
-                else if (panel.cursor !== undefined)
-                    panel.cursor = entry.index;
-                break;
+                searchMatches.push(entry);
             }
         }
+        if (searchMatches.length > 0) {
+            focusCurrentMatch();
+        }
+    }
+
+    function navigateSearch(delta) {
+        if (!searchMatches || searchMatches.length === 0)
+            return;
+        searchMatchIndex = (searchMatchIndex + delta + searchMatches.length) % searchMatches.length;
+        focusCurrentMatch();
+    }
+
+    function focusCurrentMatch() {
+        const panel = visiblePanel();
+        if (!panel || !searchMatches || searchMatches.length === 0)
+            return;
+        const entry = searchMatches[searchMatchIndex];
+        if (typeof panel.focusItem === "function")
+            panel.focusItem(entry);
+        else if (panel.cursor !== undefined)
+            panel.cursor = entry.index;
     }
 
     function startSearch() {
@@ -201,6 +231,11 @@ PanelWindow {
                 event.accepted = true;
                 return;
             }
+            if (root.searching || findField.activeFocus) {
+                // When search bar is active, all hotkeys / quick keys are strictly blocked
+                event.accepted = true;
+                return;
+            }
             if (event.key === Qt.Key_Tab) {
                 const panel = root.visiblePanel();
                 if (panel && typeof panel.nextSection === "function") {
@@ -209,13 +244,11 @@ PanelWindow {
                     return;
                 }
             }
-            if (!root.searching && !findField.activeFocus && (event.key === Qt.Key_Slash || event.text === "/")) {
+            if (event.key === Qt.Key_Slash || event.text === "/") {
                 root.startSearch();
                 event.accepted = true;
                 return;
             }
-            if (root.searching || findField.activeFocus)
-                return;
             const panel = root.visiblePanel();
             if (panel && typeof panel.handleKey === "function" && panel.handleKey(event)) {
                 event.accepted = true;
@@ -389,10 +422,31 @@ PanelWindow {
                                         root.searchQuery = "";
                                         card.forceActiveFocus();
                                         event.accepted = true;
-                                    } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                        return;
+                                    }
+                                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                        const panel = root.visiblePanel();
+                                        if (panel && typeof panel.handleKey === "function") {
+                                            panel.handleKey({
+                                                key: Qt.Key_Return,
+                                                modifiers: 0,
+                                                text: ""
+                                            });
+                                        }
                                         root.searching = false;
                                         card.forceActiveFocus();
                                         event.accepted = true;
+                                        return;
+                                    }
+                                    if (event.key === Qt.Key_Down || (event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))) {
+                                        root.navigateSearch(1);
+                                        event.accepted = true;
+                                        return;
+                                    }
+                                    if (event.key === Qt.Key_Up || event.key === Qt.Key_Backtab || (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier))) {
+                                        root.navigateSearch(-1);
+                                        event.accepted = true;
+                                        return;
                                     }
                                 }
                             }

@@ -8,6 +8,7 @@ Singleton {
     id: root
 
     property string requested: ""
+    property bool isSearching: false
     signal closed
 
     function closeAll() {
