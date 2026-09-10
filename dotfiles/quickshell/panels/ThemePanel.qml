@@ -159,56 +159,102 @@ Column {
             readonly property bool current: Themes.currentId === modelData.id
 
             width: root.width
-            height: 28
+            height: 42
             radius: Style.radius
-            color: current ? Color.accent : (selected ? Color.focusFill : Color.surface)
-            border.width: 1
-            border.color: selected ? Color.accent : (current ? Color.accent : "transparent")
+            color: selected ? Color.focusFill : Color.surface
+            border.width: selected ? 1 : 0
+            border.color: Color.accent
             Behavior on color { ColorAnimation { duration: Style.animDuration } }
-            Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
 
             Rectangle {
                 width: 3
-                height: parent.height - 10
+                height: selected ? 20 : 0
                 radius: 1.5
-                color: current ? Color.background : Color.accent
+                color: Color.accent
                 anchors.left: parent.left
-                anchors.leftMargin: 2
                 anchors.verticalCenter: parent.verticalCenter
                 visible: selected
+                Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
+            }
+
+            IndexBadge {
+                id: thBadge
+                slot: index
+                anchors.left: parent.left
+                anchors.leftMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
             }
 
             Row {
-                anchors.fill: parent
+                id: colorRow
+                anchors.left: thBadge.right
                 anchors.leftMargin: 8
-                anchors.rightMargin: 8
-                spacing: 8
-
-                IndexBadge {
-                    slot: index
-                }
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 3
 
                 Repeater {
                     model: [modelData.background, modelData.accent, modelData.urgent, modelData.green]
 
                     Rectangle {
                         required property var modelData
-                        width: 12
-                        height: 12
+                        width: 8
+                        height: 22
                         radius: 2
                         color: modelData
                         border.width: 1
                         border.color: Color.overlay
                     }
                 }
+            }
+
+            Column {
+                anchors.left: colorRow.right
+                anchors.leftMargin: 10
+                anchors.right: themeStatusBadge.left
+                anchors.rightMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 2
 
                 Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: current ? Color.background : Color.popupText
+                    width: parent.width
+                    elide: Text.ElideRight
+                    color: current ? Color.accent : Color.popupText
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontBody
+                    font.bold: true
+                    text: modelData.name
+                }
+
+                Text {
+                    width: parent.width
+                    elide: Text.ElideRight
+                    color: Color.popupMuted
                     font.family: Style.fontFamily
                     font.pixelSize: Style.fontCaption
-                    font.bold: selected || current
-                    text: modelData.name
+                    text: current ? "Paleta de colores activa" : "Haz clic para aplicar tema"
+                }
+            }
+
+            Rectangle {
+                id: themeStatusBadge
+                anchors.right: parent.right
+                anchors.rightMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                height: 20
+                width: themeBadgeText.implicitWidth + 12
+                radius: 4
+                color: current ? Color.focusFill : (selected ? Color.surface : Color.background)
+                border.width: 1
+                border.color: current ? Color.accent : (selected ? Color.subtleBorder : "transparent")
+
+                Text {
+                    id: themeBadgeText
+                    anchors.centerIn: parent
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption - 1
+                    font.bold: true
+                    color: current ? Color.accent : Color.popupMuted
+                    text: current ? "ACTIVO" : "TEMA"
                 }
             }
 

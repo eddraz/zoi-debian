@@ -16,11 +16,11 @@ Column {
     property int confirmChoice: 1
 
     readonly property var actions: [
-        { "id": "lock", "label": "Lock", "command": ["/usr/bin/qs", "ipc", "call", "lock", "lock"], "confirm": false },
-        { "id": "suspend", "label": "Suspend", "command": ["systemctl", "suspend"], "confirm": false },
-        { "id": "logout", "label": "Log out", "command": ["swaymsg", "exit"], "confirm": true },
-        { "id": "reboot", "label": "Reboot", "command": ["systemctl", "reboot"], "confirm": true },
-        { "id": "shutdown", "label": "Shut down", "command": ["systemctl", "poweroff"], "confirm": true }
+        { "id": "lock", "label": "Bloquear Pantalla", "desc": "Bloquea la sesión y suspende el monitor", "status": "Bloquear", "command": ["/usr/bin/qs", "ipc", "call", "lock", "lock"], "confirm": false },
+        { "id": "suspend", "label": "Suspender", "desc": "Pone el equipo en bajo consumo RAM", "status": "Dormir", "command": ["systemctl", "suspend"], "confirm": false },
+        { "id": "logout", "label": "Cerrar Sesión", "desc": "Finaliza la sesión actual de Sway", "status": "Salir", "command": ["swaymsg", "exit"], "confirm": true },
+        { "id": "reboot", "label": "Reiniciar", "desc": "Reinicia el sistema operativo", "status": "Reiniciar", "command": ["systemctl", "reboot"], "confirm": true },
+        { "id": "shutdown", "label": "Apagar Equipo", "desc": "Apaga el sistema de forma segura", "status": "Apagar", "command": ["systemctl", "poweroff"], "confirm": true }
     ]
 
     readonly property int count: actions.length
@@ -69,7 +69,7 @@ Column {
     readonly property var searchEntries: {
         const e = [];
         for (let i = 0; i < actions.length; i++)
-            e.push({ "label": String(actions[i].label || actions[i].id), "index": i });
+            e.push({ "label": String(actions[i].label + " " + actions[i].desc), "index": i });
         return e;
     }
 
@@ -129,7 +129,7 @@ Column {
 
             Rectangle {
                 width: parent.width
-                height: 28
+                height: 42
                 radius: Style.radius
                 color: {
                     if (modelData.id === "shutdown" && selected)
@@ -137,43 +137,81 @@ Column {
                     if (selected)
                         return Color.focusFill;
                     if (modelData.id === "shutdown")
-                        return Color.urgent;
+                        return Color.surface;
                     return Color.surface;
                 }
-                border.width: 1
-                border.color: selected ? (modelData.id === "shutdown" ? Color.urgent : Color.accent) : "transparent"
+                border.width: selected ? 1 : 0
+                border.color: modelData.id === "shutdown" ? (selected ? Color.foreground : Color.urgent) : Color.accent
                 Behavior on color { ColorAnimation { duration: Style.animDuration } }
                 Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
 
                 Rectangle {
                     width: 3
-                    height: parent.height - 10
+                    height: selected ? 20 : 0
                     radius: 1.5
                     color: modelData.id === "shutdown" ? Color.background : Color.accent
                     anchors.left: parent.left
-                    anchors.leftMargin: 2
                     anchors.verticalCenter: parent.verticalCenter
                     visible: selected
+                    Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
                 }
 
                 IndexBadge {
                     slot: index
                     anchors.left: parent.left
-                    anchors.leftMargin: 6
+                    anchors.leftMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
-                Text {
-                    anchors.fill: parent
-                    anchors.leftMargin: 28
+                Column {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 32
+                    anchors.right: statusBadge.left
                     anchors.rightMargin: 8
-                    verticalAlignment: Text.AlignVCenter
-                    color: modelData.id === "shutdown" ? Color.background : Color.popupText
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption
-                    font.bold: selected
-                    elide: Text.ElideRight
-                    text: modelData.label
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 2
+
+                    Text {
+                        width: parent.width
+                        elide: Text.ElideRight
+                        color: modelData.id === "shutdown" && selected ? Color.background : Color.popupText
+                        font.family: Style.fontFamily
+                        font.pixelSize: Style.fontBody
+                        font.bold: true
+                        text: modelData.label
+                    }
+
+                    Text {
+                        width: parent.width
+                        elide: Text.ElideRight
+                        color: modelData.id === "shutdown" && selected ? Color.background : Color.popupMuted
+                        font.family: Style.fontFamily
+                        font.pixelSize: Style.fontCaption
+                        text: modelData.desc
+                    }
+                }
+
+                Rectangle {
+                    id: statusBadge
+                    anchors.right: parent.right
+                    anchors.rightMargin: 8
+                    anchors.verticalCenter: parent.verticalCenter
+                    height: 20
+                    width: badgeText.implicitWidth + 12
+                    radius: 4
+                    color: selected ? (modelData.id === "shutdown" ? Color.background : Color.surface) : Color.background
+                    border.width: 1
+                    border.color: selected ? (modelData.id === "shutdown" ? Color.background : Color.subtleBorder) : "transparent"
+
+                    Text {
+                        id: badgeText
+                        anchors.centerIn: parent
+                        font.family: Style.fontFamily
+                        font.pixelSize: Style.fontCaption - 1
+                        font.bold: true
+                        color: modelData.id === "shutdown" && selected ? Color.urgent : Color.popupMuted
+                        text: modelData.status
+                    }
                 }
 
                 HoverMouse {

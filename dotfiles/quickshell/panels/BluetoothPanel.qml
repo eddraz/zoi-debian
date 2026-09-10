@@ -113,7 +113,7 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: 28
+        height: 42
         radius: Style.radius
         color: (adapter && adapter.enabled) ? Color.accent : (root.cursor === 0 ? Color.focusFill : Color.surface)
         visible: adapter !== null
@@ -123,12 +123,13 @@ Column {
 
         Rectangle {
             width: 3
-            height: root.cursor === 0 ? 16 : 0
+            height: root.cursor === 0 ? 20 : 0
             radius: 1.5
             color: (adapter && adapter.enabled) ? Color.background : Color.accent
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             visible: root.cursor === 0
+            Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
         }
 
         IndexBadge {
@@ -138,16 +139,55 @@ Column {
             anchors.verticalCenter: parent.verticalCenter
         }
 
-        Text {
-            anchors.fill: parent
+        Column {
+            anchors.left: parent.left
             anchors.leftMargin: 32
+            anchors.right: toggleBadge.left
             anchors.rightMargin: 8
-            verticalAlignment: Text.AlignVCenter
-            color: adapter && adapter.enabled ? Color.background : Color.popupText
-            font.family: Style.fontFamily
-            font.pixelSize: Style.fontCaption
-            elide: Text.ElideRight
-            text: (adapter && adapter.enabled ? "Disable Bluetooth" : "Enable Bluetooth")
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 2
+
+            Text {
+                width: parent.width
+                elide: Text.ElideRight
+                color: adapter && adapter.enabled ? Color.background : Color.popupText
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontBody
+                font.bold: true
+                text: "Bluetooth"
+            }
+
+            Text {
+                width: parent.width
+                elide: Text.ElideRight
+                color: adapter && adapter.enabled ? Color.background : Color.popupMuted
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption
+                text: adapter ? (adapter.enabled ? (adapter.discovering ? "Buscando dispositivos…" : "Adaptador activo y visible") : "Adaptador inalámbrico apagado") : "Sin adaptador"
+            }
+        }
+
+        Rectangle {
+            id: toggleBadge
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            height: 20
+            width: toggleBadgeText.implicitWidth + 12
+            radius: 4
+            color: adapter && adapter.enabled ? Color.background : (root.cursor === 0 ? Color.surface : Color.background)
+            border.width: 1
+            border.color: adapter && adapter.enabled ? Color.background : (root.cursor === 0 ? Color.subtleBorder : "transparent")
+
+            Text {
+                id: toggleBadgeText
+                anchors.centerIn: parent
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption - 1
+                font.bold: true
+                color: adapter && adapter.enabled ? Color.accent : Color.popupMuted
+                text: adapter && adapter.enabled ? "ON" : "OFF"
+            }
         }
 
         HoverMouse {
@@ -169,21 +209,22 @@ Column {
             readonly property bool selected: root.cursor === index + 1
 
             width: root.width
-            height: 28
+            height: 42
             radius: Style.radius
-            color: modelData.connected ? Color.accent : (selected ? Color.focusFill : Color.surface)
+            color: selected ? Color.focusFill : Color.surface
             border.width: selected ? 1 : 0
-            border.color: modelData.connected ? Color.background : Color.accent
+            border.color: Color.accent
             Behavior on color { ColorAnimation { duration: Style.animDuration } }
 
             Rectangle {
                 width: 3
-                height: deviceBox.selected ? 16 : 0
+                height: deviceBox.selected ? 20 : 0
                 radius: 1.5
-                color: modelData.connected ? Color.background : Color.accent
+                color: Color.accent
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 visible: deviceBox.selected
+                Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
             }
 
             IndexBadge {
@@ -193,19 +234,54 @@ Column {
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            Text {
-                anchors.fill: parent
+            Column {
+                anchors.left: parent.left
                 anchors.leftMargin: 32
+                anchors.right: devBadge.left
                 anchors.rightMargin: 8
-                elide: Text.ElideRight
-                verticalAlignment: Text.AlignVCenter
-                color: modelData.connected ? Color.background : Color.popupText
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption
-                text: {
-                    const name = root.deviceName(modelData);
-                    const mark = modelData.connected ? "on" : (modelData.pairing ? "pairing" : (modelData.paired ? "saved" : "new"));
-                    return name + "  " + mark;
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 2
+
+                Text {
+                    width: parent.width
+                    elide: Text.ElideRight
+                    color: modelData.connected ? Color.accent : Color.popupText
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontBody
+                    font.bold: true
+                    text: root.deviceName(modelData)
+                }
+
+                Text {
+                    width: parent.width
+                    elide: Text.ElideRight
+                    color: Color.popupMuted
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption
+                    text: modelData.connected ? "Conectado · Audio y control listos" : (modelData.pairing ? "Emparejando dispositivo…" : (modelData.paired ? "Dispositivo guardado en el sistema" : "Dispositivo descubierto"))
+                }
+            }
+
+            Rectangle {
+                id: devBadge
+                anchors.right: parent.right
+                anchors.rightMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                height: 20
+                width: devBadgeText.implicitWidth + 12
+                radius: 4
+                color: modelData.connected ? Color.focusFill : (deviceBox.selected ? Color.surface : Color.background)
+                border.width: 1
+                border.color: modelData.connected ? Color.accent : (deviceBox.selected ? Color.subtleBorder : "transparent")
+
+                Text {
+                    id: devBadgeText
+                    anchors.centerIn: parent
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption - 1
+                    font.bold: true
+                    color: modelData.connected ? Color.accent : Color.popupMuted
+                    text: modelData.connected ? "CONECTADO" : (modelData.paired ? "VINCULADO" : "NUEVO")
                 }
             }
 

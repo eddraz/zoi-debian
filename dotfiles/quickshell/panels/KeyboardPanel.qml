@@ -65,24 +65,23 @@ Column {
             readonly property bool current: Keyboard.index === index
 
             width: root.width
-            height: 36
+            height: 42
             radius: Style.radius
             color: selected ? Color.focusFill : Color.surface
-            border.width: 1
-            border.color: selected ? Color.accent : (current ? Color.accent : "transparent")
+            border.width: selected ? 1 : 0
+            border.color: Color.accent
             Behavior on color { ColorAnimation { duration: Style.animDuration } }
-            Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
 
             // Active indicator pill on left (cursor)
             Rectangle {
                 width: 3
-                height: parent.height - 10
+                height: selected ? 20 : 0
                 radius: 1.5
                 color: Color.accent
                 anchors.left: parent.left
-                anchors.leftMargin: 2
                 anchors.verticalCenter: parent.verticalCenter
                 visible: selected
+                Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
             }
 
             // Keycap badge [1], [2]
@@ -94,68 +93,61 @@ Column {
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            // Layout short code pill (e.g. LATAM, US)
-            Rectangle {
-                id: codePill
-                anchors.left: badge.right
-                anchors.leftMargin: 8
+            Column {
+                anchors.left: parent.left
+                anchors.leftMargin: 32
+                anchors.right: statusBadge.left
+                anchors.rightMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
-                width: Math.max(38, codeLabel.implicitWidth + 10)
-                height: 20
-                radius: 4
-                color: current ? Color.accent : Color.crust
-                border.width: 1
-                border.color: current ? Color.accent : Color.subtleBorder
-                Behavior on color { ColorAnimation { duration: Style.animDuration } }
+                spacing: 2
 
                 Text {
-                    id: codeLabel
-                    anchors.centerIn: parent
-                    color: current ? Color.background : Color.popupText
+                    width: parent.width
+                    elide: Text.ElideRight
+                    color: current ? Color.accent : Color.popupText
                     font.family: Style.fontFamily
-                    font.pixelSize: Style.fontBadge
+                    font.pixelSize: Style.fontBody
                     font.bold: true
-                    text: Keyboard.labels[index] || ""
+                    text: Keyboard.names[index] || Keyboard.labels[index] || "Distribución"
+                }
+
+                Text {
+                    width: parent.width
+                    elide: Text.ElideRight
+                    color: Color.popupMuted
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption
+                    text: {
+                        const code = Keyboard.labels[index] || "";
+                        if (code === "LATAM")
+                            return "Español Latinoamericano (tecla Ñ)";
+                        if (code === "US")
+                            return "Inglés Internacional estándar";
+                        return "Distribución de teclado " + code;
+                    }
                 }
             }
 
-            // Full layout name
-            Text {
-                anchors.left: codePill.right
-                anchors.leftMargin: 8
-                anchors.right: radioIndicator.left
+            Rectangle {
+                id: statusBadge
+                anchors.right: parent.right
                 anchors.rightMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
-                elide: Text.ElideRight
-                color: current ? Color.accent : Color.popupText
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption
-                font.bold: current
-                text: Keyboard.names[index] || ""
-            }
+                height: 20
+                width: badgeText.implicitWidth + 12
+                radius: 4
+                color: current ? Color.focusFill : (selected ? Color.surface : Color.background)
+                border.width: 1
+                border.color: current ? Color.accent : (selected ? Color.subtleBorder : "transparent")
 
-            // Radio button indicator on right (single selection)
-            Rectangle {
-                id: radioIndicator
-                anchors.right: parent.right
-                anchors.rightMargin: 10
-                anchors.verticalCenter: parent.verticalCenter
-                width: 18
-                height: 18
-                radius: 9
-                color: current ? Color.accent : "transparent"
-                border.width: 1.5
-                border.color: current ? Color.accent : Color.popupMuted
-                Behavior on color { ColorAnimation { duration: Style.animDuration } }
-                Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
-
-                Rectangle {
+                Text {
+                    id: badgeText
                     anchors.centerIn: parent
-                    width: 6
-                    height: 6
-                    radius: 3
-                    color: Color.background
-                    visible: current
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption - 1
+                    font.bold: true
+                    color: current ? Color.accent : Color.popupMuted
+                    text: current ? "ACTIVA" : (Keyboard.labels[index] || "ELEGIR")
                 }
             }
 

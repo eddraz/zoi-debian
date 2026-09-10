@@ -177,27 +177,80 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: 24
+        height: 42
         radius: Style.radius
         color: Audio.muted ? Color.urgent : (root.cursor === 1 ? Color.focusFill : Color.surface)
+        border.width: root.cursor === 1 ? 1 : 0
+        border.color: Audio.muted ? Color.background : Color.accent
+        Behavior on color { ColorAnimation { duration: Style.animDuration } }
+
+        Rectangle {
+            width: 3
+            height: root.cursor === 1 ? 20 : 0
+            radius: 1.5
+            color: Audio.muted ? Color.background : Color.accent
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.cursor === 1
+            Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
+        }
 
         IndexBadge {
             slot: 1
             anchors.left: parent.left
-            anchors.leftMargin: 6
+            anchors.leftMargin: 8
             anchors.verticalCenter: parent.verticalCenter
         }
 
-        Text {
-            anchors.fill: parent
-            anchors.leftMargin: 28
+        Column {
+            anchors.left: parent.left
+            anchors.leftMargin: 32
+            anchors.right: muteSinkBadge.left
             anchors.rightMargin: 8
-            verticalAlignment: Text.AlignVCenter
-            color: Audio.muted ? Color.background : Color.popupText
-            font.family: Style.fontFamily
-            font.pixelSize: Style.fontCaption
-            elide: Text.ElideRight
-            text: (Audio.muted ? "Unmute speakers" : "Mute speakers")
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 2
+
+            Text {
+                width: parent.width
+                elide: Text.ElideRight
+                color: Audio.muted ? Color.background : Color.popupText
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontBody
+                font.bold: true
+                text: "Silenciar Salida"
+            }
+
+            Text {
+                width: parent.width
+                elide: Text.ElideRight
+                color: Audio.muted ? Color.background : Color.popupMuted
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption
+                text: Audio.muted ? "Audio actualmente silenciado" : "Audio reproduciéndose con normalidad"
+            }
+        }
+
+        Rectangle {
+            id: muteSinkBadge
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            height: 20
+            width: muteSinkText.implicitWidth + 12
+            radius: 4
+            color: Audio.muted ? Color.background : (root.cursor === 1 ? Color.surface : Color.background)
+            border.width: 1
+            border.color: Audio.muted ? Color.background : (root.cursor === 1 ? Color.subtleBorder : "transparent")
+
+            Text {
+                id: muteSinkText
+                anchors.centerIn: parent
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption - 1
+                font.bold: true
+                color: Audio.muted ? Color.urgent : Color.popupMuted
+                text: Audio.muted ? "MUTED" : "ON"
+            }
         }
 
         HoverMouse {
@@ -212,32 +265,87 @@ Column {
         model: Audio.sinks
 
         Rectangle {
+            id: sinkBox
             required property var modelData
             required property int index
             readonly property bool selected: root.cursor === root.sinkStart + index
+            readonly property bool isCurrent: Audio.sink === modelData
 
             width: root.width
-            height: 24
+            height: 42
             radius: Style.radius
-            color: Audio.sink === modelData ? Color.accent : (selected ? Color.focusFill : Color.surface)
+            color: selected ? Color.focusFill : Color.surface
+            border.width: selected ? 1 : 0
+            border.color: Color.accent
+            Behavior on color { ColorAnimation { duration: Style.animDuration } }
+
+            Rectangle {
+                width: 3
+                height: sinkBox.selected ? 20 : 0
+                radius: 1.5
+                color: Color.accent
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                visible: sinkBox.selected
+                Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
+            }
 
             IndexBadge {
                 slot: root.sinkStart + index
                 anchors.left: parent.left
-                anchors.leftMargin: 6
+                anchors.leftMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            Text {
-                anchors.fill: parent
-                anchors.leftMargin: 28
+            Column {
+                anchors.left: parent.left
+                anchors.leftMargin: 32
+                anchors.right: sinkBadge.left
                 anchors.rightMargin: 8
-                elide: Text.ElideRight
-                verticalAlignment: Text.AlignVCenter
-                color: Audio.sink === modelData ? Color.background : Color.popupText
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption
-                text: (modelData.description || modelData.nickname || modelData.name)
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 2
+
+                Text {
+                    width: parent.width
+                    elide: Text.ElideRight
+                    color: sinkBox.isCurrent ? Color.accent : Color.popupText
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontBody
+                    font.bold: true
+                    text: modelData.description || modelData.nickname || modelData.name || "Salida de audio"
+                }
+
+                Text {
+                    width: parent.width
+                    elide: Text.ElideRight
+                    color: Color.popupMuted
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption
+                    text: sinkBox.isCurrent ? "Dispositivo principal de salida" : "Haz clic para usar como salida"
+                }
+            }
+
+            Rectangle {
+                id: sinkBadge
+                anchors.right: parent.right
+                anchors.rightMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                height: 20
+                width: sinkBadgeText.implicitWidth + 12
+                radius: 4
+                color: sinkBox.isCurrent ? Color.focusFill : (sinkBox.selected ? Color.surface : Color.background)
+                border.width: 1
+                border.color: sinkBox.isCurrent ? Color.accent : (sinkBox.selected ? Color.subtleBorder : "transparent")
+
+                Text {
+                    id: sinkBadgeText
+                    anchors.centerIn: parent
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption - 1
+                    font.bold: true
+                    color: sinkBox.isCurrent ? Color.accent : Color.popupMuted
+                    text: sinkBox.isCurrent ? "ACTIVO" : "SALIDA"
+                }
             }
 
             HoverMouse {
@@ -332,27 +440,80 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: 24
+        height: 42
         radius: Style.radius
         color: Audio.sourceMuted ? Color.urgent : (root.cursor === root.micMute ? Color.focusFill : Color.surface)
+        border.width: root.cursor === root.micMute ? 1 : 0
+        border.color: Audio.sourceMuted ? Color.background : Color.accent
+        Behavior on color { ColorAnimation { duration: Style.animDuration } }
+
+        Rectangle {
+            width: 3
+            height: root.cursor === root.micMute ? 20 : 0
+            radius: 1.5
+            color: Audio.sourceMuted ? Color.background : Color.accent
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.cursor === root.micMute
+            Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
+        }
 
         IndexBadge {
             slot: root.micMute
             anchors.left: parent.left
-            anchors.leftMargin: 6
+            anchors.leftMargin: 8
             anchors.verticalCenter: parent.verticalCenter
         }
 
-        Text {
-            anchors.fill: parent
-            anchors.leftMargin: 28
+        Column {
+            anchors.left: parent.left
+            anchors.leftMargin: 32
+            anchors.right: muteMicBadge.left
             anchors.rightMargin: 8
-            verticalAlignment: Text.AlignVCenter
-            color: Audio.sourceMuted ? Color.background : Color.popupText
-            font.family: Style.fontFamily
-            font.pixelSize: Style.fontCaption
-            elide: Text.ElideRight
-            text: (Audio.sourceMuted ? "Unmute mic" : "Mute mic")
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 2
+
+            Text {
+                width: parent.width
+                elide: Text.ElideRight
+                color: Audio.sourceMuted ? Color.background : Color.popupText
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontBody
+                font.bold: true
+                text: "Silenciar Micrófono"
+            }
+
+            Text {
+                width: parent.width
+                elide: Text.ElideRight
+                color: Audio.sourceMuted ? Color.background : Color.popupMuted
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption
+                text: Audio.sourceMuted ? "Micrófono actualmente silenciado" : "Captura de voz activa"
+            }
+        }
+
+        Rectangle {
+            id: muteMicBadge
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            height: 20
+            width: muteMicText.implicitWidth + 12
+            radius: 4
+            color: Audio.sourceMuted ? Color.background : (root.cursor === root.micMute ? Color.surface : Color.background)
+            border.width: 1
+            border.color: Audio.sourceMuted ? Color.background : (root.cursor === root.micMute ? Color.subtleBorder : "transparent")
+
+            Text {
+                id: muteMicText
+                anchors.centerIn: parent
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption - 1
+                font.bold: true
+                color: Audio.sourceMuted ? Color.urgent : Color.popupMuted
+                text: Audio.sourceMuted ? "MUTED" : "ON"
+            }
         }
 
         HoverMouse {
@@ -367,32 +528,87 @@ Column {
         model: Audio.sources
 
         Rectangle {
+            id: sourceBox
             required property var modelData
             required property int index
             readonly property bool selected: root.cursor === root.sourceStart + index
+            readonly property bool isCurrent: Audio.source === modelData
 
             width: root.width
-            height: 24
+            height: 42
             radius: Style.radius
-            color: Audio.source === modelData ? Color.accent : (selected ? Color.focusFill : Color.surface)
+            color: selected ? Color.focusFill : Color.surface
+            border.width: selected ? 1 : 0
+            border.color: Color.accent
+            Behavior on color { ColorAnimation { duration: Style.animDuration } }
+
+            Rectangle {
+                width: 3
+                height: sourceBox.selected ? 20 : 0
+                radius: 1.5
+                color: Color.accent
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                visible: sourceBox.selected
+                Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
+            }
 
             IndexBadge {
                 slot: root.sourceStart + index
                 anchors.left: parent.left
-                anchors.leftMargin: 6
+                anchors.leftMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            Text {
-                anchors.fill: parent
-                anchors.leftMargin: 28
+            Column {
+                anchors.left: parent.left
+                anchors.leftMargin: 32
+                anchors.right: sourceBadge.left
                 anchors.rightMargin: 8
-                elide: Text.ElideRight
-                verticalAlignment: Text.AlignVCenter
-                color: Audio.source === modelData ? Color.background : Color.popupText
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption
-                text: modelData.description || modelData.nickname || modelData.name
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 2
+
+                Text {
+                    width: parent.width
+                    elide: Text.ElideRight
+                    color: sourceBox.isCurrent ? Color.accent : Color.popupText
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontBody
+                    font.bold: true
+                    text: modelData.description || modelData.nickname || modelData.name || "Micrófono"
+                }
+
+                Text {
+                    width: parent.width
+                    elide: Text.ElideRight
+                    color: Color.popupMuted
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption
+                    text: sourceBox.isCurrent ? "Dispositivo principal de grabación" : "Haz clic para usar como micrófono"
+                }
+            }
+
+            Rectangle {
+                id: sourceBadge
+                anchors.right: parent.right
+                anchors.rightMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                height: 20
+                width: sourceBadgeText.implicitWidth + 12
+                radius: 4
+                color: sourceBox.isCurrent ? Color.focusFill : (sourceBox.selected ? Color.surface : Color.background)
+                border.width: 1
+                border.color: sourceBox.isCurrent ? Color.accent : (sourceBox.selected ? Color.subtleBorder : "transparent")
+
+                Text {
+                    id: sourceBadgeText
+                    anchors.centerIn: parent
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption - 1
+                    font.bold: true
+                    color: sourceBox.isCurrent ? Color.accent : Color.popupMuted
+                    text: sourceBox.isCurrent ? "ACTIVO" : "ENTRADA"
+                }
             }
 
             HoverMouse {

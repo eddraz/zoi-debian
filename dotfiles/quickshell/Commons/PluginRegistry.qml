@@ -85,7 +85,8 @@ Singleton {
             "popup": "weather",
             "panel": "../panels/WeatherPanel.qml",
             "title": "Weather",
-            "defaultSection": "center"
+            "defaultSection": "center",
+            "cardWidth": 280
         },
         "media": {
             "kinds": ["bar-widget", "panel"],
@@ -116,7 +117,8 @@ Singleton {
             "popup": "notifs",
             "panel": "../panels/NotifPanel.qml",
             "title": "Notifications",
-            "defaultSection": "right"
+            "defaultSection": "right",
+            "cardWidth": 320
         },
         "network": {
             "kinds": ["bar-widget", "panel"],
@@ -125,7 +127,8 @@ Singleton {
             "popup": "network",
             "panel": "../panels/NetworkPanel.qml",
             "title": "Network",
-            "defaultSection": "right"
+            "defaultSection": "right",
+            "cardWidth": 320
         },
         "bluetooth": {
             "kinds": ["bar-widget", "panel"],
@@ -134,7 +137,8 @@ Singleton {
             "popup": "bluetooth",
             "panel": "../panels/BluetoothPanel.qml",
             "title": "Bluetooth",
-            "defaultSection": "right"
+            "defaultSection": "right",
+            "cardWidth": 320
         },
         "audio": {
             "kinds": ["bar-widget", "panel"],
@@ -143,7 +147,8 @@ Singleton {
             "popup": "audio",
             "panel": "../panels/AudioPanel.qml",
             "title": "Audio",
-            "defaultSection": "right"
+            "defaultSection": "right",
+            "cardWidth": 320
         },
         "power": {
             "kinds": ["bar-widget", "panel"],
@@ -152,7 +157,8 @@ Singleton {
             "popup": "power",
             "panel": "../panels/PowerPanel.qml",
             "title": "Power",
-            "defaultSection": "right"
+            "defaultSection": "right",
+            "cardWidth": 320
         },
         "session": {
             "kinds": ["bar-widget", "panel"],
@@ -162,7 +168,7 @@ Singleton {
             "panel": "../panels/SessionPanel.qml",
             "title": "Session",
             "defaultSection": "left",
-            "cardWidth": 240
+            "cardWidth": 320
         },
         "bar": {
             "kinds": ["panel"],

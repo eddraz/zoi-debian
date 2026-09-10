@@ -96,10 +96,18 @@ Column {
 
     function profileLabel(value) {
         if (value === PowerProfile.PowerSaver)
-            return "Saver";
+            return "Ahorro de Energía";
         if (value === PowerProfile.Performance)
-            return "Perf";
-        return "Balanced";
+            return "Alto Rendimiento";
+        return "Equilibrado";
+    }
+
+    function profileDesc(value) {
+        if (value === PowerProfile.PowerSaver)
+            return "Reduce el consumo para extender la batería";
+        if (value === PowerProfile.Performance)
+            return "Máxima potencia de CPU y respuesta ágil";
+        return "Balance estándar entre rendimiento y consumo";
     }
 
     Text {
@@ -213,7 +221,14 @@ Column {
         }
     }
 
-    Row {
+    Text {
+        color: Color.popupMuted
+        font.family: Style.fontFamily
+        font.pixelSize: Style.fontCaption
+        text: "Perfiles de Energía"
+    }
+
+    Column {
         spacing: 6
         width: parent.width
 
@@ -221,36 +236,89 @@ Column {
             model: [PowerProfile.PowerSaver, PowerProfile.Balanced, PowerProfile.Performance]
 
             Rectangle {
+                id: profileBox
                 required property var modelData
                 required property int index
 
-                width: (root.width - 12) / 3
-                height: 28
+                readonly property bool isSelected: root.cursor === index + 1
+                readonly property bool isCurrent: PowerProfiles.profile === modelData
+
+                width: root.width
+                height: 42
                 radius: Style.radius
-                color: PowerProfiles.profile === modelData ? Color.accent : (root.cursor === index + 1 ? Color.focusFill : Color.surface)
-                border.width: root.cursor === index + 1 ? 1 : 0
-                border.color: PowerProfiles.profile === modelData ? Color.background : Color.accent
+                color: isSelected ? Color.focusFill : Color.surface
+                border.width: isSelected ? 1 : 0
+                border.color: Color.accent
                 Behavior on color { ColorAnimation { duration: Style.animDuration } }
                 visible: modelData !== PowerProfile.Performance || PowerProfiles.hasPerformanceProfile
+
+                Rectangle {
+                    width: 3
+                    height: profileBox.isSelected ? 20 : 0
+                    radius: 1.5
+                    color: Color.accent
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: profileBox.isSelected
+                    Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
+                }
 
                 IndexBadge {
                     slot: index + 1
                     anchors.left: parent.left
-                    anchors.leftMargin: 6
+                    anchors.leftMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
-                Text {
-                    anchors.fill: parent
-                    anchors.leftMargin: 28
+                Column {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 32
+                    anchors.right: statusBadge.left
                     anchors.rightMargin: 8
-                    verticalAlignment: Text.AlignVCenter
-                    color: PowerProfiles.profile === modelData ? Color.background : Color.popupText
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption
-                    font.bold: PowerProfiles.profile === modelData
-                    elide: Text.ElideRight
-                    text: root.profileLabel(modelData)
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 2
+
+                    Text {
+                        width: parent.width
+                        elide: Text.ElideRight
+                        color: profileBox.isCurrent ? Color.accent : Color.popupText
+                        font.family: Style.fontFamily
+                        font.pixelSize: Style.fontBody
+                        font.bold: true
+                        text: root.profileLabel(modelData)
+                    }
+
+                    Text {
+                        width: parent.width
+                        elide: Text.ElideRight
+                        color: Color.popupMuted
+                        font.family: Style.fontFamily
+                        font.pixelSize: Style.fontCaption
+                        text: root.profileDesc(modelData)
+                    }
+                }
+
+                Rectangle {
+                    id: statusBadge
+                    anchors.right: parent.right
+                    anchors.rightMargin: 8
+                    anchors.verticalCenter: parent.verticalCenter
+                    height: 20
+                    width: badgeText.implicitWidth + 12
+                    radius: 4
+                    color: profileBox.isCurrent ? Color.focusFill : (profileBox.isSelected ? Color.surface : Color.background)
+                    border.width: 1
+                    border.color: profileBox.isCurrent ? Color.accent : (profileBox.isSelected ? Color.subtleBorder : "transparent")
+
+                    Text {
+                        id: badgeText
+                        anchors.centerIn: parent
+                        font.family: Style.fontFamily
+                        font.pixelSize: Style.fontCaption - 1
+                        font.bold: true
+                        color: profileBox.isCurrent ? Color.accent : Color.popupMuted
+                        text: profileBox.isCurrent ? "ACTIVO" : "PERFIL"
+                    }
                 }
 
                 HoverMouse {
