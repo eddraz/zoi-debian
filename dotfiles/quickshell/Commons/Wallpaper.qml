@@ -24,6 +24,7 @@ Singleton {
         current = path;
         persist();
         Quickshell.execDetached([helper, "set", path]);
+        Themes.currentId = "wallpaper";
         Themes.refreshFromWallpaper(path);
     }
 

@@ -627,6 +627,33 @@ class ZoiThemeManager:
 
 
 def main():
+    mgr = ZoiThemeManager()
+
+    # 1. Fast handling of direct JSON palette argument (from Quickshell UI or scripts)
+    if len(sys.argv) > 1:
+        first_arg = sys.argv[1].strip()
+        if first_arg.startswith("{"):
+            try:
+                raw_dict = json.loads(first_arg)
+                pal = normalize_palette(raw_dict, theme_id=raw_dict.get("id", "custom"))
+                mgr.apply_palette(pal)
+                print(f"Applied palette JSON: {pal.get('name', 'Custom')} ({pal.get('id', 'custom')})")
+                return 0
+            except Exception as e:
+                print(f"Error parsing JSON palette: {e}", file=sys.stderr)
+                return 1
+
+        # 2. Fast handling of direct theme name: `zoi-theme tokyo-night` or `qs-theme-apply retro-82`
+        known_subcommands = {"list", "current", "get", "set", "apply-json", "-h", "--help"}
+        if first_arg not in known_subcommands and not first_arg.startswith("-"):
+            try:
+                pal = mgr.get_theme_palette(first_arg)
+                mgr.apply_palette(pal)
+                print(f"Applied theme: {pal['name']} ({first_arg})")
+                return 0
+            except Exception:
+                pass
+
     parser = argparse.ArgumentParser(description="ZOI Theme Engine & Manager")
     subparsers = parser.add_subparsers(dest="command")
 
@@ -642,22 +669,7 @@ def main():
     apply_json_p = subparsers.add_parser("apply-json", help="Apply custom palette from JSON")
     apply_json_p.add_argument("json_str", help="Palette JSON string")
 
-    args, unknown = parser.parse_known_args()
-    mgr = ZoiThemeManager()
-
-    if not args.command:
-        if len(sys.argv) > 1 and sys.argv[1].strip().startswith("{"):
-            try:
-                raw_dict = json.loads(sys.argv[1])
-                pal = normalize_palette(raw_dict, theme_id=raw_dict.get("id", "custom"))
-                mgr.apply_palette(pal)
-                return 0
-            except Exception as e:
-                print(f"Error parsing JSON: {e}", file=sys.stderr)
-                return 1
-        else:
-            parser.print_help()
-            return 1
+    args = parser.parse_args()
 
     if args.command == "list":
         themes = mgr.list_themes()
@@ -703,7 +715,8 @@ def main():
             print(f"Error applying palette JSON: {e}", file=sys.stderr)
             return 1
 
-    return 0
+    parser.print_help()
+    return 1
 
 
 if __name__ == "__main__":

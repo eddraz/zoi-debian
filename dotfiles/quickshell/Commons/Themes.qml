@@ -679,6 +679,8 @@ Singleton {
 ]
 
     function paletteById(id) {
+        if (id === "wallpaper")
+            return wallpaperColors;
         for (let i = 0; i < palettes.length; i++) {
             if (palettes[i].id === id)
                 return palettes[i];
