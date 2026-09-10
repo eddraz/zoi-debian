@@ -22,7 +22,7 @@ Item {
         return value <= 1 ? Math.round(value * 100) : Math.round(value);
     }
     readonly property bool charging: UPower.displayDevice.state === UPowerDeviceState.Charging
-    readonly property string tipText: (charging ? "Charging " : "Battery ") + percent + "%"
+    readonly property string tipText: "Power · " + (charging ? "Charging " : "Battery ") + percent + "%"
 
     StatusIcon {
         anchors.centerIn: parent
@@ -46,12 +46,12 @@ Item {
         onClicked: root.togglePanel()
         onContainsMouseChanged: {
             if (containsMouse)
-                HoverTip.show(root, root.tipText);
+                HoverTip.show(root, root.tipText, "Super+P");
             else
                 HoverTip.hide();
         }
     }
 
     onTipTextChanged: if (mouse.containsMouse)
-        HoverTip.update(root, tipText)
+        HoverTip.update(root, tipText, "Super+P")
 }

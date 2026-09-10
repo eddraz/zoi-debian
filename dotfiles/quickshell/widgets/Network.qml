@@ -51,12 +51,12 @@ Item {
 
     readonly property string tipText: {
         if (connectedWifi)
-            return connectedWifi.name || "Wi-Fi";
+            return "Network · " + (connectedWifi.name || "Wi-Fi");
         if (wiredDevice)
-            return "Ethernet " + (wiredDevice.address || "");
+            return "Network · Ethernet " + (wiredDevice.address || "");
         if (!Networking.wifiEnabled)
-            return "Wi-Fi off";
-        return "Wi-Fi";
+            return "Network · Wi-Fi off";
+        return "Network · Wi-Fi";
     }
 
     StatusIcon {
@@ -94,12 +94,12 @@ Item {
         }
         onContainsMouseChanged: {
             if (containsMouse)
-                HoverTip.show(root, root.tipText);
+                HoverTip.show(root, root.tipText, "Super+I");
             else
                 HoverTip.hide();
         }
     }
 
     onTipTextChanged: if (mouse.containsMouse)
-        HoverTip.update(root, tipText)
+        HoverTip.update(root, tipText, "Super+I")
 }

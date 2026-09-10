@@ -43,7 +43,7 @@ Item {
         }
         onContainsMouseChanged: {
             if (containsMouse)
-                HoverTip.show(root, Keyboard.name);
+                HoverTip.show(root, "Keyboard · " + Keyboard.name, "Alt+Shift");
             else
                 HoverTip.hide();
         }

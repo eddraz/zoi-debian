@@ -48,12 +48,12 @@ Item {
         }
         onContainsMouseChanged: {
             if (containsMouse && root.title !== "")
-                HoverTip.show(root, root.title);
+                HoverTip.show(root, "Window · " + root.title, "Super+Shift+W");
             else
                 HoverTip.hide();
         }
     }
 
     onTitleChanged: if (mouse.containsMouse)
-        HoverTip.update(root, title)
+        HoverTip.update(root, "Window · " + title, "Super+Shift+W")
 }

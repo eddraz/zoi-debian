@@ -46,7 +46,7 @@ Item {
         onClicked: root.togglePanel()
         onContainsMouseChanged: {
             if (containsMouse)
-                HoverTip.show(root, Reminders.count > 0 ? (Reminders.count + " reminder" + (Reminders.count === 1 ? "" : "s")) : "Reminders");
+                HoverTip.show(root, "Reminders" + (Reminders.count > 0 ? (" · " + Reminders.count + " active") : ""), "Super+Shift+N");
             else
                 HoverTip.hide();
         }

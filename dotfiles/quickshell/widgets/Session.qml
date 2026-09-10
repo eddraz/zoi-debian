@@ -24,7 +24,7 @@ Item {
         onClicked: root.togglePanel()
         onContainsMouseChanged: {
             if (containsMouse)
-                HoverTip.show(root, "Session");
+                HoverTip.show(root, "Session", "Super+Escape");
             else
                 HoverTip.hide();
         }

@@ -10,7 +10,7 @@ Item {
     implicitWidth: Style.iconSize + 6
     implicitHeight: Style.barHeight
 
-    readonly property string tipText: !Audio.ready ? "Volume" : (Audio.muted ? "Muted" : Audio.percent + "%")
+    readonly property string tipText: !Audio.ready ? "Volume" : (Audio.muted ? "Volume · Muted" : "Volume · " + Audio.percent + "%")
 
     StatusIcon {
         anchors.centerIn: parent
@@ -37,12 +37,12 @@ Item {
         }
         onContainsMouseChanged: {
             if (containsMouse)
-                HoverTip.show(root, root.tipText);
+                HoverTip.show(root, root.tipText, "Super+M");
             else
                 HoverTip.hide();
         }
     }
 
     onTipTextChanged: if (mouse.containsMouse)
-        HoverTip.update(root, tipText)
+        HoverTip.update(root, tipText, "Super+M")
 }

@@ -23,11 +23,11 @@ Item {
 
     readonly property string tipText: {
         if (!adapter)
-            return "No Bluetooth";
+            return "Bluetooth · N/A";
         if (!adapter.enabled)
-            return "Bluetooth off";
+            return "Bluetooth · Off";
         if (connectedDevice)
-            return connectedDevice.name || connectedDevice.deviceName || "Connected";
+            return "Bluetooth · " + (connectedDevice.name || connectedDevice.deviceName || "Connected");
         return "Bluetooth";
     }
 
@@ -57,12 +57,12 @@ Item {
         }
         onContainsMouseChanged: {
             if (containsMouse)
-                HoverTip.show(root, root.tipText);
+                HoverTip.show(root, root.tipText, "Super+U");
             else
                 HoverTip.hide();
         }
     }
 
     onTipTextChanged: if (mouse.containsMouse)
-        HoverTip.update(root, tipText)
+        HoverTip.update(root, tipText, "Super+U")
 }

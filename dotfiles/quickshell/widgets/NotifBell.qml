@@ -44,7 +44,7 @@ Item {
         }
         onContainsMouseChanged: {
             if (containsMouse)
-                HoverTip.show(root, Notifs.dnd ? "Do not disturb" : (Notifs.unread > 0 ? Notifs.unread + " new" : "Notifications"));
+                HoverTip.show(root, "Notifications" + (Notifs.dnd ? " · DND" : (Notifs.unread > 0 ? (" · " + Notifs.unread + " new") : "")), "Super+N");
             else
                 HoverTip.hide();
         }

@@ -54,8 +54,15 @@ Item {
 
                 MouseArea {
                     anchors.fill: parent
+                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: I3.dispatch("workspace number " + chip.number)
+                    onContainsMouseChanged: {
+                        if (containsMouse)
+                            HoverTip.show(chip, "Workspace " + chip.number, "Super+" + (chip.number === 10 ? "0" : chip.number));
+                        else
+                            HoverTip.hide();
+                    }
                 }
             }
         }

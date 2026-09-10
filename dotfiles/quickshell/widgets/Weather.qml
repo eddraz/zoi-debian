@@ -43,7 +43,7 @@ Item {
         }
         onContainsMouseChanged: {
             if (containsMouse)
-                HoverTip.show(root, root.tipText);
+                HoverTip.show(root, root.tipText, "Super+T");
             else
                 HoverTip.hide();
         }
@@ -52,14 +52,15 @@ Item {
     readonly property string tipText: {
         if (!Weather.ready)
             return "Weather";
-        const bits = [];
+        const bits = ["Weather"];
         if (Weather.city)
             bits.push(Weather.city);
         bits.push(Weather.label);
-        bits.push(Weather.condition);
+        if (Weather.condition)
+            bits.push(Weather.condition);
         return bits.join(" · ");
     }
 
     onTipTextChanged: if (mouse.containsMouse)
-        HoverTip.update(root, tipText)
+        HoverTip.update(root, tipText, "Super+T")
 }

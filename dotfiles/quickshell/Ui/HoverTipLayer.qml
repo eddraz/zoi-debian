@@ -11,7 +11,7 @@ PanelWindow {
     screen: modelData
     visible: HoverTip.text !== "" && HoverTip.screen === modelData
     color: "transparent"
-    implicitHeight: 22
+    implicitHeight: 24
     exclusiveZone: 0
     exclusionMode: ExclusionMode.Ignore
     mask: Region {}
@@ -29,21 +29,47 @@ PanelWindow {
         id: bubble
 
         y: 2
-        height: 18
-        width: tipLabel.implicitWidth + 10
+        height: 20
+        width: contentRow.implicitWidth + 12
         x: Math.max(4, Math.min(root.width - width - 4, HoverTip.centerX - width / 2))
         color: Color.popupBackground
-        radius: 3
+        radius: Style.radius
         border.width: 1
         border.color: Color.surface
 
-        Text {
-            id: tipLabel
+        Row {
+            id: contentRow
             anchors.centerIn: parent
-            color: Color.popupText
-            font.family: Style.fontFamily
-            font.pixelSize: Style.fontCaption
-            text: HoverTip.text
+            spacing: 6
+
+            Text {
+                id: tipLabel
+                anchors.verticalCenter: parent.verticalCenter
+                color: Color.popupText
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption
+                text: HoverTip.text
+            }
+
+            Rectangle {
+                id: shortcutBadge
+                visible: HoverTip.shortcut !== ""
+                anchors.verticalCenter: parent.verticalCenter
+                height: 14
+                width: shortcutText.implicitWidth + 6
+                radius: 2
+                color: Color.surface
+
+                Text {
+                    id: shortcutText
+                    anchors.centerIn: parent
+                    color: Color.accent
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption - 1
+                    font.bold: true
+                    text: HoverTip.shortcut
+                }
+            }
         }
     }
 }

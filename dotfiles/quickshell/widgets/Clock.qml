@@ -32,7 +32,7 @@ Item {
         onClicked: root.togglePanel()
         onContainsMouseChanged: {
             if (containsMouse)
-                HoverTip.show(root, Qt.formatDateTime(clock.date, "dddd d MMMM yyyy"));
+                HoverTip.show(root, Qt.formatDateTime(clock.date, "dddd d MMMM yyyy"), "Super+C");
             else
                 HoverTip.hide();
         }
