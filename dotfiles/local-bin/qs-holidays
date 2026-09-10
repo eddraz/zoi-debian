@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+"""Output holidays for a given year as JSON.
+
+Usage: qs-holidays [YEAR]
+  YEAR defaults to the current year.
+  Country is auto-detected from $LANG (e.g. es_CO → CO).
+
+Output: JSON object { "YYYY-MM-DD": "Holiday Name", ... }
+"""
+
+import json
+import os
+import sys
+from datetime import date
+
+try:
+    import holidays
+except ImportError:
+    # Graceful fallback: no holidays library → empty object
+    print("{}")
+    sys.exit(0)
+
+# --- Determine year ---
+year = int(sys.argv[1]) if len(sys.argv) > 1 else date.today().year
+
+# --- Detect country from LANG ---
+lang = os.environ.get("LANG", "")
+country = "CO"  # default fallback
+if "_" in lang:
+    parts = lang.split(".")[0].split("_")
+    if len(parts) >= 2 and len(parts[1]) == 2:
+        candidate = parts[1].upper()
+        try:
+            holidays.country_holidays(candidate, years=year)
+            country = candidate
+        except NotImplementedError:
+            pass  # unsupported country, keep default
+
+# --- Build holiday map ---
+h = holidays.country_holidays(country, years=year)
+result = {str(d): name for d, name in sorted(h.items())}
+
+print(json.dumps(result, ensure_ascii=False))
