@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""Generate a Wi-Fi QR code in omarchy-network-qr-compatible format.
+
+Output (stdout):
+  meta\t<iface>\t<security>\t<ssid>
+  <square matrix of 0/1 modules>
+"""
+import argparse
+import ctypes
+import subprocess
+import sys
+
+
+def run(cmd):
+    try:
+        return subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL, timeout=4).decode()
+    except Exception:
+        return ""
+
+
+def detect():
+    """Return (iface, ssid, security, password) from NetworkManager."""
+    nm = run("nmcli -t -f ACTIVE,DEVICE,TYPE,NAME connection show --active")
+    iface = ssid = ""
+    for line in nm.splitlines():
+        parts = line.split(":")
+        if len(parts) < 4:
+            continue
+        active, dev, typ, name = parts[:4]
+        if typ != "802-11-wireless" or active != "yes":
+            continue
+        iface, ssid = dev, name
+        break
+    if not ssid:
+        nm2 = run("nmcli -t -f DEVICE,TYPE,STATE | awk -F: '$2 == \"wifi\" {print $1; exit}'")
+        iface = nm2.strip() or "wlo1"
+        return iface, "", "OPEN", ""
+    sec_line = run(f"nmcli -t -f 802-11-wireless-security.key-mgmt connection show '{ssid}' 2>/dev/null | head -1")
+    sec = (sec_line.split(":", 1)[-1] or "").strip()
+    if not sec or sec in ("none", "unknown", "OPEN"):
+        return iface, ssid, "OPEN", ""
+    psk_line = run(f"nmcli -t -s -f 802-11-wireless-security.psk connection show '{ssid}' 2>/dev/null | head -1")
+    pwd = (psk_line.split(":", 1)[-1] or "").strip()
+    if pwd.startswith("<") and pwd.endswith(">"):
+        pwd = ""
+    return iface, ssid, sec, pwd
+
+
+def qrencode(payload):
+    lib = ctypes.CDLL("libqrencode.so.4")
+    inp = lib.QRinput_new()
+    QRENCODE_MODE_BYTE = 4
+    data = (ctypes.c_uint8 * len(payload))(*(ord(c) for c in payload))
+    if lib.QRinput_append(inp, QRENCODE_MODE_BYTE, len(payload), data) != 0:
+        lib.QRinput_free(inp)
+        raise RuntimeError("QRinput_append failed")
+    lib.QRcode_encodeInput.restype = ctypes.c_void_p
+    code = lib.QRcode_encodeInput(inp)
+    lib.QRinput_free(inp)
+    if not code:
+        raise RuntimeError("QRcode_encodeInput failed")
+
+    class QRcode(ctypes.Structure):
+        _fields_ = [
+            ("version", ctypes.c_int),
+            ("width", ctypes.c_int),
+            ("data", ctypes.POINTER(ctypes.c_uint8)),
+        ]
+    qr = ctypes.cast(code, ctypes.POINTER(QRcode)).contents
+    width = qr.width
+    raw = ctypes.string_at(qr.data, width * width)
+    lib.QRcode_free.argtypes = [ctypes.c_void_p]
+    lib.QRcode_free(code)
+
+    out = []
+    for r in range(width):
+        row = []
+        for c in range(width):
+            v = raw[r * width + c]
+            row.append("1" if (v & 1) else "0")
+        out.append("".join(row))
+    return out
+
+
+def main():
+    ap = argparse.ArgumentParser(add_help=False)
+    ap.add_argument("--iface", default=None)
+    ap.add_argument("--ssid", default=None)
+    ap.add_argument("--password", default=None)
+    ap.add_argument("--security", default=None)
+    ap.add_argument("--meta", dest="meta", action="store_true", default=True)
+    ap.add_argument("--no-meta", dest="meta", action="store_false")
+    args = ap.parse_args()
+
+    iface, ssid, sec, pwd = detect()
+    if args.iface:
+        iface = args.iface
+    if args.ssid:
+        ssid = args.ssid
+    if args.security:
+        sec = args.security
+    if args.password:
+        pwd = args.password
+
+    if not ssid:
+        sys.stderr.write("No active Wi-Fi connection\n")
+        sys.exit(1)
+
+    if not sec or sec == "OPEN":
+        sec = "nopass"
+    if not pwd:
+        sec = "nopass"
+
+    wifi_payload = f"WIFI:T:{sec};S:{ssid};P:{pwd};;"
+    try:
+        rows = qrencode(wifi_payload)
+    except Exception as e:
+        sys.stderr.write(f"QR encode failed: {e}\n")
+        sys.exit(1)
+
+    out = []
+    if args.meta:
+        out.append(f"meta\t{iface}\t{sec}\t{ssid}")
+    out.extend(rows)
+    sys.stdout.write("\n".join(out) + "\n")
+    sys.stdout.flush()
+
+
+if __name__ == "__main__":
+    main()

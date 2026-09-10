@@ -41,7 +41,7 @@ Column {
 
     // Tab focus cycling among interactive elements
     property int wifiTabFocus: -1   // -1 = list mode, 0 = wifi toggle, 1 = test button
-    readonly property var tabTargets: ["wifiToggleBtn", "wifiTestBtn"]
+    readonly property var tabTargets: ["wifiToggleBtn", "wifiTestBtn", "wifiShareBtn"]
 
     function focusTabItem(direction) {
         const n = tabTargets.length;
@@ -54,6 +54,7 @@ Column {
         const id = tabTargets[wifiTabFocus];
         if (id === "wifiToggleBtn") wifiToggleBtn.forceActiveFocus();
         else if (id === "wifiTestBtn") wifiTestBtn.forceActiveFocus();
+        else if (id === "wifiShareBtn") wifiShareBtn.forceActiveFocus();
         return true;
     }
 
@@ -99,6 +100,10 @@ Column {
     property int wifiQuality: 0
     property int wifiSignal: 0
     property string wifiSsid: ""
+
+    function openWifiQr() {
+        Quickshell.execDetached(["/usr/bin/qs", "ipc", "call", "wifiqr", "toggle"]);
+    }
     property bool wifiTesting: false
     property string wifiQualityError: ""
     property var wifiTabOrder: ["wifiToggle", "wifiTest", "listEnd"]
@@ -165,14 +170,6 @@ Column {
             return (b.signalStrength || 0) - (a.signalStrength || 0);
         });
         return list.slice(0, 8);
-    }
-
-    Component.onCompleted: {
-        for (let i = 0; i < Math.min(3, networks.length); i++) {
-            const n = networks[i];
-            console.warn("[NETDBG]", n.name, "signalStrength=" + n.signalStrength,
-                "type=" + typeof n.signalStrength, "connected=" + n.connected);
-        }
     }
 
     onVisibleChanged: {
@@ -383,6 +380,44 @@ Column {
                     return "Error: " + root.wifiQualityError;
                 const sig = root.wifiSignal;
                 return "SSID: " + root.wifiSsid + " · Señal " + sig + "%";
+            }
+        }
+
+        Rectangle {
+            id: wifiShareBtn
+            width: parent.width
+            height: 24
+            radius: Style.radius
+            color: root.wifiTabFocus === 2 ? Color.focusFill : Color.surface
+            border.width: 1
+            border.color: root.wifiTabFocus === 2 ? Color.accent : Color.subtleBorder
+            activeFocusOnTab: true
+            visible: root.wifiSsid !== "" && root.wifiQuality > 0
+
+            Row {
+                anchors.fill: parent
+                anchors.leftMargin: 10
+                spacing: 6
+
+                StatusIcon {
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon: "search"
+                    stroke: Color.popupText
+                    width: 12
+                    height: 12
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: Color.popupText
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption
+                    text: "Compartir con QR"
+                }
+            }
+
+            HoverMouse {
+                onClicked: root.openWifiQr()
             }
         }
     }

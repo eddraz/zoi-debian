@@ -11,26 +11,7 @@ Singleton {
 
     property var layout: defaultLayout
     property var disabled: []
-    property string barEdge: "top"   // "top" | "bottom" | "left" | "right"
     property int revision: 0
-
-    readonly property bool isVertical: barEdge === "left" || barEdge === "right"
-
-    function setBarEdge(edge) {
-        const valid = ["top", "bottom", "left", "right"];
-        if (valid.indexOf(edge) === -1) return false;
-        if (edge === barEdge) return false;
-        barEdge = edge;
-        revision++;
-        scheduleSave();
-        return true;
-    }
-
-    function cycleBarEdge() {
-        const order = ["top", "right", "bottom", "left"];
-        const idx = order.indexOf(barEdge);
-        return setBarEdge(order[(idx + 1) % 4]);
-    }
 
     Timer {
         id: autoSaveTimer
@@ -256,10 +237,14 @@ Singleton {
         "reminders-overlay": {
             "kinds": ["overlay"],
             "source": "../ReminderOverlay.qml"
+        },
+        "wifiqr": {
+            "kinds": ["overlay"],
+            "source": "../WifiQrOverlay.qml"
         }
     })
 
-    readonly property var hostOrder: ["osd", "launcher", "notifications", "lock", "idle", "clipboard", "nightlight", "polkit", "emojis", "media-arm", "reminders-overlay"]
+    readonly property var hostOrder: ["osd", "launcher", "notifications", "lock", "idle", "clipboard", "nightlight", "polkit", "emojis", "media-arm", "reminders-overlay", "wifiqr"]
 
     readonly property var leftIds: {
         revision;
@@ -493,10 +478,7 @@ Singleton {
         autoSaveTimer.stop();
         const payload = {
             "version": 1,
-            "bar": {
-                "edge": barEdge,
-                "layout": { "left": orderedIds("left"), "center": orderedIds("center"), "right": orderedIds("right") }
-            },
+            "bar": { "layout": { "left": orderedIds("left"), "center": orderedIds("center"), "right": orderedIds("right") } },
             "disabledPlugins": disabled.slice()
         };
         const json = JSON.stringify(payload, null, 2);
@@ -520,14 +502,10 @@ Singleton {
                 return;
             const nextLayout = (parsed.bar && parsed.bar.layout) ? parsed.bar.layout : defaultLayout;
             const nextDisabled = Array.isArray(parsed.disabledPlugins) ? parsed.disabledPlugins : [];
-            const nextEdge = (parsed.bar && parsed.bar.edge) ? String(parsed.bar.edge) : "top";
-            const validEdges = ["top", "bottom", "left", "right"];
-            const safeEdge = validEdges.indexOf(nextEdge) >= 0 ? nextEdge : "top";
-            if (JSON.stringify(nextLayout) === JSON.stringify(layout) && JSON.stringify(nextDisabled) === JSON.stringify(disabled) && safeEdge === barEdge)
+            if (JSON.stringify(nextLayout) === JSON.stringify(layout) && JSON.stringify(nextDisabled) === JSON.stringify(disabled))
                 return;
             layout = nextLayout;
             disabled = nextDisabled;
-            barEdge = safeEdge;
             revision++;
         } catch (e) {
             console.warn("PluginRegistry: shell.json parse failed:", e);
