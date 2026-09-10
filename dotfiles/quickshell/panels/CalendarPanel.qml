@@ -12,12 +12,57 @@ Column {
     spacing: 8
     width: parent ? parent.width : 252
 
+    property int cursor: -1
+
+    function nextSection(back) {
+        if (cursor < 0) cursor = back ? 4 : 0;
+        else cursor = back ? (cursor - 1 + 5) % 5 : (cursor + 1) % 5;
+    }
+
+    function focusItem(entry) {
+        cursor = entry.index;
+    }
+
+    readonly property var searchEntries: [
+        { "label": "year prev anterior año", "index": 0 },
+        { "label": "month prev mes anterior", "index": 1 },
+        { "label": "today hoy actual", "index": 2 },
+        { "label": "month next siguiente mes", "index": 3 },
+        { "label": "year next siguiente año", "index": 4 }
+    ]
+
+    function runSlot(id) {
+        if (id === 0) root.year -= 1;
+        else if (id === 1) root.prevMonth();
+        else if (id === 2) root.goToday();
+        else if (id === 3) root.nextMonth();
+        else if (id === 4) root.year += 1;
+    }
+
     function handleKey(event) {
-        if (KeyNav.isLeft(event)) { prevMonth(); return true; }
-        if (KeyNav.isRight(event)) { nextMonth(); return true; }
+        const jump = KeyNav.jump(event, 5);
+        if (jump >= 0) {
+            cursor = jump;
+            runSlot(jump);
+            return true;
+        }
+        if (KeyNav.isLeft(event)) {
+            if (cursor >= 0) cursor = Math.max(0, cursor - 1);
+            else prevMonth();
+            return true;
+        }
+        if (KeyNav.isRight(event)) {
+            if (cursor >= 0) cursor = Math.min(4, cursor + 1);
+            else nextMonth();
+            return true;
+        }
         if (KeyNav.isPrev(event)) { year -= 1; return true; }
         if (KeyNav.isNext(event)) { year += 1; return true; }
-        if (KeyNav.isActivate(event)) { goToday(); return true; }
+        if (KeyNav.isActivate(event)) {
+            if (cursor >= 0) runSlot(cursor);
+            else goToday();
+            return true;
+        }
         return false;
     }
 
@@ -122,21 +167,25 @@ Column {
 
             Rectangle {
                 required property var modelData
+                required property int index
                 width: 28
                 height: 24
                 radius: Style.radius
-                color: Color.surface
+                color: root.cursor === index ? Color.focusFill : Color.surface
+                border.width: root.cursor === index ? 1 : 0
+                border.color: Color.accent
 
                 StatusIcon {
                     anchors.centerIn: parent
                     width: 14
                     height: 14
                     icon: parent.modelData.icon
-                    stroke: Color.popupText
+                    stroke: parent.modelData && root.cursor === parent.index ? Color.accent : Color.popupText
                 }
 
                 HoverMouse {
                     onClicked: {
+                        root.cursor = index;
                         if (modelData.action === "year-prev")
                             root.year -= 1;
                         else
@@ -146,31 +195,42 @@ Column {
             }
         }
 
-        Column {
+        Rectangle {
             width: parent.width - 28 * 4 - 4 * 4
             height: 34
-            spacing: 0
+            radius: Style.radius
+            color: root.cursor === 2 ? Color.focusFill : "transparent"
+            border.width: root.cursor === 2 ? 1 : 0
+            border.color: Color.accent
 
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                color: Color.popupText
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption
-                font.bold: true
-                text: Qt.locale().monthName(root.month - 1, Locale.LongFormat) + " " + root.year
+            Column {
+                anchors.centerIn: parent
+                spacing: 0
 
-                HoverMouse {
-                    onClicked: root.goToday()
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    color: root.cursor === 2 ? Color.accent : Color.popupText
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption
+                    font.bold: true
+                    text: Qt.locale().monthName(root.month - 1, Locale.LongFormat) + " " + root.year
+                }
+
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    visible: Weather.country !== ""
+                    color: Color.popupMuted
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontBadge
+                    text: Weather.city !== "" ? (Weather.city + " · " + Weather.country) : Weather.country
                 }
             }
 
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                visible: Weather.country !== ""
-                color: Color.popupMuted
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontBadge
-                text: Weather.city !== "" ? (Weather.city + " · " + Weather.country) : Weather.country
+            HoverMouse {
+                onClicked: {
+                    root.cursor = 2;
+                    root.goToday();
+                }
             }
         }
 
@@ -182,21 +242,25 @@ Column {
 
             Rectangle {
                 required property var modelData
+                required property int index
                 width: 28
                 height: 24
                 radius: Style.radius
-                color: Color.surface
+                color: root.cursor === index + 3 ? Color.focusFill : Color.surface
+                border.width: root.cursor === index + 3 ? 1 : 0
+                border.color: Color.accent
 
                 StatusIcon {
                     anchors.centerIn: parent
                     width: 14
                     height: 14
                     icon: parent.modelData.icon
-                    stroke: Color.popupText
+                    stroke: root.cursor === parent.index + 3 ? Color.accent : Color.popupText
                 }
 
                 HoverMouse {
                     onClicked: {
+                        root.cursor = index + 3;
                         if (modelData.action === "year-next")
                             root.year += 1;
                         else

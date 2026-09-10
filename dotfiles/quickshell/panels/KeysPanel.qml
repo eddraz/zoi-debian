@@ -20,6 +20,8 @@ Item {
     property int cursor: 0
 
     function nextSection(back) {
+        if (flatCount <= 0) return;
+        cursor = back ? (cursor - 1 + flatCount) % flatCount : (cursor + 1) % flatCount;
     }
 
     function handleEscape() {

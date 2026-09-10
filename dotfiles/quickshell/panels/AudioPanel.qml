@@ -21,7 +21,8 @@ Column {
         cursor = 0
 
     function nextSection(back) {
-        cursor = KeyNav.nextStart([0, micVol, sourceStart], cursor, back);
+        if (count <= 0) return;
+        cursor = back ? (cursor - 1 + count) % count : (cursor + 1) % count;
     }
 
     function focusItem(entry) {

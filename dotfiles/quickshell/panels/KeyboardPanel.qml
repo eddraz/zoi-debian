@@ -19,7 +19,8 @@ Column {
     }
 
     function nextSection(back) {
-        cursor = KeyNav.nextStart([0], cursor, back);
+        if (count <= 0) return;
+        cursor = back ? (cursor - 1 + count) % count : (cursor + 1) % count;
     }
 
     function focusItem(entry) {

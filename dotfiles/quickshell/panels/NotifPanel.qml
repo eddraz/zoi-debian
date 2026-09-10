@@ -13,7 +13,10 @@ Column {
     property int cursor: 0
     readonly property int count: 1 + Notifs.history.length
 
-    function nextSection(back) {}
+    function nextSection(back) {
+        if (count <= 0) return;
+        cursor = back ? (cursor - 1 + count) % count : (cursor + 1) % count;
+    }
 
     function focusItem(entry) {
         cursor = Math.max(0, Math.min(count - 1, entry.index));

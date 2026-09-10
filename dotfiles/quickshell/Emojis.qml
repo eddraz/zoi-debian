@@ -183,11 +183,11 @@ Scope {
                             if (event.key === Qt.Key_Escape) {
                                 root.close();
                                 event.accepted = true;
-                            } else if (event.key === Qt.Key_Right) {
-                                root.selectedIndex = Math.min(root.selectedIndex + 1, last);
+                            } else if (event.key === Qt.Key_Right || (event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))) {
+                                root.selectedIndex = (root.selectedIndex + 1) % Math.max(1, root.filtered.length);
                                 event.accepted = true;
-                            } else if (event.key === Qt.Key_Left) {
-                                root.selectedIndex = Math.max(0, root.selectedIndex - 1);
+                            } else if (event.key === Qt.Key_Left || event.key === Qt.Key_Backtab || (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier))) {
+                                root.selectedIndex = (root.selectedIndex - 1 + root.filtered.length) % Math.max(1, root.filtered.length);
                                 event.accepted = true;
                             } else if (event.key === Qt.Key_Down) {
                                 root.selectedIndex = Math.min(root.selectedIndex + root.columns, last);

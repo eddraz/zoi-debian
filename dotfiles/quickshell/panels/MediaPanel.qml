@@ -21,7 +21,7 @@ Column {
     }
 
     function nextSection(back) {
-        cursor = KeyNav.nextStart([0, 1, 2], cursor, back);
+        cursor = back ? (cursor - 1 + 3) % 3 : (cursor + 1) % 3;
     }
 
     function focusItem(entry) {

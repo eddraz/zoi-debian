@@ -220,12 +220,14 @@ Scope {
             }
             return false;
         }
-        if (event.key === Qt.Key_Down || event.key === Qt.Key_J) {
-            root.selectedIndex = Math.min(root.selectedIndex + 1, Math.max(0, root.filtered.length - 1));
+        if (event.key === Qt.Key_Down || event.key === Qt.Key_J || (event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))) {
+            if (root.filtered.length > 0)
+                root.selectedIndex = (root.selectedIndex + 1) % root.filtered.length;
             return true;
         }
-        if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
-            root.selectedIndex = Math.max(0, root.selectedIndex - 1);
+        if (event.key === Qt.Key_Up || event.key === Qt.Key_K || event.key === Qt.Key_Backtab || (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier))) {
+            if (root.filtered.length > 0)
+                root.selectedIndex = (root.selectedIndex - 1 + root.filtered.length) % root.filtered.length;
             return true;
         }
         if (event.key === Qt.Key_PageDown) {
@@ -683,13 +685,15 @@ Scope {
                                         event.accepted = true;
                                         return;
                                     }
-                                    if (event.key === Qt.Key_Down) {
-                                        root.selectedIndex = Math.min(root.selectedIndex + 1, Math.max(0, root.filtered.length - 1));
+                                    if (event.key === Qt.Key_Down || (event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))) {
+                                        if (root.filtered.length > 0)
+                                            root.selectedIndex = (root.selectedIndex + 1) % root.filtered.length;
                                         event.accepted = true;
                                         return;
                                     }
-                                    if (event.key === Qt.Key_Up) {
-                                        root.selectedIndex = Math.max(0, root.selectedIndex - 1);
+                                    if (event.key === Qt.Key_Up || event.key === Qt.Key_Backtab || (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier))) {
+                                        if (root.filtered.length > 0)
+                                            root.selectedIndex = (root.selectedIndex - 1 + root.filtered.length) % root.filtered.length;
                                         event.accepted = true;
                                         return;
                                     }

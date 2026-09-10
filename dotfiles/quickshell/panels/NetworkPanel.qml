@@ -25,7 +25,9 @@ Column {
     }
 
     function nextSection(back) {
-        cursor = KeyNav.nextStart([0, Math.min(1, networks.length)], cursor, back);
+        const count = 2 + networks.length;
+        if (count <= 0) return;
+        cursor = back ? (cursor - 1 + count) % count : (cursor + 1) % count;
     }
 
     function focusItem(entry) {
@@ -33,28 +35,13 @@ Column {
     }
 
     readonly property var searchEntries: {
-        const e = [{ "label": "wifi enable disable", "index": 0 }];
+        const e = [
+            { "label": "wifi enable disable wifi apagar encender", "index": 0 },
+            { "label": "probar calidad test wifi speed signal", "index": 1 }
+        ];
         for (let i = 0; i < networks.length; i++)
-            e.push({ "label": String(networks[i].name || "network"), "index": i + 1 });
+            e.push({ "label": String(networks[i].name || "network"), "index": i + 2 });
         return e;
-    }
-
-    // Tab focus cycling among interactive elements
-    property int wifiTabFocus: -1   // -1 = list mode, 0 = wifi toggle, 1 = test button
-    readonly property var tabTargets: ["wifiToggleBtn", "wifiTestBtn"]
-
-    function focusTabItem(direction) {
-        const n = tabTargets.length;
-        if (n === 0) return false;
-        if (wifiTabFocus < 0) {
-            wifiTabFocus = direction > 0 ? 0 : n - 1;
-        } else {
-            wifiTabFocus = (wifiTabFocus + (direction > 0 ? 1 : -1) + n) % n;
-        }
-        const id = tabTargets[wifiTabFocus];
-        if (id === "wifiToggleBtn") wifiToggleBtn.forceActiveFocus();
-        else if (id === "wifiTestBtn") wifiTestBtn.forceActiveFocus();
-        return true;
     }
 
     function handleKey(event) {
@@ -64,12 +51,12 @@ Column {
             root.openWifiQr();
             return true;
         }
-        const jump = KeyNav.jump(event, 1 + networks.length);
+        const count = 2 + networks.length;
+        const jump = KeyNav.jump(event, count);
         if (jump >= 0) {
             cursor = jump;
             return true;
         }
-        const count = 1 + networks.length;
         if (KeyNav.isNext(event) || KeyNav.isRight(event)) {
             cursor = Math.min(cursor + 1, count - 1);
             return true;
@@ -83,7 +70,11 @@ Column {
                 Networking.wifiEnabled = !Networking.wifiEnabled;
                 return true;
             }
-            const net = networks[cursor - 1];
+            if (cursor === 1) {
+                root.refreshWifi();
+                return true;
+            }
+            const net = networks[cursor - 2];
             if (!net) return true;
             if (net.connected) net.disconnect();
             else if (needsPassword(net)) {
@@ -109,7 +100,6 @@ Column {
     }
     property bool wifiTesting: false
     property string wifiQualityError: ""
-    property var wifiTabOrder: ["wifiToggle", "wifiTest", "listEnd"]
 
     function refreshWifi() {
         if (wifiTesting)
@@ -177,7 +167,7 @@ Column {
 
     onVisibleChanged: {
         if (visible) {
-            root.wifiTabFocus = -1;
+            root.cursor = 0;
             refreshWifi();
         }
         if (wifiDevice)
@@ -302,9 +292,9 @@ Column {
             width: parent.width
             height: 28
             radius: Style.radius
-            color: root.wifiTabFocus === 1 ? Color.focusFill : Color.surface
+            color: root.cursor === 1 ? Color.focusFill : Color.surface
             border.width: 1
-            border.color: root.wifiTabFocus === 1 ? Color.accent : Color.subtleBorder
+            border.color: root.cursor === 1 ? Color.accent : Color.subtleBorder
             activeFocusOnTab: true
 
             Row {
@@ -351,7 +341,10 @@ Column {
             }
 
             HoverMouse {
-                onClicked: root.refreshWifi()
+                onClicked: {
+                    root.cursor = 1;
+                    root.refreshWifi();
+                }
             }
         }
 
@@ -401,24 +394,24 @@ Column {
                 width: parent.width
                 height: 42
                 radius: Style.radius
-                color: root.cursor === index + 1 ? Color.focusFill : Color.surface
-                border.width: root.cursor === index + 1 ? 1 : 0
+                color: root.cursor === index + 2 ? Color.focusFill : Color.surface
+                border.width: root.cursor === index + 2 ? 1 : 0
                 border.color: Color.accent
                 Behavior on color { ColorAnimation { duration: Style.animDuration } }
 
                 Rectangle {
                     width: 3
-                    height: root.cursor === index + 1 ? 20 : 0
+                    height: root.cursor === index + 2 ? 20 : 0
                     radius: 1.5
                     color: Color.accent
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    visible: root.cursor === index + 1
+                    visible: root.cursor === index + 2
                     Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
                 }
 
                 IndexBadge {
-                    slot: index + 1
+                    slot: index + 2
                     anchors.left: parent.left
                     anchors.leftMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
@@ -469,9 +462,9 @@ Column {
                     height: 20
                     width: netBadgeText.implicitWidth + 12
                     radius: 4
-                    color: modelData.connected ? Color.focusFill : (root.cursor === index + 1 ? Color.surface : Color.background)
+                    color: modelData.connected ? Color.focusFill : (root.cursor === index + 2 ? Color.surface : Color.background)
                     border.width: 1
-                    border.color: modelData.connected ? Color.accent : (root.cursor === index + 1 ? Color.subtleBorder : "transparent")
+                    border.color: modelData.connected ? Color.accent : (root.cursor === index + 2 ? Color.subtleBorder : "transparent")
 
                     Text {
                         id: netBadgeText

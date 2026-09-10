@@ -51,7 +51,7 @@ Column {
     }
 
     function nextSection(back) {
-        const max = 2;
+        const max = 4;
         if (back)
             section = section <= 0 ? max : section - 1;
         else
@@ -68,8 +68,10 @@ Column {
             cursor = entry.index;
         else if (section === 1)
             wallCursor = entry.index;
-        else
+        else if (section === 2)
             Qt.callLater(() => editor.forceActiveFocus());
+        else
+            editor.focus = false;
     }
 
     readonly property var searchEntries: {
@@ -81,6 +83,8 @@ Column {
             e.push({ "label": parts.length ? parts[parts.length - 1] : "wallpaper", "index": i, "section": 1 });
         }
         e.push({ "label": "salvapantallas screensaver text zoi", "index": 0, "section": 2 });
+        e.push({ "label": "restablecer zoi reset screensaver", "index": 0, "section": 3 });
+        e.push({ "label": "guardar texto save screensaver", "index": 0, "section": 4 });
         return e;
     }
 
@@ -105,6 +109,8 @@ Column {
                 cursor = Math.min(themeCount - 1, cursor + 1);
             else if (section === 1)
                 wallCursor = Math.min(Math.max(0, wallCount - 1), wallCursor + 2);
+            else if (section === 3)
+                section = 4;
             return true;
         }
         if (KeyNav.isPrev(event)) {
@@ -112,6 +118,8 @@ Column {
                 cursor = Math.max(0, cursor - 1);
             else if (section === 1)
                 wallCursor = Math.max(0, wallCursor - 2);
+            else if (section === 4)
+                section = 3;
             return true;
         }
         if (KeyNav.isRight(event)) {
@@ -119,6 +127,8 @@ Column {
                 section = wallCount > 0 ? 1 : 2;
             else if (section === 1)
                 wallCursor = Math.min(Math.max(0, wallCount - 1), wallCursor + 1);
+            else if (section === 3)
+                section = 4;
             return true;
         }
         if (KeyNav.isLeft(event)) {
@@ -128,6 +138,8 @@ Column {
                 wallCursor = Math.max(0, wallCursor - 1);
             else if (section === 2)
                 section = 1;
+            else if (section === 4)
+                section = 3;
             return true;
         }
         if (KeyNav.isActivate(event)) {
@@ -137,6 +149,10 @@ Column {
                 Wallpaper.apply(Wallpaper.images[wallCursor]);
             else if (section === 2)
                 editor.forceActiveFocus();
+            else if (section === 3)
+                Themes.resetScreensaver();
+            else if (section === 4)
+                Themes.saveScreensaver();
             return true;
         }
         return false;
@@ -474,8 +490,8 @@ Column {
                 if (event.key === Qt.Key_Escape) {
                     editor.focus = false;
                     event.accepted = true;
-                } else if (event.key === Qt.Key_Tab) {
-                    root.nextSection(!!(event.modifiers & Qt.ShiftModifier));
+                } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+                    root.nextSection(event.key === Qt.Key_Backtab || !!(event.modifiers & Qt.ShiftModifier));
                     event.accepted = true;
                 }
             }
@@ -490,18 +506,23 @@ Column {
             width: (parent.width - 6) / 2
             height: 26
             radius: Style.radius
-            color: Color.surface
+            color: root.section === 3 ? Color.focusFill : Color.surface
+            border.width: root.section === 3 ? 1 : 0
+            border.color: Color.accent
 
             Text {
                 anchors.centerIn: parent
-                color: Color.popupText
+                color: root.section === 3 ? Color.accent : Color.popupText
                 font.family: Style.fontFamily
                 font.pixelSize: Style.fontCaption
                 text: "Restablecer ZOI"
             }
 
             HoverMouse {
-                onClicked: Themes.resetScreensaver()
+                onClicked: {
+                    root.section = 3;
+                    Themes.resetScreensaver();
+                }
             }
         }
 
@@ -510,6 +531,8 @@ Column {
             height: 26
             radius: Style.radius
             color: Color.accent
+            border.width: root.section === 4 ? 2 : 0
+            border.color: Color.text
 
             Text {
                 anchors.centerIn: parent
@@ -521,7 +544,10 @@ Column {
             }
 
             HoverMouse {
-                onClicked: Themes.saveScreensaver()
+                onClicked: {
+                    root.section = 4;
+                    Themes.saveScreensaver();
+                }
             }
         }
     }

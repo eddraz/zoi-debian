@@ -59,7 +59,12 @@ Column {
     }
 
     function nextSection(back) {
-        cursor = KeyNav.nextStart([0], cursor, back);
+        if (pendingId !== "") {
+            confirmChoice = confirmChoice === 1 ? 0 : 1;
+            return;
+        }
+        if (count <= 0) return;
+        cursor = back ? (cursor - 1 + count) % count : (cursor + 1) % count;
     }
 
     function focusItem(entry) {

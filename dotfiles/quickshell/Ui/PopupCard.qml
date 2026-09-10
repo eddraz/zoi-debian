@@ -245,10 +245,10 @@ PanelWindow {
                 event.accepted = true;
                 return;
             }
-            if (event.key === Qt.Key_Tab) {
+            if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
                 const panel = root.visiblePanel();
                 if (panel && typeof panel.nextSection === "function") {
-                    panel.nextSection(!!(event.modifiers & Qt.ShiftModifier));
+                    panel.nextSection(event.key === Qt.Key_Backtab || !!(event.modifiers & Qt.ShiftModifier));
                     event.accepted = true;
                     return;
                 }

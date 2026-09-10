@@ -14,7 +14,9 @@ Column {
     property int cursor: 0
 
     function nextSection(back) {
-        cursor = KeyNav.nextStart([0, Math.min(1, devices.length)], cursor, back);
+        const count = 1 + devices.length;
+        if (count <= 0) return;
+        cursor = back ? (cursor - 1 + count) % count : (cursor + 1) % count;
     }
 
     function focusItem(entry) {
