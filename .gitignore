@@ -14,3 +14,5 @@ state/
 # Logs
 *.log
 .codegraph/
+# Local Pi runtime state
+.atl/

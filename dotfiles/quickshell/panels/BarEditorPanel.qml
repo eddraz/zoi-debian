@@ -314,6 +314,92 @@ Column {
         }
     }
 
+    // ── Bar Position Selector ──
+    Rectangle {
+        width: parent.width
+        height: 42
+        radius: Style.radius
+        color: Color.surface
+        border.width: 1
+        border.color: Color.subtleBorder
+
+        Row {
+            anchors.fill: parent
+            anchors.leftMargin: 8
+            anchors.rightMargin: 8
+            spacing: 6
+
+            Rectangle {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 3
+                height: 14
+                radius: 1.5
+                color: Color.accent
+            }
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                color: Color.popupText
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption
+                font.bold: true
+                text: "Posición"
+            }
+
+            Item { width: 8; height: 1 }
+
+            Repeater {
+                model: [
+                    { edge: "top",    label: "↑ Arriba" },
+                    { edge: "bottom", label: "↓ Abajo" },
+                    { edge: "left",   label: "← Izq" },
+                    { edge: "right",  label: "→ Der" }
+                ]
+
+                Rectangle {
+                    required property var modelData
+                    readonly property bool active: PluginRegistry.barEdge === modelData.edge
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: edgeLabel.implicitWidth + 16
+                    height: 26
+                    radius: Style.radius
+                    color: active ? Color.accent : (edgeMouse.containsMouse ? Color.focusFill : "transparent")
+                    border.width: active ? 0 : 1
+                    border.color: Color.subtleBorder
+                    Behavior on color { ColorAnimation { duration: Style.animDuration } }
+
+                    Text {
+                        id: edgeLabel
+                        anchors.centerIn: parent
+                        color: parent.active ? Color.crust : Color.popupText
+                        font.family: Style.fontFamily
+                        font.pixelSize: Style.fontCaption
+                        font.bold: parent.active
+                        text: parent.modelData.label
+                    }
+
+                    MouseArea {
+                        id: edgeMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: PluginRegistry.setBarEdge(parent.modelData.edge)
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Drag hint ──
+    Text {
+        width: parent.width
+        horizontalAlignment: Text.AlignHCenter
+        color: Color.popupMuted
+        font.family: Style.fontFamily
+        font.pixelSize: Style.fontBadge
+        text: "Tip: arrastra la barra a cualquier borde de la pantalla"
+    }
+
     Rectangle {
         width: parent.width
         height: 22

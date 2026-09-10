@@ -12,12 +12,14 @@ def get(url):
 
 
 def main():
-    loc = get("http://ip-api.com/json/?fields=status,city,lat,lon")
+    loc = get("http://ip-api.com/json/?fields=status,city,country,countryCode,lat,lon")
     if loc.get("status") != "success":
         raise SystemExit(1)
     lat = loc["lat"]
     lon = loc["lon"]
     city = loc.get("city") or "Here"
+    country = loc.get("country") or ""
+    countryCode = loc.get("countryCode") or ""
     url = (
         "https://api.open-meteo.com/v1/forecast"
         f"?latitude={lat}&longitude={lon}"
@@ -43,6 +45,8 @@ def main():
         json.dumps(
             {
                 "city": city,
+                "country": country,
+                "countryCode": countryCode,
                 "lat": lat,
                 "lon": lon,
                 "temp": current.get("temperature_2m"),

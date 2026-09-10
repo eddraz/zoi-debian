@@ -8,6 +8,8 @@ Singleton {
     id: root
 
     property string city: ""
+    property string country: ""
+    property string countryCode: ""
     property real temp: 0
     property int code: -1
     property bool isDay: true
@@ -55,6 +57,8 @@ Singleton {
         try {
             const data = JSON.parse(String(text || "{}"));
             city = data.city || "";
+            country = data.country || "";
+            countryCode = data.countryCode || "";
             temp = Number(data.temp || 0);
             code = Number(data.code);
             isDay = !!data.isDay;

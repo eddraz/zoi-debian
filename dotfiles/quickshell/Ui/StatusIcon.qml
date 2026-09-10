@@ -70,6 +70,9 @@ Item {
                 root.paintSearch(ctx, w, h);
             else if (root.icon === "clipboard")
                 root.paintClipboard(ctx, w, h);
+            else if (root.icon === "chev-left" || root.icon === "chev-right"
+                     || root.icon === "chev-double-left" || root.icon === "chev-double-right")
+                root.paintChevron(ctx, w, h);
         }
     }
 
@@ -451,6 +454,25 @@ Item {
         ctx.moveTo(cx + r * 0.707, cy + r * 0.707);
         ctx.lineTo(w * 0.82, h * 0.82);
         ctx.stroke();
+    }
+
+    function paintChevron(ctx, w, h) {
+        ctx.fillStyle = "transparent";
+        const cy = h * 0.50;
+        const single = root.icon === "chev-left" || root.icon === "chev-right";
+        const left = root.icon === "chev-left" || root.icon === "chev-double-left";
+        const drawOne = off => {
+            const tipX = left ? w * (0.32 + off) : w * (0.68 - off);
+            const baseX = left ? w * (0.62 + off) : w * (0.38 - off);
+            ctx.beginPath();
+            ctx.moveTo(baseX, h * 0.26);
+            ctx.lineTo(tipX, cy);
+            ctx.lineTo(baseX, h * 0.74);
+            ctx.stroke();
+        };
+        drawOne(0);
+        if (!single)
+            drawOne(left ? 0.22 : 0.22);
     }
 
     function paintClipboard(ctx, w, h) {

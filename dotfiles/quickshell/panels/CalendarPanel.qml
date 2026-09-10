@@ -21,12 +21,13 @@ Column {
         return false;
     }
 
-    property int year: now.getFullYear()
-    property int month: now.getMonth() + 1
-    readonly property var now: new Date()
-    readonly property int todayYear: now.getFullYear()
-    readonly property int todayMonth: now.getMonth() + 1
-    readonly property int todayDay: now.getDate()
+    property int year: todayDate.getFullYear()
+    property int month: todayDate.getMonth() + 1
+    // todayDate se reasigna en goToday(); las propiedades today* dependen de él.
+    property var todayDate: new Date()
+    readonly property int todayYear: todayDate.getFullYear()
+    readonly property int todayMonth: todayDate.getMonth() + 1
+    readonly property int todayDay: todayDate.getDate()
     readonly property int daysInMonth: new Date(year, month, 0).getDate()
     readonly property int startOffset: {
         const weekday = new Date(year, month - 1, 1).getDay();
@@ -87,6 +88,7 @@ Column {
         const date = new Date();
         year = date.getFullYear();
         month = date.getMonth() + 1;
+        todayDate = date;
     }
 
     function prevMonth() {
@@ -114,8 +116,8 @@ Column {
 
         Repeater {
             model: [
-                { label: "<<", action: "year-prev" },
-                { label: "<", action: "month-prev" }
+                { icon: "chev-double-left", action: "year-prev" },
+                { icon: "chev-left", action: "month-prev" }
             ]
 
             Rectangle {
@@ -125,13 +127,12 @@ Column {
                 radius: Style.radius
                 color: Color.surface
 
-                Text {
+                StatusIcon {
                     anchors.centerIn: parent
-                    color: Color.popupText
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption
-                    font.bold: true
-                    text: modelData.label
+                    width: 14
+                    height: 14
+                    icon: parent.modelData.icon
+                    stroke: Color.popupText
                 }
 
                 HoverMouse {
@@ -145,28 +146,38 @@ Column {
             }
         }
 
-        Item {
+        Column {
             width: parent.width - 28 * 4 - 4 * 4
-            height: 24
+            height: 34
+            spacing: 0
 
             Text {
-                anchors.centerIn: parent
+                anchors.horizontalCenter: parent.horizontalCenter
                 color: Color.popupText
                 font.family: Style.fontFamily
                 font.pixelSize: Style.fontCaption
                 font.bold: true
-                text: Qt.locale().monthName(root.month, Locale.LongFormat) + " " + root.year
+                text: Qt.locale().monthName(root.month - 1, Locale.LongFormat) + " " + root.year
 
                 HoverMouse {
                     onClicked: root.goToday()
                 }
             }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: Weather.country !== ""
+                color: Color.popupMuted
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontBadge
+                text: Weather.city !== "" ? (Weather.city + " · " + Weather.country) : Weather.country
+            }
         }
 
         Repeater {
             model: [
-                { label: ">", action: "month-next" },
-                { label: ">>", action: "year-next" }
+                { icon: "chev-right", action: "month-next" },
+                { icon: "chev-double-right", action: "year-next" }
             ]
 
             Rectangle {
@@ -176,13 +187,12 @@ Column {
                 radius: Style.radius
                 color: Color.surface
 
-                Text {
+                StatusIcon {
                     anchors.centerIn: parent
-                    color: Color.popupText
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption
-                    font.bold: true
-                    text: modelData.label
+                    width: 14
+                    height: 14
+                    icon: parent.modelData.icon
+                    stroke: Color.popupText
                 }
 
                 HoverMouse {
@@ -367,3 +377,4 @@ Column {
         }
     }
 }
+
