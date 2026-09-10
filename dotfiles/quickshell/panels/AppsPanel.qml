@@ -47,7 +47,7 @@ Column {
         },
         {
             "id": "bar",
-            "name": "Plugin Registry",
+            "name": "Bar",
             "desc": "Organizar barra y widgets",
             "status": "Super+Shift+B",
             "active": false
