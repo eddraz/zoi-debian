@@ -92,7 +92,7 @@ Scope {
                         radius: Style.radius
                         color: Color.popupBackground
                         border.width: 1
-                        border.color: modelData.urgency === NotificationUrgency.Critical ? Color.urgent : Color.surface
+                        border.color: modelData.urgency === NotificationUrgency.Critical ? Color.urgent : Color.cardBorder
 
                         Column {
                             id: toastBody
@@ -112,8 +112,17 @@ Scope {
                                     source: toast.iconSource
                                 }
 
+                                Rectangle {
+                                    visible: toast.iconSource === ""
+                                    implicitWidth: 10
+                                    implicitHeight: 10
+                                    radius: 5
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: toast.modelData.urgency === NotificationUrgency.Critical ? Color.urgent : Color.accent
+                                }
+
                                 Column {
-                                    width: parent.width - 30
+                                    width: parent.width - (toast.iconSource !== "" ? 30 : 18)
                                     spacing: 2
 
                                     Text {
@@ -163,7 +172,9 @@ Scope {
                                         height: 22
                                         implicitWidth: actionLabel.implicitWidth + 12
                                         radius: Style.radius
-                                        color: Color.surface
+                                        color: actionMouse.containsMouse ? Color.focusFill : Color.surface
+                                        border.width: 1
+                                        border.color: Color.subtleBorder
 
                                         Text {
                                             id: actionLabel
@@ -175,7 +186,9 @@ Scope {
                                         }
 
                                         MouseArea {
+                                            id: actionMouse
                                             anchors.fill: parent
+                                            hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
                                             onClicked: modelData.invoke()
                                         }

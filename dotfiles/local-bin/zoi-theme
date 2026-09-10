@@ -20,6 +20,56 @@ except ImportError:
     import tomli as tomllib
 
 
+def dump_toml(data):
+    lines = []
+    for k, v in data.items():
+        if not isinstance(v, dict):
+            if isinstance(v, bool):
+                b_str = "true" if v else "false"
+                lines.append(f"{k} = {b_str}\n")
+            elif isinstance(v, (int, float)):
+                lines.append(f"{k} = {v}\n")
+            elif isinstance(v, str):
+                lines.append(f'{k} = "{v}"\n')
+            elif isinstance(v, list):
+                lines.append(f"{k} = {json.dumps(v)}\n")
+    if lines:
+        lines.append("\n")
+
+    def emit_table(prefix, table):
+        t_lines = []
+        sub_tables = []
+        for k, v in table.items():
+            if isinstance(v, dict):
+                sub_tables.append((k, v))
+            else:
+                if isinstance(v, bool):
+                    b_str = "true" if v else "false"
+                    t_lines.append(f"{k} = {b_str}\n")
+                elif isinstance(v, (int, float)):
+                    t_lines.append(f"{k} = {v}\n")
+                elif isinstance(v, str):
+                    t_lines.append(f'{k} = "{v}"\n')
+                elif isinstance(v, list):
+                    t_lines.append(f"{k} = {json.dumps(v)}\n")
+        
+        res = []
+        if t_lines or not sub_tables:
+            res.append(f"[{prefix}]\n")
+            res.extend(t_lines)
+            res.append("\n")
+        for sub_k, sub_v in sub_tables:
+            sub_prefix = f"{prefix}.{sub_k}" if prefix else sub_k
+            res.extend(emit_table(sub_prefix, sub_v))
+        return res
+
+    for k, v in data.items():
+        if isinstance(v, dict):
+            lines.extend(emit_table(k, v))
+
+    return "".join(lines).strip() + "\n"
+
+
 def hex_to_rgb(h):
     s = str(h or "").strip().lstrip("#")
     if len(s) == 3:
@@ -333,7 +383,7 @@ class ZoiThemeManager:
         self._dispatch_zed(rendered_files.get("zed.json"))
         self._dispatch_vscode(pal)
         self._dispatch_gtk(rendered_files.get("gtk-3.0.css"), rendered_files.get("gtk-4.0.css"), pal)
-        self._dispatch_herdr(theme_id)
+        self._dispatch_herdr(pal)
         self._dispatch_state(pal, colors_json_content, sh_lines)
         self._run_hooks(theme_id)
 
@@ -542,11 +592,13 @@ class ZoiThemeManager:
             with open(os.path.join(d4, "gtk.css"), "w", encoding="utf-8") as f:
                 f.write(css4)
 
-    def _dispatch_herdr(self, theme_id):
+    def _dispatch_herdr(self, pal):
         herdr_cfg = os.path.join(self.home, ".config/herdr/config.toml")
         if not os.path.exists(herdr_cfg):
             return
 
+        theme_id = pal.get("id", "custom")
+        mode = pal.get("mode", "dark")
         theme_map = {
             "catppuccin": "catppuccin",
             "catppuccin-mocha": "catppuccin",
@@ -560,33 +612,36 @@ class ZoiThemeManager:
             "rose-pine": "rose-pine",
             "tokyo-night": "tokyo-night"
         }
-        h_theme = theme_map.get(theme_id, "catppuccin")
+        h_theme = theme_map.get(theme_id, "catppuccin-latte" if mode == "light" else "catppuccin")
+
         try:
-            with open(herdr_cfg, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-            new_lines = []
-            in_theme = False
-            replaced = False
-            for line in lines:
-                if line.strip().startswith("[theme]"):
-                    in_theme = True
-                    new_lines.append(line)
-                    continue
-                if in_theme and line.strip().startswith("name ="):
-                    new_lines.append(f'name = "{h_theme}"\n')
-                    replaced = True
-                    in_theme = False
-                    continue
-                if in_theme and line.startswith("["):
-                    if not replaced:
-                        new_lines.append(f'name = "{h_theme}"\n')
-                        replaced = True
-                    in_theme = False
-                new_lines.append(line)
-            if not replaced and "[theme]" not in "".join(lines):
-                new_lines.append(f'\n[theme]\nname = "{h_theme}"\nauto_switch = false\n')
+            with open(herdr_cfg, "rb") as f:
+                data = tomllib.load(f)
+        except Exception:
+            data = {}
+
+        if "theme" not in data or not isinstance(data["theme"], dict):
+            data["theme"] = {}
+        data["theme"]["name"] = h_theme
+        data["theme"]["auto_switch"] = False
+
+        data["theme"]["custom"] = {
+            "sidebar_bg": pal.get("dark_background", "#181825"),
+            "active_row_bg": pal.get("background", "#1e1e2e"),
+            "selection_bg": pal.get("selection", "#313244"),
+            "accent": pal.get("accent", "#89b4fa"),
+            "red": pal.get("red", "#f38ba8"),
+            "green": pal.get("green", "#a6e3a1")
+        }
+
+        if "ui" not in data or not isinstance(data["ui"], dict):
+            data["ui"] = {}
+        data["ui"]["accent"] = pal.get("accent", "#89b4fa")
+
+        try:
+            rendered = dump_toml(data)
             with open(herdr_cfg, "w", encoding="utf-8") as f:
-                f.writelines(new_lines)
+                f.write(rendered)
             subprocess.run(["herdr", "server", "reload-config"], capture_output=True, timeout=1)
         except Exception:
             pass
