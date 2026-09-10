@@ -80,7 +80,7 @@ Column {
             const parts = String(Wallpaper.images[i] || "").split("/");
             e.push({ "label": parts.length ? parts[parts.length - 1] : "wallpaper", "index": i, "section": 1 });
         }
-        e.push({ "label": "screensaver text zoi", "index": 0, "section": 2 });
+        e.push({ "label": "salvapantallas screensaver text zoi", "index": 0, "section": 2 });
         return e;
     }
 
@@ -146,7 +146,7 @@ Column {
         color: Color.popupMuted
         font.family: Style.fontFamily
         font.pixelSize: Style.fontCaption
-        text: "Colors"
+        text: "Paleta de colores"
     }
 
     Repeater {
@@ -231,7 +231,11 @@ Column {
                     color: Color.popupMuted
                     font.family: Style.fontFamily
                     font.pixelSize: Style.fontCaption
-                    text: current ? "Paleta de colores activa" : "Haz clic para aplicar tema"
+                    text: {
+                        if (current)
+                            return modelData.id === "wallpaper" ? "Extraída del fondo de pantalla actual" : "Paleta de colores activa";
+                        return modelData.id === "wallpaper" ? "Colores adaptativos del fondo" : "Haz clic para aplicar tema";
+                    }
                 }
             }
 
@@ -272,17 +276,39 @@ Column {
         color: Color.popupMuted
         font.family: Style.fontFamily
         font.pixelSize: Style.fontCaption
-        text: "Background"
+        text: "Fondo de pantalla"
     }
 
-    Text {
+    Rectangle {
         visible: Wallpaper.images.length === 0
         width: parent.width
-        color: Color.popupMuted
-        font.family: Style.fontFamily
-        font.pixelSize: Style.fontCaption
-        wrapMode: Text.Wrap
-        text: "Put jpg/png files in ~/Imágenes"
+        height: 60
+        radius: Style.radius
+        color: Color.surface
+        border.width: 1
+        border.color: Color.subtleBorder
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 4
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                color: Color.popupText
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontBody
+                font.bold: true
+                text: "No se encontraron imágenes"
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                color: Color.popupMuted
+                font.family: Style.fontFamily
+                font.pixelSize: Style.fontCaption
+                text: "Coloca archivos .jpg o .png en ~/Imágenes"
+            }
+        }
     }
 
     Grid {
@@ -295,49 +321,110 @@ Column {
             model: Wallpaper.images
 
             Rectangle {
+                id: wallCard
                 required property var modelData
                 required property int index
                 readonly property bool selected: root.section === 1 && root.wallCursor === index
                 readonly property bool current: Wallpaper.current === modelData
 
                 width: (root.width - 8) / 2
-                height: 88
+                height: 94
                 radius: Style.radius
+                clip: true
                 color: selected ? Color.focusFill : Color.surface
-                border.width: selected || current ? 2 : 1
-                border.color: selected ? Color.accent : (current ? Color.green : Color.subtleBorder)
+                border.width: current ? 2 : (selected ? 2 : 1)
+                border.color: current ? Color.accent : (selected ? Color.focusFill : Color.subtleBorder)
                 Behavior on color { ColorAnimation { duration: Style.animDuration } }
                 Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
 
+                // Thumbnail image
+                Image {
+                    anchors.fill: parent
+                    anchors.margins: current ? 2 : 1
+                    anchors.bottomMargin: 24
+                    source: "file://" + modelData
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    sourceSize.width: 180
+                    sourceSize.height: 80
+                }
+
+                // Dark gradient overlay for bottom title readability
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.topMargin: parent.height - 26
+                    color: current ? Color.mantle : Color.crust
+                    opacity: 0.92
+                }
+
+                // Top left: Index badge
                 IndexBadge {
-                    z: 1
+                    z: 2
                     slot: index
                     anchors.left: parent.left
                     anchors.top: parent.top
                     anchors.margins: 6
                 }
 
-                Image {
-                    anchors.fill: parent
-                    anchors.margins: 3
-                    anchors.bottomMargin: 20
-                    source: "file://" + modelData
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    sourceSize.width: 160
-                    sourceSize.height: 70
+                // Top right: Active badge
+                Rectangle {
+                    z: 2
+                    visible: wallCard.current
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 6
+                    height: 18
+                    width: activeText.implicitWidth + 10
+                    radius: 3
+                    color: Color.accent
+                    border.width: 1
+                    border.color: Color.accent
+
+                    Row {
+                        id: activeText
+                        anchors.centerIn: parent
+                        spacing: 3
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: Color.crust
+                            font.family: Style.fontFamily
+                            font.pixelSize: Style.fontBadge
+                            font.bold: true
+                            text: "✓ ACTUAL"
+                        }
+                    }
                 }
 
-                Text {
+                // Bottom bar: filename and active dot
+                Row {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
                     anchors.margins: 4
-                    elide: Text.ElideMiddle
-                    color: Color.popupText
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption
-                    text: current ? "Current" : root.nameFor(modelData)
+                    anchors.leftMargin: 6
+                    anchors.rightMargin: 6
+                    spacing: 5
+
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 5
+                        height: 5
+                        radius: 2.5
+                        color: wallCard.current ? Color.accent : "transparent"
+                        visible: wallCard.current
+                    }
+
+                    Text {
+                        width: parent.width - (wallCard.current ? 10 : 0)
+                        anchors.verticalCenter: parent.verticalCenter
+                        elide: Text.ElideMiddle
+                        color: wallCard.current ? Color.accent : Color.popupText
+                        font.family: Style.fontFamily
+                        font.pixelSize: Style.fontCaption
+                        font.bold: wallCard.current
+                        text: root.nameFor(modelData)
+                    }
                 }
 
                 HoverMouse {
@@ -355,7 +442,7 @@ Column {
         color: Color.popupMuted
         font.family: Style.fontFamily
         font.pixelSize: Style.fontCaption
-        text: "Screensaver text"
+        text: "Texto de salvapantallas"
     }
 
     Rectangle {
@@ -410,7 +497,7 @@ Column {
                 color: Color.popupText
                 font.family: Style.fontFamily
                 font.pixelSize: Style.fontCaption
-                text: "Reset ZOI"
+                text: "Restablecer ZOI"
             }
 
             HoverMouse {
@@ -429,7 +516,8 @@ Column {
                 color: Color.background
                 font.family: Style.fontFamily
                 font.pixelSize: Style.fontCaption
-                text: "Save text"
+                font.bold: true
+                text: "Guardar texto"
             }
 
             HoverMouse {

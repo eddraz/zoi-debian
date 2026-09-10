@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+"""Extract a rich, harmonious, high-contrast dark theme palette from a wallpaper image.
+
+Outputs key=value pairs for:
+  background, mantle, crust, surface
+  foreground, muted, overlay
+  accent, urgent, green, peach, yellow
+"""
+
+import colorsys
+import math
+import os
 import sys
 
 try:
@@ -9,118 +20,221 @@ except Exception:
     sys.exit(1)
 
 
-def clamp(value):
-    return max(0, min(255, int(value)))
-
-
-def mix(a, b, t):
-    return tuple(clamp(a[i] * (1 - t) + b[i] * t) for i in range(3))
-
-
-def scale(c, f):
-    return tuple(clamp(x * f) for x in c)
-
-
-def lum(c):
-    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
-
-
-def sat(c):
-    mx, mn = max(c), min(c)
-    if mx <= 0:
-        return 0.0
-    return (mx - mn) / mx
+def clamp(value, lo=0, hi=255):
+    return max(lo, min(hi, int(value)))
 
 
 def hexc(c):
-    return "#{:02x}{:02x}{:02x}".format(*c)
+    return "#{:02x}{:02x}{:02x}".format(clamp(c[0]), clamp(c[1]), clamp(c[2]))
 
 
-def kmeans(points, k=6, rounds=8):
+def hls_to_rgb(h, l, s):
+    r, g, b = colorsys.hls_to_rgb(h % 1.0, max(0.0, min(1.0, l)), max(0.0, min(1.0, s)))
+    return (clamp(r * 255), clamp(g * 255), clamp(b * 255))
+
+
+def rgb_to_hls(r, g, b):
+    return colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
+
+
+def rel_lum(c):
+    # sRGB relative luminance
+    def chan(v):
+        v_lin = v / 255.0
+        return v_lin / 12.92 if v_lin <= 0.04045 else ((v_lin + 0.055) / 1.055) ** 2.4
+    return 0.2126 * chan(c[0]) + 0.7152 * chan(c[1]) + 0.0722 * chan(c[2])
+
+
+def rgb_dist(c1, c2):
+    return math.sqrt((c1[0] - c2[0]) ** 2 + (c1[1] - c2[1]) ** 2 + (c1[2] - c2[2]) ** 2)
+
+
+def kmeans(points, k=12, rounds=10):
     if not points:
         return []
     step = max(1, len(points) // k)
     centers = [points[min(i * step, len(points) - 1)] for i in range(k)]
+    counts = [0] * k
     for _ in range(rounds):
         buckets = [[] for _ in range(k)]
         for p in points:
-            best = 0
-            best_d = None
+            best_i = 0
+            best_d = float("inf")
             for i, c in enumerate(centers):
                 d = (p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2 + (p[2] - c[2]) ** 2
-                if best_d is None or d < best_d:
+                if d < best_d:
                     best_d = d
-                    best = i
-            buckets[best].append(p)
+                    best_i = i
+            buckets[best_i].append(p)
         for i, bucket in enumerate(buckets):
-            if not bucket:
-                continue
-            n = len(bucket)
-            centers[i] = (
-                sum(p[0] for p in bucket) // n,
-                sum(p[1] for p in bucket) // n,
-                sum(p[2] for p in bucket) // n,
-            )
-    return centers
+            if bucket:
+                n = len(bucket)
+                centers[i] = (
+                    sum(p[0] for p in bucket) // n,
+                    sum(p[1] for p in bucket) // n,
+                    sum(p[2] for p in bucket) // n,
+                )
+                counts[i] = n
+            else:
+                counts[i] = 0
+    return [(c, cnt) for c, cnt in zip(centers, counts) if cnt > 0]
+
+
+def extract_clusters_from_pixbuf(pb):
+    pixels = pb.get_pixels()
+    rs = pb.get_rowstride()
+    n = pb.get_n_channels()
+    w, h = pb.get_width(), pb.get_height()
+
+    all_points = []
+    vibrant_points = []
+
+    for y in range(h):
+        for x in range(w):
+            o = y * rs + x * n
+            r, g, b = pixels[o], pixels[o + 1], pixels[o + 2]
+            all_points.append((r, g, b))
+            h_val, l_val, s_val = rgb_to_hls(r, g, b)
+            # Vibrant threshold: decent saturation and not extreme black/white
+            if s_val >= 0.15 and 0.10 <= l_val <= 0.90:
+                vibrant_points.append((r, g, b))
+
+    # Base clusters from all pixels
+    base_clusters_raw = kmeans(all_points, k=12, rounds=8)
+    
+    # Vibrant clusters (for rich accent and semantic colors)
+    if len(vibrant_points) >= 30:
+        vibrant_clusters_raw = kmeans(vibrant_points, k=12, rounds=10)
+    else:
+        vibrant_clusters_raw = base_clusters_raw
+
+    def enrich(raw_list):
+        out = []
+        for c, cnt in raw_list:
+            h, l, s = rgb_to_hls(c[0], c[1], c[2])
+            out.append({
+                "rgb": c,
+                "count": cnt,
+                "h": h,
+                "l": l,
+                "s": s,
+                "lum": rel_lum(c),
+            })
+        return out
+
+    return enrich(base_clusters_raw), enrich(vibrant_clusters_raw), len(all_points)
 
 
 def main():
     if len(sys.argv) < 2:
         return 2
-    path = sys.argv[1]
-    pb = GdkPixbuf.Pixbuf.new_from_file_at_size(path, 96, 96)
-    pixels = pb.get_pixels()
-    rs = pb.get_rowstride()
-    n = pb.get_n_channels()
-    w, h = pb.get_width(), pb.get_height()
-    points = []
-    for y in range(h):
-        for x in range(w):
-            o = y * rs + x * n
-            points.append((pixels[o], pixels[o + 1], pixels[o + 2]))
-    centers = kmeans(points)
-    if not centers:
+    path = os.path.expanduser(sys.argv[1])
+    if not os.path.isfile(path):
         return 1
-    dark = min(centers, key=lum)
-    light = max(centers, key=lum)
-    colorful = [c for c in centers if 28 < lum(c) < 220]
-    if not colorful:
-        colorful = centers[:]
-    def far(c, ref):
-        return abs(c[0] - ref[0]) + abs(c[1] - ref[1]) + abs(c[2] - ref[2])
 
-    def distinct(c, ref, fallback):
-        return c if far(c, ref) > 48 else mix(c, fallback, 0.72)
+    try:
+        pb = GdkPixbuf.Pixbuf.new_from_file_at_size(path, 128, 128)
+    except Exception:
+        return 1
 
-    accent = max(colorful, key=sat)
-    urgent = max(colorful, key=lambda c: c[0] - (c[1] + c[2]) / 2)
-    green = max(colorful, key=lambda c: c[1] - (c[0] + c[2]) / 2)
-    peach = max(colorful, key=lambda c: c[0] * 0.6 + c[1] * 0.4 - c[2])
-    yellow = max(colorful, key=lambda c: c[0] + c[1] - 2 * c[2])
-    if lum(dark) > 80:
-        dark = scale(dark, 0.45)
-    if lum(light) < 160:
-        light = mix(light, (245, 245, 245), 0.55)
-    bg, fg = dark, light
-    accent = distinct(accent, bg, mix(accent, (90, 150, 220), 0.6))
-    urgent = distinct(urgent, bg, (220, 80, 95))
-    green = distinct(green, bg, (120, 180, 110))
-    peach = distinct(peach, bg, (230, 150, 90))
-    yellow = distinct(yellow, bg, (230, 190, 90))
+    base_clusters, vibrant_clusters, total_pixels = extract_clusters_from_pixbuf(pb)
+    if not base_clusters:
+        return 1
+
+    # 1. Determine dominant theme hue and temperature
+    sorted_base = sorted(base_clusters, key=lambda c: c["count"], reverse=True)
+    dom_h = sorted_base[0]["h"] if sorted_base else 0.60
+    dom_s = sorted_base[0]["s"] if sorted_base else 0.15
+
+    # 2. Base Dark Theme Shades (with subtle wallpaper tint)
+    # Guaranteed deep, elegant dark background for high text contrast
+    bg_s = min(dom_s * 0.45, 0.18)
+    bg = hls_to_rgb(dom_h, 0.12, bg_s)
+    mantle = hls_to_rgb(dom_h, 0.09, bg_s)
+    crust = hls_to_rgb(dom_h, 0.065, bg_s)
+    surface = hls_to_rgb(dom_h, 0.20, min(dom_s * 0.35, 0.14))
+
+    # 3. High-Contrast Text Colors (WCAG AAA >= 7:1)
+    fg_s = min(dom_s * 0.20, 0.10)
+    fg = hls_to_rgb(dom_h, 0.90, fg_s)        # ~#e0e2f0, high contrast > 11:1
+    muted = hls_to_rgb(dom_h, 0.70, fg_s)     # ~#a8abbd, contrast > 6:1
+    overlay = hls_to_rgb(dom_h, 0.50, fg_s)   # ~#75788a, contrast > 3.5:1
+
+    # 4. Extract or synthesize distinct, vibrant Semantic & Accent colors
+    candidates = vibrant_clusters if vibrant_clusters else base_clusters
+
+    def find_best_in_hue(h_min_deg, h_max_deg, fallback_h_deg, target_l=0.72, min_s=0.65):
+        h_min = h_min_deg / 360.0
+        h_max = h_max_deg / 360.0
+        matches = []
+        for c in candidates:
+            in_range = (h_min <= c["h"] <= h_max) if h_min <= h_max else (c["h"] >= h_min or c["h"] <= h_max)
+            if in_range:
+                # Score by saturation and presence
+                score = c["s"] * 2.0 + math.sqrt(c["count"])
+                matches.append((score, c))
+        if matches:
+            matches.sort(key=lambda x: x[0], reverse=True)
+            best = matches[0][1]
+            s_tuned = max(min_s, min(0.92, best["s"] * 1.25))
+            l_tuned = max(0.68, min(0.78, best["l"]))
+            return hls_to_rgb(best["h"], l_tuned, s_tuned)
+        else:
+            return hls_to_rgb(fallback_h_deg / 360.0, target_l, min_s)
+
+    # Accent: The standout vibrant hue from the image
+    vibrant_sorted = sorted(candidates, key=lambda c: c["s"] * 2.5 + math.sqrt(c["count"]), reverse=True)
+    if vibrant_sorted and vibrant_sorted[0]["s"] >= 0.18:
+        best_acc = vibrant_sorted[0]
+        acc_s = max(0.65, min(0.92, best_acc["s"] * 1.30))
+        acc_l = max(0.68, min(0.78, max(0.65, best_acc["l"])))
+        accent = hls_to_rgb(best_acc["h"], acc_l, acc_s)
+    else:
+        # Fallback harmonic accent
+        accent = hls_to_rgb((dom_h + 0.55) % 1.0, 0.74, 0.75)
+
+    urgent = find_best_in_hue(330, 20, 350, target_l=0.70, min_s=0.75)   # Red / Pink / Rose
+    green = find_best_in_hue(85, 165, 130, target_l=0.72, min_s=0.62)    # Green / Mint
+    peach = find_best_in_hue(20, 50, 28, target_l=0.72, min_s=0.75)      # Orange / Peach
+    yellow = find_best_in_hue(48, 78, 52, target_l=0.75, min_s=0.80)     # Yellow / Gold
+
+    # 5. Ensure mutual distinctness among all semantic colors (minimum distance >= 58 in RGB)
+    semantic_order = [
+        ("accent", accent, None),
+        ("urgent", urgent, (350 / 360.0, 0.70, 0.78)),
+        ("green", green, (130 / 360.0, 0.72, 0.65)),
+        ("peach", peach, (28 / 360.0, 0.72, 0.78)),
+        ("yellow", yellow, (52 / 360.0, 0.75, 0.82)),
+    ]
+
+    resolved_colors = {}
+    used_colors = []
+
+    for name, current_col, fallback_hls in semantic_order:
+        col = current_col
+        for prev in used_colors:
+            if rgb_dist(col, prev) < 58:
+                if fallback_hls:
+                    col = hls_to_rgb(*fallback_hls)
+                break
+        resolved_colors[name] = col
+        used_colors.append(col)
+
     pal = {
         "background": bg,
-        "mantle": scale(bg, 0.86),
-        "crust": scale(bg, 0.72),
+        "mantle": mantle,
+        "crust": crust,
         "foreground": fg,
-        "muted": mix(fg, bg, 0.42),
-        "overlay": mix(fg, bg, 0.62),
-        "surface": mix(bg, fg, 0.16),
-        "accent": accent,
-        "urgent": urgent,
-        "green": green,
-        "peach": peach,
-        "yellow": yellow,
+        "muted": muted,
+        "overlay": overlay,
+        "surface": surface,
+        "accent": resolved_colors["accent"],
+        "urgent": resolved_colors["urgent"],
+        "green": resolved_colors["green"],
+        "peach": resolved_colors["peach"],
+        "yellow": resolved_colors["yellow"],
     }
+
     for key, value in pal.items():
         print(f"{key}={hexc(value)}")
     return 0
