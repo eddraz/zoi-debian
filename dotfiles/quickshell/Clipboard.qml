@@ -201,11 +201,11 @@ Scope {
         }
         if (root.confirmingClear) {
             if (event.key === Qt.Key_Left || event.key === Qt.Key_H) {
-                root.clearConfirmFocused = false;
+                root.clearConfirmFocused = true;
                 return true;
             }
             if (event.key === Qt.Key_Right || event.key === Qt.Key_L) {
-                root.clearConfirmFocused = true;
+                root.clearConfirmFocused = false;
                 return true;
             }
             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
