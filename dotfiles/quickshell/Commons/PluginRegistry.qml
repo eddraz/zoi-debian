@@ -25,9 +25,9 @@ Singleton {
     }
 
     readonly property var defaultLayout: ({
-        "left": ["workspaces", "window"],
-        "center": ["clock"],
-        "right": ["tray", "keyboard", "weather", "media", "reminders", "dnd", "notifs", "network", "bluetooth", "audio", "power", "session"]
+        "left": ["session", "workspaces", "window"],
+        "center": ["reminders", "clock", "weather"],
+        "right": ["keyboard", "media", "audio", "power", "bluetooth", "network", "notifs", "dnd", "tray"]
     })
 
     readonly property var catalog: ({
@@ -74,7 +74,7 @@ Singleton {
             "popup": "weather",
             "panel": "../panels/WeatherPanel.qml",
             "title": "Weather",
-            "defaultSection": "right"
+            "defaultSection": "center"
         },
         "media": {
             "kinds": ["bar-widget", "panel"],
@@ -90,7 +90,7 @@ Singleton {
             "label": "Reminders",
             "source": "../widgets/Reminder.qml",
             "ipc": ["reminders", "toggle"],
-            "defaultSection": "right"
+            "defaultSection": "center"
         },
         "dnd": {
             "kinds": ["bar-widget"],
@@ -150,7 +150,7 @@ Singleton {
             "popup": "session",
             "panel": "../panels/SessionPanel.qml",
             "title": "Session",
-            "defaultSection": "right"
+            "defaultSection": "left"
         },
         "bar": {
             "kinds": ["panel"],

@@ -3,24 +3,24 @@
   "bar": {
     "layout": {
       "left": [
+        "session",
         "workspaces",
         "window"
       ],
       "center": [
-        "clock"
+        "reminders",
+        "clock",
+        "weather"
       ],
       "right": [
-        "session",
+        "keyboard",
+        "media",
         "audio",
         "power",
         "bluetooth",
         "network",
         "notifs",
         "dnd",
-        "reminders",
-        "media",
-        "weather",
-        "keyboard",
         "tray"
       ]
     }
