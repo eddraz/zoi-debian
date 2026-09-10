@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Extract a rich, harmonious, high-contrast 22-color Omarchy Quatro palette from a wallpaper image.
-Outputs key=value pairs (or JSON with --json).
+"""ZOI Wallpaper Color Extraction Engine (Omarchy Quatro Architecture)
+Extracts a rich, multi-dominant, vibrant 22-color palette directly from any wallpaper image,
+strictly enforcing WCAG AA/AAA contrast ratios while preserving the authentic chromatic
+character, ambient tones, and accent highlights of the image.
 """
 
 import argparse
@@ -15,6 +17,7 @@ try:
     gi.require_version("GdkPixbuf", "2.0")
     from gi.repository import GdkPixbuf
 except Exception:
+    print("Error: GdkPixbuf (gi) is required for image extraction", file=sys.stderr)
     sys.exit(1)
 
 
@@ -35,101 +38,165 @@ def rgb_to_hls(r, g, b):
     return colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
 
 
-def rel_lum(c):
-    def chan(v):
-        v_lin = v / 255.0
-        return v_lin / 12.92 if v_lin <= 0.04045 else ((v_lin + 0.055) / 1.055) ** 2.4
-    return 0.2126 * chan(c[0]) + 0.7152 * chan(c[1]) + 0.0722 * chan(c[2])
+def srgb_to_linear(v):
+    v_norm = v / 255.0
+    return v_norm / 12.92 if v_norm <= 0.04045 else ((v_norm + 0.055) / 1.055) ** 2.4
+
+
+def rel_luminance(c):
+    return 0.2126 * srgb_to_linear(c[0]) + 0.7152 * srgb_to_linear(c[1]) + 0.0722 * srgb_to_linear(c[2])
+
+
+def contrast_ratio(c1, c2):
+    l1 = rel_luminance(c1)
+    l2 = rel_luminance(c2)
+    return (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
+
+
+def ensure_contrast(c, bg, min_cr=4.5, is_bright=True):
+    """Adjust color lightness incrementally until minimum contrast ratio is achieved."""
+    h, l, s = rgb_to_hls(c[0], c[1], c[2])
+    if contrast_ratio(c, bg) >= min_cr:
+        return c
+    step = 0.015 if is_bright else -0.015
+    for _ in range(40):
+        l = max(0.04, min(0.99, l + step))
+        candidate = hls_to_rgb(h, l, s)
+        if contrast_ratio(candidate, bg) >= min_cr:
+            return candidate
+    return hls_to_rgb(h, l, s)
 
 
 def extract_palette(image_path):
-    pb = GdkPixbuf.Pixbuf.new_from_file_at_size(image_path, 160, 160)
+    # 1. Downsample for high-fidelity color frequency analysis
+    pb = GdkPixbuf.Pixbuf.new_from_file_at_size(image_path, 220, 220)
     pixels = pb.get_pixels()
     rs = pb.get_rowstride()
     n = pb.get_n_channels()
     w, h = pb.get_width(), pb.get_height()
 
-    points = []
-    vibrant = []
-
+    color_counts = {}
     for y in range(h):
         for x in range(w):
             o = y * rs + x * n
+            if n >= 4 and pixels[o + 3] < 128:
+                continue
             r, g, b = pixels[o], pixels[o + 1], pixels[o + 2]
-            h_val, l_val, s_val = rgb_to_hls(r, g, b)
-            points.append((r, g, b, h_val, l_val, s_val))
-            if s_val >= 0.18 and 0.12 <= l_val <= 0.88:
-                vibrant.append((r, g, b, h_val, l_val, s_val))
+            # 5-bit quantization per channel (32 levels = 32768 bins)
+            qr = (r >> 3) << 3
+            qg = (g >> 3) << 3
+            qb = (b >> 3) << 3
+            key = (qr, qg, qb)
+            color_counts[key] = color_counts.get(key, 0) + 1
 
-    # Dominant hue
-    if vibrant:
-        sorted_v = sorted(vibrant, key=lambda p: p[5], reverse=True)
-        dom_h = sorted_v[0][3]
-        dom_s = sorted_v[0][5]
+    total_px = max(1, sum(color_counts.values()))
+    clusters = []
+    for (r, g, b), count in color_counts.items():
+        h_val, l_val, s_val = rgb_to_hls(r, g, b)
+        weight = count / total_px
+        clusters.append({
+            "rgb": (r, g, b),
+            "hls": (h_val, l_val, s_val),
+            "h_deg": h_val * 360.0,
+            "weight": weight,
+            "chroma": (weight ** 0.32) * s_val * (1.0 - abs(l_val - 0.55) * 1.15)
+        })
+
+    if not clusters:
+        clusters.append({
+            "rgb": (30, 30, 46),
+            "hls": (0.66, 0.15, 0.20),
+            "h_deg": 240.0,
+            "weight": 1.0,
+            "chroma": 0.20
+        })
+
+    # 2. Extract Dominant Ambient Background Tone
+    dark_clusters = [c for c in clusters if c["hls"][1] <= 0.45]
+    if dark_clusters:
+        dark_clusters.sort(key=lambda c: c["weight"], reverse=True)
+        ambient_h = dark_clusters[0]["hls"][0]
+        ambient_s = dark_clusters[0]["hls"][2]
     else:
-        dom_h = points[0][3] if points else 0.6
-        dom_s = 0.2
+        clusters.sort(key=lambda c: c["weight"], reverse=True)
+        ambient_h = clusters[0]["hls"][0]
+        ambient_s = clusters[0]["hls"][2]
 
-    # 1. Background hierarchy (subtle wallpaper tint, deep dark tone)
-    bg_s = min(dom_s * 0.35, 0.16)
-    bg = hls_to_rgb(dom_h, 0.11, bg_s)
-    dark_bg = hls_to_rgb(dom_h, 0.08, bg_s)
-    darker_bg = hls_to_rgb(dom_h, 0.055, bg_s)
-    lighter_bg = hls_to_rgb(dom_h, 0.18, min(dom_s * 0.30, 0.14))
+    # Background hierarchy (calibrated dark mode with authentic image undertone)
+    bg_s = min(ambient_s * 0.40, 0.18)
+    bg = hls_to_rgb(ambient_h, 0.110, bg_s)
+    dark_bg = hls_to_rgb(ambient_h, 0.080, bg_s)
+    darker_bg = hls_to_rgb(ambient_h, 0.052, bg_s)
+    lighter_bg = hls_to_rgb(ambient_h, 0.180, min(ambient_s * 0.35, 0.15))
 
-    # 2. Foreground hierarchy (WCAG AAA contrast > 7:1)
-    fg_s = min(dom_s * 0.15, 0.08)
-    fg = hls_to_rgb(dom_h, 0.90, fg_s)
-    dark_fg = hls_to_rgb(dom_h, 0.50, fg_s)
-    light_fg = hls_to_rgb(dom_h, 0.93, fg_s)
-    bright_fg = hls_to_rgb(dom_h, 0.98, fg_s)
-    muted = hls_to_rgb(dom_h, 0.65, fg_s)
+    # 3. Extract Top Chromatic Accent from Wallpaper
+    vibrant_clusters = [c for c in clusters if c["hls"][2] >= 0.18 and 0.12 <= c["hls"][1] <= 0.88]
+    if vibrant_clusters:
+        vibrant_clusters.sort(key=lambda c: c["chroma"], reverse=True)
+        best_accent = vibrant_clusters[0]
+        acc_h = best_accent["hls"][0]
+        acc_l = max(0.68, min(0.76, best_accent["hls"][1] * 1.25))
+        acc_s = max(0.72, min(0.95, best_accent["hls"][2] * 1.35))
+        accent = hls_to_rgb(acc_h, acc_l, acc_s)
+    else:
+        accent = hls_to_rgb((ambient_h + 0.55) % 1.0, 0.72, 0.80)
 
-    # 3. Vibrant Accents from image
-    def find_hue_in_points(h_deg_center, width_deg=35, target_l=0.72, min_s=0.68):
-        c_h = h_deg_center / 360.0
-        w_h = width_deg / 360.0
-        matches = []
-        for p in vibrant:
-            diff = abs(p[3] - c_h)
-            if diff > 0.5:
-                diff = 1.0 - diff
-            if diff <= w_h:
-                score = p[5] * 2.0 + (1.0 - diff)
-                matches.append((score, p))
-        if matches:
-            matches.sort(key=lambda x: x[0], reverse=True)
-            best = matches[0][1]
-            return hls_to_rgb(best[3], max(0.65, min(0.78, best[4])), max(min_s, min(0.92, best[5] * 1.3)))
+    accent = ensure_contrast(accent, bg, min_cr=4.5)
+
+    selection = hls_to_rgb(ambient_h, 0.24, min(ambient_s * 0.50, 0.28))
+
+    # 4. Foreground Hierarchy (Strict WCAG AAA > 7:1 for body and titles)
+    fg_s = min(ambient_s * 0.12, 0.06)
+    fg = ensure_contrast(hls_to_rgb(ambient_h, 0.90, fg_s), bg, min_cr=7.5)
+    dark_fg = ensure_contrast(hls_to_rgb(ambient_h, 0.52, fg_s), bg, min_cr=3.2)
+    light_foreground = ensure_contrast(hls_to_rgb(ambient_h, 0.94, fg_s), bg, min_cr=9.0)
+    bright_foreground = ensure_contrast(hls_to_rgb(ambient_h, 0.98, fg_s), bg, min_cr=11.0)
+    muted = ensure_contrast(hls_to_rgb(ambient_h, 0.65, fg_s), bg, min_cr=4.5)
+
+    # 5. Multi-Color ANSI Syntax Sector Extraction
+    # Maps each ANSI syntax role to the best representative color found in the wallpaper
+    sectors = [
+        ("red", 355, 35, 0.72, 0.82),
+        ("orange", 28, 25, 0.72, 0.84),
+        ("yellow", 54, 25, 0.75, 0.86),
+        ("green", 132, 50, 0.72, 0.76),
+        ("cyan", 185, 35, 0.72, 0.80),
+        ("blue", 222, 35, 0.72, 0.82),
+        ("magenta", 298, 45, 0.72, 0.82),
+    ]
+
+    ansi = {}
+    for name, target_h_deg, width_deg, target_l, target_s in sectors:
+        matching = []
+        for c in clusters:
+            diff = abs(c["h_deg"] - target_h_deg)
+            if diff > 180:
+                diff = 360 - diff
+            if diff <= width_deg and c["hls"][2] >= 0.12:
+                # Rank by cluster weight, saturation, and closeness to sector center
+                score = (c["weight"] ** 0.28) * c["hls"][2] * (1.0 - (diff / width_deg) * 0.6)
+                matching.append((score, c))
+        if matching:
+            matching.sort(key=lambda x: x[0], reverse=True)
+            best = matching[0][1]
+            h_val = best["hls"][0]
+            l_val = max(0.68, min(0.78, best["hls"][1] * 1.25))
+            s_val = max(target_s, min(0.95, best["hls"][2] * 1.35))
+            col = hls_to_rgb(h_val, l_val, s_val)
         else:
-            return hls_to_rgb(c_h, target_l, min_s)
+            col = hls_to_rgb(target_h_deg / 360.0, target_l, target_s)
 
-    # Standout primary accent
-    if vibrant:
-        best_v = sorted(vibrant, key=lambda p: p[5] * 2.0 + (0.5 - abs(p[4] - 0.5)), reverse=True)[0]
-        accent = hls_to_rgb(best_v[3], max(0.68, min(0.78, best_v[4])), max(0.68, min(0.92, best_v[5] * 1.35)))
-    else:
-        accent = hls_to_rgb((dom_h + 0.55) % 1.0, 0.74, 0.75)
+        col = ensure_contrast(col, bg, min_cr=4.5)
+        ansi[name] = col
 
-    selection = hls_to_rgb(dom_h, 0.22, min(dom_s * 0.40, 0.25))
+    ansi["brown"] = ensure_contrast(hls_to_rgb(22 / 360.0, 0.48, 0.45), bg, min_cr=3.2)
 
-    # ANSI 8 Colors
-    red = find_hue_in_points(355, 30, target_l=0.70, min_s=0.75)
-    orange = find_hue_in_points(28, 25, target_l=0.72, min_s=0.78)
-    yellow = find_hue_in_points(52, 25, target_l=0.75, min_s=0.82)
-    green = find_hue_in_points(130, 40, target_l=0.72, min_s=0.68)
-    cyan = find_hue_in_points(185, 35, target_l=0.72, min_s=0.70)
-    blue = find_hue_in_points(220, 35, target_l=0.72, min_s=0.75)
-    magenta = find_hue_in_points(285, 40, target_l=0.72, min_s=0.75)
-    brown = hls_to_rgb(20 / 360.0, 0.45, 0.40)
-
-    # Bright ANSI 6
-    bright_red = hls_to_rgb(355 / 360.0, 0.78, 0.85)
-    bright_yellow = hls_to_rgb(52 / 360.0, 0.82, 0.90)
-    bright_green = hls_to_rgb(130 / 360.0, 0.80, 0.80)
-    bright_cyan = hls_to_rgb(185 / 360.0, 0.80, 0.85)
-    bright_blue = hls_to_rgb(220 / 360.0, 0.80, 0.85)
-    bright_magenta = hls_to_rgb(285 / 360.0, 0.80, 0.85)
+    # 6. Bright ANSI 6 Variants (High-visibility for CLI and syntax highlighters)
+    bright = {}
+    for name in ["red", "yellow", "green", "cyan", "blue", "magenta"]:
+        h_val, l_val, s_val = rgb_to_hls(ansi[name][0], ansi[name][1], ansi[name][2])
+        b_col = hls_to_rgb(h_val, min(0.86, l_val + 0.10), min(0.98, s_val * 1.10))
+        bright[f"bright_{name}"] = ensure_contrast(b_col, bg, min_cr=6.0)
 
     return {
         "id": "wallpaper",
@@ -144,36 +211,36 @@ def extract_palette(image_path):
         "lighter_background": hexc(lighter_bg),
         "foreground": hexc(fg),
         "dark_foreground": hexc(dark_fg),
-        "light_foreground": hexc(light_fg),
-        "bright_foreground": hexc(bright_fg),
-        "red": hexc(red),
-        "yellow": hexc(yellow),
-        "orange": hexc(orange),
-        "green": hexc(green),
-        "cyan": hexc(cyan),
-        "blue": hexc(blue),
-        "magenta": hexc(magenta),
-        "brown": hexc(brown),
-        "bright_red": hexc(bright_red),
-        "bright_yellow": hexc(bright_yellow),
-        "bright_green": hexc(bright_green),
-        "bright_cyan": hexc(bright_cyan),
-        "bright_blue": hexc(bright_blue),
-        "bright_magenta": hexc(bright_magenta),
-        # Legacy aliases
+        "light_foreground": hexc(light_foreground),
+        "bright_foreground": hexc(bright_foreground),
+        "red": hexc(ansi["red"]),
+        "yellow": hexc(ansi["yellow"]),
+        "orange": hexc(ansi["orange"]),
+        "green": hexc(ansi["green"]),
+        "cyan": hexc(ansi["cyan"]),
+        "blue": hexc(ansi["blue"]),
+        "magenta": hexc(ansi["magenta"]),
+        "brown": hexc(ansi["brown"]),
+        "bright_red": hexc(bright["bright_red"]),
+        "bright_yellow": hexc(bright["bright_yellow"]),
+        "bright_green": hexc(bright["bright_green"]),
+        "bright_cyan": hexc(bright["bright_cyan"]),
+        "bright_blue": hexc(bright["bright_blue"]),
+        "bright_magenta": hexc(bright["bright_magenta"]),
+        # Aliases for compatibility
         "mantle": hexc(dark_bg),
         "crust": hexc(darker_bg),
         "surface": hexc(lighter_bg),
         "overlay": hexc(muted),
-        "urgent": hexc(red),
-        "peach": hexc(orange)
+        "urgent": hexc(ansi["red"]),
+        "peach": hexc(ansi["orange"])
     }
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Extract 22-color palette from wallpaper")
+    parser = argparse.ArgumentParser(description="Extract rich 22-color Omarchy Quatro palette from wallpaper")
     parser.add_argument("image_path", help="Path to wallpaper image")
-    parser.add_argument("--json", action="store_true", help="Output JSON instead of key=value")
+    parser.add_argument("--json", action="store_true", help="Output JSON format")
     args = parser.parse_args()
 
     path = os.path.expanduser(args.image_path)
