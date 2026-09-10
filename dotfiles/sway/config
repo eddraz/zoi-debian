@@ -102,8 +102,9 @@ input type:touchpad {
     floating_modifier $mod normal
 
 # Pixel borders only — window titles live in the Quickshell bar.
-default_border pixel 1
+default_border pixel 2
 default_floating_border pixel 2
+include theme.conf
 
     # Reload the configuration file
     bindsym $mod+Shift+c reload
