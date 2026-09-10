@@ -496,12 +496,39 @@ Scope {
                                     if (event.key === Qt.Key_Escape) {
                                         if (root.confirmingClear) {
                                             root.confirmingClear = false;
+                                            root.clearConfirmFocused = true;
                                         } else if (root.query !== "") {
                                             root.query = "";
                                         } else {
                                             root.close();
                                         }
                                         event.accepted = true;
+                                    } else if (event.key === Qt.Key_0) {
+                                        if (root.entries.length > 0 && !root.confirmingClear) {
+                                            root.confirmingClear = true;
+                                            root.clearConfirmFocused = true;
+                                            event.accepted = true;
+                                        }
+                                    } else if (event.key === Qt.Key_L && (event.modifiers & Qt.ControlModifier)) {
+                                        if (root.entries.length > 0 && !root.confirmingClear) {
+                                            root.confirmingClear = true;
+                                            root.clearConfirmFocused = true;
+                                            event.accepted = true;
+                                        }
+                                    } else if (root.confirmingClear) {
+                                        if (event.key === Qt.Key_Left || event.key === Qt.Key_H) {
+                                            root.clearConfirmFocused = false;
+                                            event.accepted = true;
+                                        } else if (event.key === Qt.Key_Right || event.key === Qt.Key_L) {
+                                            root.clearConfirmFocused = true;
+                                            event.accepted = true;
+                                        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                            if (root.clearConfirmFocused)
+                                                root.clearAll();
+                                            else
+                                                root.confirmingClear = false;
+                                            event.accepted = true;
+                                        }
                                     } else if (event.key === Qt.Key_Down) {
                                         root.selectedIndex = Math.min(root.selectedIndex + 1, Math.max(0, root.filtered.length - 1));
                                         event.accepted = true;
@@ -785,6 +812,13 @@ Scope {
                         anchors.verticalCenter: parent.verticalCenter
                         Text { text: "→ / del"; font.pixelSize: 9; color: Color.urgent; font.bold: true }
                         Text { text: "eliminar"; font.family: Style.fontFamily; font.pixelSize: 9; color: Color.popupMuted }
+                    }
+
+                    Row {
+                        spacing: 4
+                        anchors.verticalCenter: parent.verticalCenter
+                        Text { text: "0"; font.pixelSize: 9; color: Color.urgent; font.bold: true }
+                        Text { text: "vaciar"; font.family: Style.fontFamily; font.pixelSize: 9; color: Color.popupMuted }
                     }
 
                     Row {
