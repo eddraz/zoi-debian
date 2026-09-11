@@ -168,49 +168,31 @@ Column {
     Repeater {
         model: Themes.palettes
 
-        Rectangle {
+        ActionListItem {
             required property var modelData
             required property int index
-            readonly property bool selected: root.section === 0 && root.cursor === index
             readonly property bool current: Themes.currentId === modelData.id
 
             width: root.width
-            height: 42
-            radius: Style.radius
-            color: selected ? Color.focusFill : Color.surface
-            border.width: selected ? 1 : 0
-            border.color: Color.accent
-            Behavior on color { ColorAnimation { duration: Style.animDuration } }
-
-            Rectangle {
-                width: 3
-                height: selected ? 20 : 0
-                radius: 1.5
-                color: Color.accent
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                visible: selected
-                Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
+            selected: root.section === 0 && root.cursor === index
+            slot: index
+            highlighted: current
+            title: modelData.name
+            description: {
+                if (current)
+                    return modelData.id === "wallpaper" ? "Extraída del fondo de pantalla actual" : "Paleta de colores activa";
+                return modelData.id === "wallpaper" ? "Colores adaptativos del fondo" : "Haz clic para aplicar tema";
             }
-
-            IndexBadge {
-                id: thBadge
-                slot: index
-                anchors.left: parent.left
-                anchors.leftMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
+            badge: current ? "ACTIVO" : "TEMA"
+            onClicked: {
+                root.section = 0;
+                root.cursor = index;
+                Themes.apply(modelData.id);
             }
-
-            Row {
-                id: colorRow
-                anchors.left: thBadge.right
-                anchors.leftMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
+            leading: Row {
                 spacing: 3
-
                 Repeater {
                     model: [modelData.background, modelData.accent, modelData.urgent, modelData.green]
-
                     Rectangle {
                         required property var modelData
                         width: 8
@@ -220,69 +202,6 @@ Column {
                         border.width: 1
                         border.color: Color.overlay
                     }
-                }
-            }
-
-            Column {
-                anchors.left: colorRow.right
-                anchors.leftMargin: 10
-                anchors.right: themeStatusBadge.left
-                anchors.rightMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 2
-
-                Text {
-                    width: parent.width
-                    elide: Text.ElideRight
-                    color: current ? Color.accent : Color.popupText
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontBody
-                    font.bold: true
-                    text: modelData.name
-                }
-
-                Text {
-                    width: parent.width
-                    elide: Text.ElideRight
-                    color: Color.popupMuted
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption
-                    text: {
-                        if (current)
-                            return modelData.id === "wallpaper" ? "Extraída del fondo de pantalla actual" : "Paleta de colores activa";
-                        return modelData.id === "wallpaper" ? "Colores adaptativos del fondo" : "Haz clic para aplicar tema";
-                    }
-                }
-            }
-
-            Rectangle {
-                id: themeStatusBadge
-                anchors.right: parent.right
-                anchors.rightMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                height: 20
-                width: themeBadgeText.implicitWidth + 12
-                radius: 4
-                color: current ? Color.focusFill : (selected ? Color.surface : Color.background)
-                border.width: 1
-                border.color: current ? Color.accent : (selected ? Color.subtleBorder : "transparent")
-
-                Text {
-                    id: themeBadgeText
-                    anchors.centerIn: parent
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption - 1
-                    font.bold: true
-                    color: current ? Color.accent : Color.popupMuted
-                    text: current ? "ACTIVO" : "TEMA"
-                }
-            }
-
-            HoverMouse {
-                onClicked: {
-                    root.section = 0;
-                    root.cursor = index;
-                    Themes.apply(modelData.id);
                 }
             }
         }
@@ -532,7 +451,7 @@ Column {
             radius: Style.radius
             color: Color.accent
             border.width: root.section === 4 ? 2 : 0
-            border.color: Color.text
+            border.color: Color.foreground
 
             Text {
                 anchors.centerIn: parent

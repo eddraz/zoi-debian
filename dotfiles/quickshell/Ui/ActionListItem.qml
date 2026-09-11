@@ -4,9 +4,12 @@ import QtQuick
 import "../Commons"
 
 // Reusable list item for panels.
-// Encapsulates the standard row: indicator pill · IndexBadge · title/desc column · status badge · HoverMouse.
+// Encapsulates the standard row: indicator pill · IndexBadge · optional leading · title/desc · status badge · HoverMouse.
 Item {
     id: root
+
+    // Optional extra content between the index badge and the title (e.g. theme swatches).
+    property Component leading: null
 
     // --- Required props ---
     property bool selected: false
@@ -69,10 +72,21 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
     }
 
+    Loader {
+        id: leadingLoader
+        anchors.left: parent.left
+        anchors.leftMargin: 32
+        anchors.verticalCenter: parent.verticalCenter
+        visible: status === Loader.Ready
+        width: visible ? Math.max(implicitWidth, item ? item.implicitWidth : 0) : 0
+        height: 22
+        sourceComponent: root.leading
+    }
+
     // Title + Description column
     Column {
         anchors.left: parent.left
-        anchors.leftMargin: 32
+        anchors.leftMargin: 32 + (leadingLoader.visible ? leadingLoader.width + 10 : 0)
         anchors.right: statusBadge.left
         anchors.rightMargin: 8
         anchors.verticalCenter: parent.verticalCenter
