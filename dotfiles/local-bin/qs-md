@@ -1,0 +1,32 @@
+#!/bin/sh
+# Open a markdown file in Inlyne (GPU viewer, no browser engine).
+set -eu
+PATH="${HOME}/.local/bin:/usr/local/bin:/usr/bin:${PATH:-/usr/bin}"
+export PATH
+
+file="${1:-}"
+if [ -z "$file" ]; then
+    echo "usage: qs-md <file.md>" >&2
+    exit 2
+fi
+
+case "$file" in
+    file://*)
+        file=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.unquote(sys.argv[1][7:]))' "$file")
+        ;;
+esac
+
+if [ ! -f "$file" ]; then
+    echo "qs-md: no such file: $file" >&2
+    notify-send "Markdown" "No existe $file" 2>/dev/null || true
+    exit 1
+fi
+
+abs="$(readlink -f "$file" 2>/dev/null || python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$file")"
+
+if ! command -v inlyne >/dev/null; then
+    notify-send "Markdown" "Inlyne no está en PATH (~/.local/bin/inlyne)"
+    exit 1
+fi
+
+exec inlyne view --theme dark "$abs"

@@ -1,0 +1,24 @@
+#!/bin/sh
+# Pick a file with Yazi in foot, then open it in Inlyne.
+set -eu
+PATH="/usr/bin:/usr/local/bin:$HOME/.local/bin:$PATH"
+export PATH
+
+out="${XDG_RUNTIME_DIR:-/tmp}/zoi-md-pick"
+start="${1:-$HOME}"
+[ -d "$start" ] || start="$HOME"
+
+if ! command -v yazi >/dev/null; then
+    notify-send "Markdown" "Yazi no está en PATH"
+    exit 1
+fi
+
+rm -f "$out"
+if ! /usr/bin/foot -a yazi -T "Open markdown" -e /usr/bin/yazi --chooser-file "$out" "$start"; then
+    notify-send "Markdown" "No pude abrir Yazi"
+    exit 1
+fi
+[ -s "$out" ] || exit 0
+file=$(head -n 1 "$out")
+[ -n "$file" ] && [ -f "$file" ] || exit 0
+exec qs-md "$file"

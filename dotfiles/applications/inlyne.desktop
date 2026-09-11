@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Inlyne
+GenericName=Markdown Viewer
+Comment=GPU markdown viewer (no browser engine)
+Exec=qs-md %f
+Terminal=false
+StartupNotify=false
+StartupWMClass=inlyne
+MimeType=text/markdown;text/x-markdown;
+Icon=text-markdown
+Categories=Office;Viewer;
+Keywords=Markdown;Docs;README;Inlyne;
