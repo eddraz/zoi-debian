@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Unreleased
+
+### Features
+- **Optional Limine UEFI helper**: `scripts/limine-setup.sh` (dry-run by default) copies upstream `BOOTX64.EFI`, writes `limine.conf` under `/boot/limine` (so it can be recolored), and can add an NVRAM entry without removing GRUB. Documented in `docs/limine.md`. Not invoked by `install.sh`.
+- **Limine follows zoi-theme**: `limine.conf.tpl` maps the 22-color palette onto Limine `term_*` / `interface_*` options. Theme apply writes `~/.config/zoi/themed/limine.conf` and merges it into `/boot/limine/limine.conf` when that directory is writable.
+
 ## 0.1.3 — 2026-09-10
 
 ### Features & Fixes

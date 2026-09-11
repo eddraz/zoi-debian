@@ -142,6 +142,7 @@ Aplicaciones compiladas automáticamente:
 - **VSCode / Antigravity IDE / VSCodium**: `settings.json` (`workbench.colorCustomizations`)
 - **GTK 3.0 y GTK 4.0 / LibreWolf**: `~/.config/gtk-3.0/gtk.css` y `~/.config/gtk-4.0/gtk.css` + `gsettings prefer-dark/prefer-light`
 - **Herdr**: `~/.config/herdr/config.toml`
+- **Limine** (si está instalado): `~/.config/zoi/themed/limine.conf` + merge a `/boot/limine/limine.conf`. Ver [limine.md](limine.md).
 
 ### 3. Comandos CLI `zoi-theme`
 

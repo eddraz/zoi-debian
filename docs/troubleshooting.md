@@ -179,3 +179,13 @@ El script `scripts/uninstall.sh` realiza una desinstalación limpia:
 - Limpia los directorios de estado en `~/.local/state/quickshell` y `~/.local/state/zoi`.
 - Remueve los comandos `exec_always` de `~/.config/sway/config`.
 - Mantiene los paquetes apt instalados intactos (para removerlos por completo, seguir las instrucciones que imprime al finalizar).
+
+## Limine no arranca Debian
+
+El helper opcional está documentado en [limine.md](limine.md). GRUB no se desinstala.
+
+- Firmware: elegí la entrada `debian` (`shimx64.efi`).
+- `sudo ./scripts/limine-setup.sh status` — ¿están `BOOTX64.EFI` y `limine.conf`?
+- El kernel se lee por `guid(<UUID-de-/>):/boot/vmlinuz-...`. Si Limine dice que no encuentra el archivo, el UUID de `/` no coincide o `/boot` no está en esa partición.
+- Secure Boot tiene que estar **off** para este helper.
+- No uses este script si no querés cambiar el bootloader; `install.sh` no lo corre.

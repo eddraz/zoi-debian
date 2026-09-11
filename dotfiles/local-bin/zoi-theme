@@ -384,6 +384,7 @@ class ZoiThemeManager:
         self._dispatch_vscode(pal)
         self._dispatch_gtk(rendered_files.get("gtk-3.0.css"), rendered_files.get("gtk-4.0.css"), pal)
         self._dispatch_herdr(pal)
+        self._dispatch_limine(rendered_files.get("limine.conf"))
         self._dispatch_state(pal, colors_json_content, sh_lines)
         self._run_hooks(theme_id)
 
@@ -713,6 +714,79 @@ class ZoiThemeManager:
             subprocess.run(["herdr", "server", "reload-config"], capture_output=True, timeout=1)
         except Exception:
             pass
+
+
+    def _dispatch_limine(self, content):
+        """Write Limine color globals and merge with kernel entries if /boot/limine is writable."""
+        if not content:
+            return
+        themed_path = os.path.join(self.home, ".config/zoi/themed/limine.conf")
+        os.makedirs(os.path.dirname(themed_path), exist_ok=True)
+        with open(themed_path, "w", encoding="utf-8") as f:
+            f.write(content.rstrip() + "\n")
+
+        live_dir = "/boot/limine"
+        live_path = os.path.join(live_dir, "limine.conf")
+        if not os.path.isdir(live_dir) or not os.access(live_dir, os.W_OK):
+            return
+        try:
+            assembled = self._assemble_limine_conf(content)
+            tmp_path = live_path + ".tmp"
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                f.write(assembled)
+            os.replace(tmp_path, live_path)
+        except OSError:
+            pass
+
+    def _assemble_limine_conf(self, theme_body):
+        uuid = ""
+        try:
+            r = subprocess.run(["findmnt", "-no", "UUID", "/"], capture_output=True, text=True, timeout=3)
+            uuid = (r.stdout or "").strip()
+        except Exception:
+            uuid = ""
+        versions = []
+        boot = "/boot"
+        if os.path.isdir(boot):
+            for name in os.listdir(boot):
+                if not name.startswith("vmlinuz-"):
+                    continue
+                ver = name[len("vmlinuz-"):]
+                if os.path.isfile(os.path.join(boot, "initrd.img-" + ver)):
+                    versions.append(ver)
+            try:
+                r = subprocess.run(["sort", "-Vr"], input="\n".join(versions) + "\n", capture_output=True, text=True, timeout=3)
+                versions = [v for v in (r.stdout or "").splitlines() if v]
+            except Exception:
+                versions.sort(reverse=True)
+        lines = [
+            "# Assembled by zoi-theme + limine-setup.sh. Theme: zoi-theme; entries: regenerated.",
+            "timeout: 5",
+            "default_entry: 1",
+            "",
+            "# zoi-theme-begin",
+            theme_body.rstrip(),
+            "# zoi-theme-end",
+            "",
+            "# zoi-entries-begin",
+        ]
+        cmdline = f"root=UUID={uuid} ro quiet" if uuid else "ro quiet"
+        for ver in versions:
+            kernel = f"guid({uuid}):/boot/vmlinuz-{ver}" if uuid else f"boot():/boot/vmlinuz-{ver}"
+            initrd = f"guid({uuid}):/boot/initrd.img-{ver}" if uuid else f"boot():/boot/initrd.img-{ver}"
+            lines.extend([
+                f"/Debian {ver}",
+                "    comment: Debian GNU/Linux (Limine)",
+                "    protocol: linux",
+                f"    path: {kernel}",
+                f"    cmdline: {cmdline}",
+                f"    module_path: {initrd}",
+                "",
+            ])
+        lines.append("# zoi-entries-end")
+        lines.append("")
+        return "\n".join(lines)
+
 
     def _dispatch_state(self, pal, json_str, sh_lines):
         with open(os.path.join(self.qs_state_dir, "colors.json"), "w", encoding="utf-8") as f:

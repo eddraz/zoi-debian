@@ -187,6 +187,7 @@ grim -g "$(swaymsg -t get_tree | python3 -c '...')" /tmp/x.png
 - Don't reorder `hostOrder` without checking that nothing depends on the previous order.
 - Don't add `qs.Ui` or `$OMARCHY_PATH` — first-party only.
 - Don't try to reload `foot` terminal config with `pkill -SIGUSR1 foot`. Foot does NOT support signal-based reloading. Use the OSC escape sequence mechanism implemented in `zoi-theme._osc_reload_foot` (writes directly to `/dev/pts/*`).
+- Don't run `scripts/limine-setup.sh apply` unless the user explicitly asked to change the bootloader. Default is dry-run. Never call it from `install.sh`. Don't uninstall GRUB as part of Limine setup.
 
 ## When to update the docs
 

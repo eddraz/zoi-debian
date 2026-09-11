@@ -48,9 +48,11 @@ zoi-debian/
 │   ├── configuration.md       dónde está cada config y motor de temas
 │   ├── shortcuts.md           tabla completa de atajos
 │   ├── architecture.md        PluginRegistry + singletons + theme engine
-│   └── troubleshooting.md     problemas frecuentes
+│   ├── troubleshooting.md     problemas frecuentes
+│   └── limine.md              Limine UEFI opcional (no lo instala install.sh)
 ├── scripts/
 │   ├── install.sh             bootstrap completo (curl | sh friendly)
+│   ├── limine-setup.sh        plan/apply Limine (GRUB queda de fallback)
 │   └── uninstall.sh
 ├── dotfiles/
 │   ├── quickshell/            todo el árbol de QML

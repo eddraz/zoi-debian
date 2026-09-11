@@ -229,3 +229,7 @@ Si no se ve nada, mirá `~/.cache/quickshell/crashes/<shell>/`.
 ```
 
 (Elimina dotfiles de `~/.config/quickshell`, restaura `waybar` como bar default.)
+
+## Bootloader (opcional)
+
+`install.sh` no cambia GRUB. Si querés Limine en UEFI, ver [limine.md](limine.md).
