@@ -46,8 +46,10 @@ print_plan() {
   log "Plan (sin escribir nada)."
   echo "  Version:     v$LEMURS_VERSION (binary tarball)"
   echo "  Binary dest: /usr/local/bin/lemurs"
-  echo "  Config:      /etc/lemurs/config.toml"
-  echo "  Variables:   /etc/lemurs/variables.toml  (chown $(owner_name), zoi-theme writes here)"
+  echo "  Config:      /etc/lemurs/config.toml  (chown user; zoi-theme may refresh)"
+  echo "  Variables:   /etc/lemurs/variables.toml  (paleta wallpaper/tema)"
+  echo "  User layout: ~/.config/zoi/lemurs/config.toml  (optional override)"
+  echo "  Overlay:     ~/.config/zoi/lemurs/variables.overlay.toml"
   echo "  Wayland:     /etc/lemurs/wayland/sway"
   echo "  Unit:        /etc/systemd/system/lemurs.service  (TTY2, alias display-manager)"
   echo "  PAM:         /etc/pam.d/lemurs"
@@ -67,8 +69,32 @@ install_binary() {
   $SUDO install -m 0755 "$efi" /usr/local/bin/lemurs
 }
 
+write_wallpaper_fallback_vars() {
+  local vars="$1"
+  $SUDO tee "$vars" >/dev/null <<'EOF'
+background = "#1c1c1c"
+foreground = "#e6e6e6"
+accent = "#fbad60"
+muted = "#a6a6a6"
+overlay = "#a6a6a6"
+surface = "#2e2e2e"
+mantle = "#141414"
+crust = "#0d0d0d"
+red = "#fb6060"
+green = "#60fbfb"
+peach = "#fbad60"
+yellow = "#fbfb60"
+login_title = "ZOI"
+password_title = "password"
+EOF
+}
+
 apply_install() {
   need_root_write
+  arch="$(dpkg --print-architecture)"
+  if [ "$arch" != "amd64" ]; then
+    die "Lemurs v$LEMURS_VERSION solo publica tarball x86_64 (esta máquina: $arch)."
+  fi
   [ -d "$DOT_LEMURS" ] || die "No encuentro $DOT_LEMURS."
   command -v curl >/dev/null || die "Falta curl."
 
@@ -76,30 +102,40 @@ apply_install() {
 
   log "Instalando /etc/lemurs."
   $SUDO mkdir -p /etc/lemurs/wayland /etc/lemurs/wms /var/cache/lemurs
-  $SUDO cp -a "$DOT_LEMURS/config.toml" /etc/lemurs/config.toml
   $SUDO cp -a "$DOT_LEMURS/lemurs.pam" /etc/pam.d/lemurs
   $SUDO install -m 0755 "$DOT_LEMURS/wayland-sway" /etc/lemurs/wayland/sway
   $SUDO cp -a "$DOT_LEMURS/lemurs.service" /etc/systemd/system/lemurs.service
 
-  local themed vars owner
-  themed="$(owner_home)/.config/zoi/themed/lemurs-variables.toml"
-  vars=/etc/lemurs/variables.toml
+  local owner home share user_cfg stock_cfg themed vars example
   owner="$(owner_name)"
-  if [ -f "$themed" ]; then
-    log "Copiando variables de tema desde $themed."
-    $SUDO cp -a "$themed" "$vars"
-  elif [ ! -f "$vars" ]; then
-    log "Variables de fallback (tokyo-night-ish) hasta el primer zoi-theme."
-    $SUDO tee "$vars" >/dev/null <<'EOF'
-background = "#1a1b26"
-foreground = "#a9b1d6"
-accent = "#7aa2f7"
-muted = "#414868"
-red = "#f7768e"
-EOF
+  home="$(owner_home)"
+  share="$home/.local/share/zoi/lemurs"
+  user_cfg="$home/.config/zoi/lemurs/config.toml"
+  stock_cfg="$DOT_LEMURS/config.toml"
+  example="$REPO_ROOT/dotfiles/config/zoi/lemurs/variables.overlay.toml.example"
+  mkdir -p "$share" "$home/.config/zoi/lemurs"
+  cp -a "$stock_cfg" "$share/config.toml"
+  if [ -f "$example" ] && [ ! -f "$home/.config/zoi/lemurs/variables.overlay.toml.example" ]; then
+    cp -a "$example" "$home/.config/zoi/lemurs/variables.overlay.toml.example"
   fi
-  $SUDO chown "$owner:$owner" "$vars"
-  $SUDO chmod 0644 "$vars"
+  if [ -f "$user_cfg" ]; then
+    log "Layout de usuario: $user_cfg"
+    $SUDO cp -a "$user_cfg" /etc/lemurs/config.toml
+  else
+    $SUDO cp -a "$stock_cfg" /etc/lemurs/config.toml
+  fi
+
+  themed="$home/.config/zoi/themed/lemurs-variables.toml"
+  vars=/etc/lemurs/variables.toml
+  if [ -f "$themed" ]; then
+    log "Paleta activa desde wallpaper/tema: $themed"
+    $SUDO cp -a "$themed" "$vars"
+  else
+    log "Sin themed aún: paleta del wallpaper default (Baby Yoda), no tokyo-night."
+    write_wallpaper_fallback_vars "$vars"
+  fi
+  $SUDO chown "$owner:$owner" "$vars" /etc/lemurs/config.toml
+  $SUDO chmod 0644 "$vars" /etc/lemurs/config.toml
 
   if getent group seat >/dev/null 2>&1; then
     $SUDO usermod -aG seat "$owner" || true

@@ -1,10 +1,10 @@
 # Lemurs (display manager)
 
-[Lemurs](https://github.com/coastalwhite/lemurs) es el TUI login de zoi-debian. La UI usa la paleta ZOI. LightDM queda instalado como fallback, deshabilitado.
+Lemurs es el login TUI de zoi-debian. **No pinta el wallpaper** (no es un greeter gráfico): usa la **paleta** de ese fondo o del tema que elijas. LightDM queda instalado como fallback, deshabilitado.
+
+Por defecto, el primer boot usa los colores extraídos de `assets/default-wallpaper.jpg` (Baby Yoda).
 
 ## Quick path
-
-`scripts/install.sh` ya lo llama. A mano:
 
 ```sh
 ./scripts/lemurs-setup.sh          # plan
@@ -12,34 +12,49 @@ sudo ./scripts/lemurs-setup.sh apply
 # reboot — login en TTY2
 ```
 
-No arranca Lemurs en caliente: solo `enable` para el próximo boot.
+`apply` solo hace `enable`. No arranca Lemurs en caliente.
 
-## Tema
+## Tema (automático)
+
+Elegir wallpaper o paleta en Quickshell / `zoi-theme set …` reescribe `/etc/lemurs/variables.toml`. Se ve en el **próximo** login.
 
 | Archivo | Rol |
-|---------|-----|
-| `/etc/lemurs/config.toml` | Layout fijo; colores vía `$background`, `$accent`, … |
-| `/etc/lemurs/variables.toml` | Hex de la paleta activa (ownership del usuario) |
-| `~/.config/zoi/themed/lemurs-variables.toml` | Copia que escribe `zoi-theme` |
+|---|---|
+| `/etc/lemurs/config.toml` | Layout (`$variables`). Writable por el usuario de escritorio. |
+| `/etc/lemurs/variables.toml` | Hex + títulos. Lo escribe `zoi-theme`. |
+| `~/.config/zoi/themed/lemurs-variables.toml` | Copia de la paleta activa |
 
-Elegir un tema (panel o `zoi-theme set …`) reescribe `variables.toml`. Se ve en el **próximo** login (Lemurs no está corriendo dentro de Sway).
+## Personalizar
 
-## First install + wallpaper
+| Querés | Archivo | Qué pasa |
+|---|---|---|
+| Cambiar colores con el resto del desktop | Panel Theme / wallpaper | Automático |
+| Títulos, un hex puntual | `~/.config/zoi/lemurs/variables.overlay.toml` | Se mergea encima de la paleta |
+| Layout entero (hints, anchos, focus) | `~/.config/zoi/lemurs/config.toml` | Tiene que ser el TOML **completo** (Lemurs v0.4 exige todas las keys). Copiá `/etc/lemurs/config.toml` y editá. |
 
-El fondo default **ya está en el repo**: `assets/default-wallpaper.jpg` (idéntico a `~/Imágenes/baby-yoda-cartoon.jpg`).
+Ejemplo de overlay:
+
+```sh
+cp ~/.config/zoi/lemurs/variables.overlay.toml.example \
+   ~/.config/zoi/lemurs/variables.overlay.toml
+# editá login_title / accent / …
+zoi-theme set wallpaper
+```
+
+## First install
 
 `install.sh`:
 
-1. Copia el jpg a `~/Imágenes/baby-yoda-cartoon.jpg`
-2. Extrae 22 colores con `qs-theme-from-wallpaper --json`
-3. `zoi-theme apply-json` (incluye Lemurs + Limine + el resto)
-4. `lemurs-setup.sh apply`
+1. Copia `assets/default-wallpaper.jpg` → `~/Imágenes/baby-yoda-cartoon.jpg`
+2. Extrae 22 colores (`qs-theme-from-wallpaper --json`)
+3. `zoi-theme apply-json` (Lemurs + el resto)
+4. `lemurs-setup.sh apply` (si no hay themed, fallback = paleta Baby Yoda, no tokyo-night)
 
 ## Qué no hace
 
 - No borra el paquete `lightdm`
-- No hace `systemctl start lemurs` (evitaría cortar la sesión actual)
-- No es un greeter gráfico: no muestra el wallpaper como imagen, sí sus colores (fondo, acento, bordes)
+- No hace `systemctl start lemurs` desde una sesión gráfica
+- No muestra el jpg en TTY; sí sus colores de fondo, acento y bordes
 
 ## Fallback a LightDM
 
@@ -52,6 +67,6 @@ sudo systemctl start lightdm
 ## Checklist
 
 - [ ] `./scripts/lemurs-setup.sh` muestra TTY2 y `/etc/lemurs/wayland/sway`
-- [ ] `~/.config/zoi/themed/lemurs-variables.toml` tiene hex del tema actual
+- [ ] `~/.config/zoi/themed/lemurs-variables.toml` tiene hex del wallpaper o tema actual
 - [ ] Después de `apply`, `systemctl is-enabled lemurs` es `enabled`
 - [ ] Reboot → login TUI → sesión `sway`

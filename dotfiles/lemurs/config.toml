@@ -1,5 +1,8 @@
-# ZOI Lemurs config. Colors come from /etc/lemurs/variables.toml ($name).
-# All keys are required by Lemurs v0.4.
+# ZOI Lemurs — TUI greeter. All keys required (Lemurs v0.4).
+# Colors and labels: /etc/lemurs/variables.toml ($name), written by zoi-theme.
+# Customize:
+#   ~/.config/zoi/lemurs/variables.overlay.toml  — extra/override $variables
+#   ~/.config/zoi/lemurs/config.toml             — full layout (copied to /etc)
 
 tty = 2
 main_log_path = "/var/log/lemurs.log"
@@ -8,31 +11,31 @@ cache_path = "/var/cache/lemurs"
 do_log = true
 pam_service = "lemurs"
 system_shell = "/bin/sh"
-initial_path = "/usr/local/sbin:/usr/local/bin:/usr/bin"
+initial_path = "/usr/local/sbin:/usr/local/bin:/usr/bin:/bin"
 shell_login_flag = "short"
-focus_behaviour = "default"
+focus_behaviour = "username"
 
 [background]
-show_background = false
+show_background = true
 
 [background.style]
 color = "$background"
-show_border = true
-border_color = "$muted"
+show_border = false
+border_color = "$accent"
 
 [power_controls]
 hint_margin = 2
 entries = []
 
 [[power_controls.base_entries]]
-hint = "Shutdown"
+hint = "F1 shutdown"
 hint_color = "$muted"
 hint_modifiers = ""
 key = "F1"
 cmd = "systemctl poweroff -l"
 
 [[power_controls.base_entries]]
-hint = "Reboot"
+hint = "F2 reboot"
 hint_color = "$muted"
 hint_modifiers = ""
 key = "F2"
@@ -55,7 +58,7 @@ right_mover = ">"
 mover_margin = 1
 show_neighbours = true
 neighbour_color = "$muted"
-neighbour_modifiers = ""
+neighbour_modifiers = "dim"
 neighbour_color_focused = "$foreground"
 neighbour_modifiers_focused = ""
 neighbour_margin = 1
@@ -63,44 +66,44 @@ selected_color = "$foreground"
 selected_modifiers = "underlined"
 selected_color_focused = "$accent"
 selected_modifiers_focused = "bold"
-max_display_length = 8
-no_envs_text = "No environments..."
+max_display_length = 12
+no_envs_text = "No sessions"
 no_envs_color = "$foreground"
 no_envs_modifiers = ""
 no_envs_color_focused = "$red"
-no_envs_modifiers_focused = ""
+no_envs_modifiers_focused = "bold"
 
 [username_field]
 remember = true
 
 [username_field.style]
 show_title = true
-title = "Login"
-title_color = "$foreground"
+title = "$login_title"
+title_color = "$muted"
 content_color = "$foreground"
 title_color_focused = "$accent"
 content_color_focused = "$accent"
 show_border = true
-border_color = "$muted"
+border_color = "$surface"
 border_color_focused = "$accent"
 use_max_width = true
-max_width = 48
+max_width = 42
 
 [password_field]
 content_replacement_character = "*"
 
 [password_field.style]
 show_title = true
-title = "Password"
-title_color = "$foreground"
+title = "$password_title"
+title_color = "$muted"
 content_color = "$foreground"
 title_color_focused = "$accent"
 content_color_focused = "$accent"
 show_border = true
-border_color = "$muted"
+border_color = "$surface"
 border_color_focused = "$accent"
 use_max_width = true
-max_width = 48
+max_width = 42
 
 [x11]
 xserver_log_path = "/var/log/lemurs.xorg.log"
