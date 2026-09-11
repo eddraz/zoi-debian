@@ -148,7 +148,10 @@ PanelWindow {
         }
         searching = true;
         searchQuery = "";
-        Qt.callLater(() => findField.forceActiveFocus());
+        Qt.callLater(() => {
+            searchBar.searchQuery = "";
+            searchBar.forceActiveFocus();
+        });
     }
 
     function triggerQr() {
@@ -242,7 +245,7 @@ PanelWindow {
             }
             if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
                 const back = event.key === Qt.Key_Backtab || !!(event.modifiers & Qt.ShiftModifier);
-                if (findField.activeFocus) {
+                if (searchBar.activeFocusOnField) {
                     if (searchMatches && searchMatches.length > 0) {
                         root.navigateSearch(back ? -1 : 1);
                         event.accepted = true;
@@ -257,7 +260,7 @@ PanelWindow {
                     return;
                 }
             }
-            if (root.searching || findField.activeFocus) {
+            if (root.searching || searchBar.activeFocusOnField) {
                 // When search bar is active, all hotkeys / quick keys are strictly blocked
                 event.accepted = true;
                 return;
@@ -440,133 +443,36 @@ PanelWindow {
                     }
                 }
 
-                Rectangle {
-                    visible: root.searching
+                SearchBar {
+                    id: searchBar
                     width: parent.width
-                    height: visible ? 30 : 0
-                    radius: Style.radius
-                    color: Color.crust
-                    border.width: 1
-                    border.color: Color.accent
-
-                    Row {
-                        anchors.fill: parent
-                        anchors.leftMargin: 8
-                        anchors.rightMargin: 6
-                        spacing: 6
-
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            color: Color.accent
-                            font.family: Style.fontFamily
-                            font.pixelSize: 11
-                            font.bold: true
-                            text: "/"
+                    searching: root.searching
+                    onSearchQueryChanged: {
+                        root.searchQuery = searchBar.searchQuery;
+                        if (root.searching)
+                            root.applySearch();
+                    }
+                    onEscapePressed: {
+                        root.searching = false;
+                        root.searchQuery = "";
+                        card.forceActiveFocus();
+                    }
+                    onRunItem: {
+                        const panel = root.visiblePanel();
+                        if (panel && typeof panel.handleKey === "function") {
+                            panel.handleKey({ key: Qt.Key_Return, modifiers: 0, text: "" });
                         }
-
-                        Item {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: Math.max(50, parent.width - 60)
-                            height: parent.height
-
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                visible: root.searchQuery === ""
-                                color: Color.popupMuted
-                                font.family: Style.fontFamily
-                                font.pixelSize: Style.fontCaption
-                                text: "Filtrar opciones..."
-                            }
-
-                            TextInput {
-                                id: findField
-                                anchors.fill: parent
-                                verticalAlignment: Text.AlignVCenter
-                                color: Color.popupText
-                                font.family: Style.fontFamily
-                                font.pixelSize: Style.fontCaption
-                                clip: true
-                                text: root.searchQuery
-                                onTextChanged: {
-                                    root.searchQuery = text;
-                                    root.applySearch();
-                                }
-                                Keys.onPressed: event => {
-                                    if (event.key === Qt.Key_Escape) {
-                                        root.searching = false;
-                                        root.searchQuery = "";
-                                        card.forceActiveFocus();
-                                        event.accepted = true;
-                                        return;
-                                    }
-                                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                        const panel = root.visiblePanel();
-                                        if (panel && typeof panel.handleKey === "function") {
-                                            panel.handleKey({
-                                                key: Qt.Key_Return,
-                                                modifiers: 0,
-                                                text: ""
-                                            });
-                                        }
-                                        root.searching = false;
-                                        card.forceActiveFocus();
-                                        event.accepted = true;
-                                        return;
-                                    }
-                                    if (event.key === Qt.Key_Down || (event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))) {
-                                        if (root.searchMatches && root.searchMatches.length > 0) {
-                                            root.navigateSearch(1);
-                                        } else {
-                                            card.forceActiveFocus();
-                                            const panel = root.visiblePanel();
-                                            if (panel && typeof panel.nextSection === "function") {
-                                                panel.nextSection(false);
-                                            }
-                                        }
-                                        event.accepted = true;
-                                        return;
-                                    }
-                                    if (event.key === Qt.Key_Up || event.key === Qt.Key_Backtab || (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier))) {
-                                        if (root.searchMatches && root.searchMatches.length > 0) {
-                                            root.navigateSearch(-1);
-                                        } else {
-                                            card.forceActiveFocus();
-                                            const panel = root.visiblePanel();
-                                            if (panel && typeof panel.nextSection === "function") {
-                                                panel.nextSection(true);
-                                            }
-                                        }
-                                        event.accepted = true;
-                                        return;
-                                    }
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            height: 16
-                            width: escLabel.implicitWidth + 8
-                            radius: 2
-                            color: Color.surface
-
-                            Text {
-                                id: escLabel
-                                anchors.centerIn: parent
-                                color: Color.popupMuted
-                                font.family: Style.fontFamily
-                                font.pixelSize: 9
-                                text: "Esc"
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    root.searching = false;
-                                    root.searchQuery = "";
-                                    card.forceActiveFocus();
-                                }
+                        root.searching = false;
+                        card.forceActiveFocus();
+                    }
+                    onNavigateSearch: delta => {
+                        if (root.searchMatches && root.searchMatches.length > 0) {
+                            root.navigateSearch(delta);
+                        } else {
+                            card.forceActiveFocus();
+                            const panel = root.visiblePanel();
+                            if (panel && typeof panel.nextSection === "function") {
+                                panel.nextSection(delta < 0);
                             }
                         }
                     }
