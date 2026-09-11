@@ -167,6 +167,27 @@ pip install terminaltexteffects
 sudo apt install python3-terminaltexteffects
 ```
 
+## Inlyne no abre / `qs-md` falla
+
+```sh
+command -v inlyne; inlyne --version   # esperá 0.5.3 en ~/.local/bin
+qs-md ~/projects/zoi-debian/docs/README.md
+```
+
+`install.sh` solo baja el tarball en **amd64/arm64**. No hay overlay Quickshell: Markdown es una ventana (`inlyne view`).
+
+## Yazi muestra rectángulos en vez de íconos
+
+ZOI no instala Nerd Font. El tema usa ASCII (`>` carpetas, `-` archivos) en `~/.config/yazi/theme.toml`. Si ves cajas, Yazi está usando el preset; reaplicá tema (`zoi-theme set wallpaper` o el que uses).
+
+## Yazi: `at least one of url or mime must be specified`
+
+Yazi 26 no acepta `name = "*.md"` en `[open]`. Tiene que ser `url = "*.md"` o `mime = "text/markdown"`. El `yazi.toml` del repo ya va así.
+
+## Yazi APT: omitiendo `binary-i386`
+
+El repo oficial no publica i386. `install.sh` escribe `deb [arch=$ARCH …]`. A mano: `arch=amd64` (o `arm64`) en `/etc/apt/sources.list.d/yazi.list`.
+
 ## "Cómo desinstalo"
 
 ```sh
@@ -175,7 +196,7 @@ sudo apt install python3-terminaltexteffects
 
 El script `scripts/uninstall.sh` realiza una desinstalación limpia:
 - Respalda `~/.config/quickshell` con marca temporal (`quickshell.bak.<timestamp>`).
-- Elimina los ejecutables `qs-*` y `zoi-theme` de `~/.local/bin/`.
+- Elimina `qs-*`, `zoi-theme` e `inlyne` de `~/.local/bin/`, más `~/.config/inlyne`.
 - Limpia los directorios de estado en `~/.local/state/quickshell` y `~/.local/state/zoi`.
 - Remueve los comandos `exec_always` de `~/.config/sway/config`.
 - Mantiene los paquetes apt instalados intactos (para removerlos por completo, seguir las instrucciones que imprime al finalizar).

@@ -138,6 +138,7 @@ Loader {
 - **`PopupCard.visiblePanel()` desenvuelve `Loader.item`** — si no, `/`, Tab, J/K, H/L no llegan al panel cargado dinámicamente.
 
 - **El hostOrder de overlays/services importa** — algunos servicios registran IpcHandler en construcción y se duplican si dos coexisten. Mantener `hostOrder` estable en `PluginRegistry.qml`.
+- **Markdown no es overlay de qs** — Inlyne es una ventana (`qs-md`). No va en `hostOrder`.
 
 ## Hot reload
 
@@ -195,6 +196,9 @@ Cada panel en `panels/<X>Panel.qml` es un `Column` (o `Item`) que expone opciona
 - `function nextSection(back)` — para Tab
 - `function focusItem(entry)` — para `/` search
 - `readonly property var searchEntries` — para `/` search
+- `property bool capturing` / `conflictOpen` — KeysPanel captura un combo nuevo; PopupCard le cede el teclado antes de `/` y Super+Q.
+
+`KeysMap` (singleton) es el catálogo de atajos + overrides en `~/.config/zoi/keys.json`. `qs-keys-apply` (exec_always) los empuja a Sway.
 
 `bindPanel(item)` en `Bar.qml` conecta `openKeys/openWallpaper/openTheme/openBar` si existen.
 

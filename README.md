@@ -8,30 +8,42 @@ Catppuccin Mocha como paleta base, paneles con teclado al estilo vim (hjkl), lau
 
 ## Quickstart
 
-```sh
-curl -fsSL https://raw.githubusercontent.com/<owner>/zoi-debian/main/scripts/install.sh | sh
-```
-
-…o, en este dev tree, simplemente:
+Instalá **Debian 13 (trixie) en modo terminal** (netinst, sin desktop). En la TTY, como root:
 
 ```sh
-git clone https://github.com/<owner>/zoi-debian ~/projects/zoi-debian
-cd ~/projects/zoi-debian
+# A) clone y correr
+apt update && apt install -y git
+git clone https://github.com/<owner>/zoi-debian ~/zoi-debian
+cd ~/zoi-debian
 ./scripts/install.sh
+
+# B) un solo comando (hace falta red; usar bash, no sh)
+curl -fsSL https://raw.githubusercontent.com/<owner>/zoi-debian/main/scripts/install.sh \
+  | sudo ZOI_REPO=https://github.com/<owner>/zoi-debian.git bash
 ```
 
-El instalador es **idempotente**: si una dependencia o dotfile ya está presente, lo deja en paz. Podés correrlo varias veces.
+El instalador, en orden:
 
-Después de instalar, cerrá sesión y volvé a entrar (para que `systemd --user`, sway, qs se reinicien limpios). El wallpaper por defecto aparece en el lock screen.
+1. Si no hay red, pide SSID y clave Wi‑Fi.
+2. Pide locale, teclado XKB y timezone.
+3. Pide nombre y email de GitHub (`git config --global`).
+4. Pide usuario + contraseña y crea un usuario **sudo** (si corriste como root).
+5. Instala Pi (`pi.dev`), Herdr (`herdr.dev`), Sway, Quickshell, foot+fish, Yazi, Inlyne, Mullvad Browser, Lemurs, temas. Terceros (Yazi/Mullvad/Lemurs/Inlyne) según arquitectura.
+6. Pregunta si reiniciás para comprobar el login.
+
+Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1` usa env `TARGET_USER` / `GIT_NAME` / `GIT_EMAIL` / `ZOI_LANG` / `ZOI_XKB` / `ZOI_TZ`.
 
 ## Qué se instala
 
 - **Sway** (WM) + **foot** (terminal) + **fish** (login shell y shell de foot). El bar por defecto es **Quickshell** (no waybar).
 - **Quickshell 0.3.0** desde trixie-backports.
 - **PipeWire** implícito vía los servicios de QS.
-- **ZOI Theme Engine (`zoi-theme`)**: Motor de temas declarativo (arquitectura Omarchy Quatro) con 17 paletas estándar, 22 colores normalizados (`colors.toml`), plantillas (`*.tpl`) y propagación atómica en vivo a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK 3/4 y Herdr.
-- Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `btop` `bc` `libqrencode4` `mullvad-browser` (default browser).
-- **Yazi** en **foot** (Sixel) como file manager (`Super+Shift+F`).
+- **ZOI Theme Engine (`zoi-theme`)**: Motor de temas declarativo (arquitectura Omarchy Quatro) con 17 paletas estándar, 22 colores normalizados (`colors.toml`), plantillas (`*.tpl`) y propagación atómica en vivo a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK 3/4, Herdr, Yazi e Inlyne.
+- Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `btop` `bc` `libqrencode4` `mullvad-browser` (XDG default al instalar). Super+Shift+Return usa `qs-browser` (sigue el default actual).
+- **Yazi** en **foot** (Sixel) como file manager (`Super+Shift+F`). Íconos ASCII (no Nerd Font).
+- **Inlyne** visor markdown GPU (`qs-md`). Learn, Trigger y Yazi lo usan.
+- **mpv** video, **Amberol** audio, **Loupe** imágenes (defaults XDG).
+- **Herdr** multiplexer de terminales para agentes (`herdr.dev`). Config en `~/.config/herdr/config.toml`; `zoi-theme` pinta la paleta.
 - **Fish** shell (default interactive shell).
 - Fuente: **Noto Color Emoji** para el picker de emojis. No instalamos Nerd Font (los íconos del bar son Canvas / QPainter).
 
@@ -51,7 +63,8 @@ zoi-debian/
 │   ├── architecture.md        PluginRegistry + singletons + theme engine
 │   ├── troubleshooting.md     problemas frecuentes
 │   ├── limine.md              Limine UEFI opcional (no lo instala install.sh)
-│   └── lemurs.md              Lemurs TUI DM temeado con ZOI
+│   ├── lemurs.md              Lemurs TUI DM temeado con ZOI
+│   └── herdr.md               Herdr multiplexer
 ├── scripts/
 │   ├── install.sh             bootstrap completo (curl | sh friendly)
 │   ├── limine-setup.sh        plan/apply Limine (GRUB queda de fallback)
@@ -94,6 +107,9 @@ zoi-debian/
 | Power actions | `Session → Lock / Suspend / Log out / Reboot / Shut down` |
 | Lofi radio (`mpv` + `mpv-mpris`) | `Audio panel → Lofi radio` |
 | Weather (Open-Meteo, IP geolocation) | click en el chip de weather |
+| Learn (docs ZOI en Inlyne) | Menú principal → Learn |
+| Markdown (Inlyne) | Trigger → Markdown, o `qs-md archivo.md` |
+| Trigger | `Super+G` |
 | Bar visual editor | `Super+Shift+B` o `Session → Bar` |
 | OSD volume / brightness | botones multimedia / teclas brillo |
 
@@ -104,6 +120,7 @@ Ver [docs/features.md](docs/features.md) para detalle.
 | Combo | Acción |
 |---|---|
 | `Super+Space` | Launcher |
+| `Super+Alt+Space` | Menú principal |
 | `Super+Q` | Cerrar popup / panel actual |
 | `Super+Escape` | Session panel |
 | `Super+Tab` | Workspace next |
@@ -117,8 +134,11 @@ Ver [docs/features.md](docs/features.md) para detalle.
 | `Super+Shift+R` | Media arm (1/2/3 = prev/play/next) |
 | `Super+W` | Cerrar ventana activa |
 | `Super+Shift+W` | Cerrar todas las ventanas del workspace |
+| `Super+/` | Shortcuts overlay (Quickshell) |
+| `Super+G` | Trigger |
 | `Super+Return` | Terminal (foot + fish) |
-| `Super+Shift+Return` | Mullvad Browser |
+| `Super+Shift+Return` | Navegador predeterminado |
+| `Super+Shift+F` | File manager (foot + Yazi) |
 
 Ver [docs/shortcuts.md](docs/shortcuts.md) para el mapa completo.
 

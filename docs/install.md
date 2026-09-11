@@ -4,19 +4,37 @@ Esta guía describe cómo levantar `zoi-debian` desde cero en Debian 13 (trixie)
 
 ## Requisitos
 
-- Debian 13 (trixie) con `sudo` o acceso root.
-- Conexión a internet.
-- Aprox. **400 MB** de espacio en disco.
+- Debian 13 (trixie) **instalación terminal** (netinst, sin GNOME/KDE).
+- Root o un usuario que pueda usar `sudo`.
+- Red: ethernet, o Wi‑Fi que el propio `install.sh` puede pedir (SSID + clave).
+- Aprox. **1 GB** libre (Sway, Quickshell, Mullvad Browser, Pi).
+- Arquitectura nativa (`dpkg --print-architecture`). Los repos de terceros se pinnean a esa ISA (no a i386 foreign).
+
+| Arch | Debian (Sway, qs, …) | Yazi | Mullvad | Lemurs | Inlyne |
+|---|---|---|---|---|---|
+| **amd64** | sí | sí | sí | sí | sí |
+| **arm64** | sí | sí | no | no | sí |
+| **otra** | intenta | no | no | no | no |
 
 ## Pasos
 
-### 1. Bootstrap vía curl
+### 1. Clonar y correr el instalador
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/<owner>/zoi-debian/main/scripts/install.sh | sh
+# Clone
+apt update && apt install -y git
+git clone https://github.com/<owner>/zoi-debian ~/zoi-debian
+cd ~/zoi-debian
+./scripts/install.sh
+
+# O curl | bash (red ya disponible; no uses `sh`)
+curl -fsSL https://raw.githubusercontent.com/<owner>/zoi-debian/main/scripts/install.sh \
+  | sudo ZOI_REPO=https://github.com/<owner>/zoi-debian.git bash
 ```
 
-Por defecto clona el repo en `~/projects/zoi-debian`. Variables de entorno:
+El script pide: Wi‑Fi si no hay red; locale / teclado / timezone; nombre/email de GitHub; usuario+contraseña sudo (si sos root); instala Pi + el escritorio; y al final pregunta si reiniciás.
+
+Variables de entorno:
 
 | Variable | Default | Descripción |
 |---|---|---|
@@ -26,21 +44,22 @@ Por defecto clona el repo en `~/projects/zoi-debian`. Variables de entorno:
 
 ### 2. Lo que hace el instalador
 
-1. **Activa backports** (`/etc/apt/sources.list.d/backports.list`) si no existe.
-2. **Instala paquetes** (ver tabla abajo).
-3. **Clona** el repo de zoi-debian en `$ZOI_DIR`.
-4. **Copia dotfiles y temas**:
+1. **Lee la arquitectura** y saltea Yazi / Mullvad / Lemurs / Inlyne si no hay binario para esa ISA.
+2. **Activa backports** (`/etc/apt/sources.list.d/backports.list`) si no existe.
+3. **Instala paquetes** (ver tabla abajo).
+4. **Clona** el repo de zoi-debian en `$ZOI_DIR`.
+5. **Copia dotfiles y temas**:
    - `~/.config/quickshell/` (todos los QML + `shell.json`)
    - `~/.config/zoi/themes/` y `~/.config/zoi/themed/` (17 temas + plantillas `.tpl`)
    - `~/.config/sway/config`
    - `~/.config/foot/foot.ini`
-   - `~/.local/bin/` (`zoi-theme` CLI + 18 scripts auxiliares `qs-*`)
-5. **Pone wallpaper por defecto** (`assets/default-wallpaper.jpg` → `~/Imágenes/baby-yoda-cartoon.jpg`).
-6. Extrae la paleta de ese fondo y la aplica con `zoi-theme apply-json`.
-7. **Instala Lemurs** como DM (TTY2); LightDM queda de fallback.
-8. **Cambia la shell** a `fish`.
-9. **Agrega** `exec_always` de qs + qs-idle al `sway/config`.
-10. Verifica binarios.
+   - `~/.local/bin/` (`zoi-theme`, `inlyne`, helpers `qs-*` incl. `qs-md` / `qs-docs` / `qs-md-open`)
+6. **Pone wallpaper por defecto** (`assets/default-wallpaper.jpg` → `~/Imágenes/baby-yoda-cartoon.jpg`).
+7. Extrae la paleta de ese fondo y la aplica con `zoi-theme apply-json` (también pinta Inlyne y Yazi).
+8. **Instala Lemurs** como DM (TTY2) en amd64; LightDM queda de fallback.
+9. **Cambia la shell** a `fish`.
+10. **Agrega** `exec_always` de qs + qs-idle al `sway/config`.
+11. Verifica binarios.
 
 ### 3. Cerrá sesión y volvé a entrar
 
@@ -75,7 +94,9 @@ Importante: el primer arranque de `qs` necesita:
 | `grim` + `slurp` | Screenshots rectangulares |
 | `wf-recorder` | Grabación de pantalla |
 | `playerctl` | MPRIS CLI |
-| `mpv` + `mpv-mpris` | Reproductor + bridge MPRIS |
+| `mpv` + `mpv-mpris` | Video default (XDG) + lofi/MPRIS |
+| `amberol` | Reproductor de audio default |
+| `loupe` | Visor de imágenes default |
 | `yt-dlp` | Lo fi radio streaming |
 | `cliphist` | Historial de clipboard |
 | `figlet` | Banner ZOI para el screensaver |
@@ -83,8 +104,10 @@ Importante: el primer arranque de `qs` necesita:
 | `brightnessctl` | Brillo (Power panel) |
 | `light` | Brillo de teclado |
 | `lightdm` | Fallback display manager (deshabilitado si Lemurs se instaló) |
-| `mullvad-browser` | Browser default. Repo APT oficial `repository.mullvad.net` |
-| `yazi` | File manager (foot + Sixel). Repo APT oficial `yazi-rs.github.io/builds` |
+| `mullvad-browser` | Browser XDG default al instalar (repo APT oficial). Super+Shift+Return lanza `qs-browser` |
+| `yazi` | File manager (foot + Sixel). Repo APT oficial, `deb [arch=$ARCH …]` (amd64/arm64) |
+| `inlyne` | **No es paquete apt.** Release GitHub v0.5.3 → `~/.local/bin/inlyne` (amd64/arm64) |
+| `herdr` | Multiplexer de terminales para agentes. Instalador oficial `herdr.dev/install.sh` |
 | `ffmpeg` `poppler-utils` `fd-find` `ripgrep` `fzf` `imagemagick` `p7zip-full` | Previews de Yazi |
 | `fish` | Login shell + shell de foot |
 | `bc` | Cálculos matemáticos en scripts auxiliares |
@@ -131,6 +154,8 @@ Importante: el primer arranque de `qs` necesita:
 │   ├── HoverTip.qml         # tooltip singleton
 │   ├── Idle.qml             # Stay awake
 │   ├── KeyNav.qml           # hjkl helpers
+│   ├── KeysCombo.js         # parseo Super+W ↔ Mod4+w
+│   ├── KeysMap.qml          # catálogo + overrides ~/.config/zoi/keys.json
 │   ├── Keyboard.qml         # XKB layout tracker
 │   ├── Media.qml            # MPRIS wrapper
 │   ├── NightLight.qml       # wlsunset wrapper
@@ -145,24 +170,30 @@ Importante: el primer arranque de `qs` necesita:
 │   ├── Weather.qml          # Open-Meteo
 │   └── qmldir               # registro de singletons
 ├── Ui/
+│   ├── ActionListItem.qml
 │   ├── HoverMouse.qml
 │   ├── HoverTipLayer.qml
 │   ├── IndexBadge.qml
 │   ├── PopupCard.qml
-│   └── StatusIcon.qml
+│   ├── SearchBar.qml
+│   ├── StatusIcon.qml
+│   └── VolumeSlider.qml
 ├── panels/                  # cargados por PluginRegistry.panelUrl(popup)
+│   ├── AppsPanel.qml
 │   ├── AudioPanel.qml
 │   ├── BarEditorPanel.qml
 │   ├── BluetoothPanel.qml
 │   ├── CalendarPanel.qml
 │   ├── KeyboardPanel.qml
 │   ├── KeysPanel.qml
+│   ├── LearnPanel.qml
 │   ├── MediaPanel.qml
 │   ├── NetworkPanel.qml
 │   ├── NotifPanel.qml
 │   ├── PowerPanel.qml
 │   ├── SessionPanel.qml
 │   ├── ThemePanel.qml
+│   ├── TriggerPanel.qml
 │   ├── WallpaperPanel.qml
 │   └── WeatherPanel.qml
 └── widgets/                 # cargados por PluginRegistry.widgetUrl(id)
@@ -182,14 +213,20 @@ Importante: el primer arranque de `qs` necesita:
     ├── Weather.qml
     └── Workspaces.qml
 
+~/.config/herdr/config.toml  # Herdr; paleta vía zoi-theme
+
 ~/.config/zoi/
 ├── themes/                  # 17 paletas estándar (colors.toml)
 ├── themed/                  # plantillas declarativas (*.tpl)
 └── hooks/theme-set.d/       # hooks de usuario post-cambio de tema
 
 ~/.local/bin/
-├── zoi-theme                # CLI y motor de compilación de temas
-└── qs-*                     # 18 scripts auxiliares de Quickshell
+├── zoi-theme                # CLI y motor de temas
+├── inlyne                   # visor markdown GPU
+├── qs-md / qs-docs / qs-md-open
+├── qs-browser               # Super+Shift+Return → XDG default browser
+├── qs-keys-apply            # reaplica atajos custom a Sway
+└── qs-*                     # resto de helpers Quickshell
 
 ~/.local/state/zoi/theme/    # estado del motor de temas
 ├── current/                 # archivos compilados activos (foot.ini, sway.theme.conf, btop.theme, etc.)
@@ -232,7 +269,7 @@ Si no se ve nada, mirá `~/.cache/quickshell/crashes/<shell>/`.
 ~/projects/zoi-debian/scripts/uninstall.sh
 ```
 
-(Elimina dotfiles de `~/.config/quickshell`, restaura `waybar` como bar default.)
+Quita el shell ZOI (`qs-*`, Inlyne, `~/.config/quickshell`). Los paquetes apt quedan.
 
 ## Bootloader (opcional)
 

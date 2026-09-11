@@ -3,9 +3,22 @@
 ## Unreleased
 
 ### Features
+- **Media defaults:** mpv (video), Amberol (audio), Loupe (imágenes) vía `xdg-mime`.
+- **Markdown viewer:** Inlyne (`qs-md` / `inlyne view`) en lugar del overlay Quickshell. Learn y Yazi lo usan; `zoi-theme` pinta `~/.config/inlyne/inlyne.toml`.
+- **Arch gating:** `install.sh` lee `dpkg --print-architecture` y pinnea/salta Yazi, Mullvad, Lemurs e Inlyne.
+- **Yazi 26:** reglas `url`/`mime`; íconos ASCII (sin Nerd Font).
+- **Learn:** menú de docs (ZOI, Sway, Quickshell, Helix, Fish, Bash) desde el Menú principal.
+- **Herdr:** `install.sh` instala el multiplexer (`herdr.dev`) y siembra `~/.config/herdr/config.toml`. `zoi-theme` pinta `[theme.custom]`.
+- **Trigger:** panel nativo (Super+G) con captura, share, reminders y toggles, al estilo del menú Trigger de Omarchy.
+- **Lemurs:** login TUI con paleta del wallpaper/tema (fondo lleno, títulos ZOI). Overlay `~/.config/zoi/lemurs/variables.overlay.toml` y layout opcional `config.toml`. Fallback de install = Baby Yoda, no tokyo-night.
+- **Launcher:** precalienta `DesktopEntries` al login y usa `ListView` (reuse) para que Super+Space no arme todas las filas en la primera apertura.
+- **Super+Shift+Return** abre el navegador XDG default (`qs-browser`), no un binario hardcodeado.
+- **Keys (Quickshell):** Super+/ abre el panel de atajos. `/` busca, badges 1–0, hjkl/flechas, Enter o clic en el ítem ya seleccionado reasigna. Un combo duplicado muestra qué ejecuta; Reemplazar deja al anterior sin atajo. `~/.config/zoi/keys.json` + `qs-keys-apply`.
 - **Optional Limine UEFI helper**: `scripts/limine-setup.sh` (dry-run by default) copies upstream `BOOTX64.EFI`, writes `limine.conf` under `/boot/limine` (so it can be recolored), and can add an NVRAM entry without removing GRUB. Documented in `docs/limine.md`. Not invoked by `install.sh`.
 - **Limine follows zoi-theme**: `limine.conf.tpl` maps the 22-color palette onto Limine `term_*` / `interface_*` options. Theme apply writes `~/.config/zoi/themed/limine.conf` and merges it into `/boot/limine/limine.conf` when that directory is writable.
 - **Lemurs display manager**: TUI login (TTY2) with `lemurs-variables.toml.tpl`. First install extracts the palette from `assets/default-wallpaper.jpg` (Baby Yoda) instead of tokyo-night. LightDM stays installed as fallback.
+- **Locale, keyboard, timezone**: `install.sh` prompts for LANG (default `es_CO.UTF-8`), XKB layout (default `latam,us`), and timezone (default `America/Bogota`), then applies them to the system and Sway.
+- **Terminal Debian bootstrap**: `install.sh` configures Wi-Fi if offline, creates a sudo login user, sets GitHub git identity, installs Pi (`pi.dev`), then the desktop stack, and offers a reboot.
 - **Window close bindings**: Super+W kills the focused window; Super+Shift+W kills every window on the focused workspace. Tabbed layout is no longer on Super+W (stacking Super+S, split Super+E remain).
 - **Mullvad Browser is the default browser**: official Mullvad APT repo in `install.sh`, Sway `$browser`, and XDG http/https. LibreWolf is no longer pulled by default.
 - **Foot + fish are the setup terminal/shell**: `foot.ini` runs fish, Sway `$term` is foot+fish, login shell is fish, and `conf.d/zoi.fish` puts `~/.local/bin` on PATH without clobbering an existing `config.fish`.

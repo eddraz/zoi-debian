@@ -29,6 +29,11 @@ Detalle de cada feature, cómo funciona por dentro, qué archivos toca.
 23. [PluginRegistry](#pluginregistry)
 24. [Bar visual editor](#bar-visual-editor)
 25. [System tray](#system-tray)
+26. [Shortcuts overlay](#shortcuts-overlay)
+27. [Trigger](#trigger)
+28. [Herdr](#herdr)
+29. [Learn](#learn)
+30. [Markdown viewer](#markdown-viewer)
 
 ---
 
@@ -124,15 +129,14 @@ PopupCard (anchors to bar)
 
 ## Launcher
 
-`Launcher.qml` — full app list con `Quickshell.iconPath(modelData.icon)`. Sin rofi, sin fuzzel.
+`Launcher.qml` — lista de apps con `Quickshell.iconPath`. Sin rofi, sin fuzzel.
 
-- **Activación**: `Super+Space` (`sway: bindsym $mod+Space exec $menu`).
+- **Activación**: `Super+Space`.
 - **Búsqueda**: empieza a tipear; filtra en vivo por nombre.
-- **Navegación**: `↑/↓` o `J/K` mueve selección, flechas siguen la selección visual.
-- **Enter** ejecuta vía `xdg-open` o `Quickshell.execDetached`.
-- **Escape** cierra.
+- **Navegación**: `↑/↓` o `J/K`, Enter lanza, Escape cierra.
+- **Primera apertura**: el catálogo se precalienta al arrancar `qs`; la lista es un `ListView` con recicle de filas (no instancia todas las apps a la vez).
 
-Lista de apps: `Quickshell.DesktopEntries.applications` (todo lo que esté en `~/.local/share/applications/` + `/usr/share/applications/`).
+Lista de apps: `DesktopEntries.applications` (`~/.local/share/applications/` + `/usr/share/applications/`).
 
 ---
 
@@ -462,6 +466,60 @@ El file manager default es **Yazi** dentro de **foot**. Foot tiene `sixel=yes`; 
 
 - Wrapper: `~/.local/bin/qs-files` → `foot -a yazi -e yazi`
 - Atajo: `Super+Shift+F`
-- MIME: `yazi.desktop` es default de `inode/directory`
-- Tema: `zoi-theme` escribe `~/.config/yazi/theme.toml`
+- MIME: `yazi-folder.desktop` + `qs-files %u` (decodifica `file://`)
+- Openers: `*.md` → `qs-md` (Inlyne). En Yazi 26 las reglas usan `url`, no `name`.
+- Tema: `zoi-theme` escribe `~/.config/yazi/theme.toml` con íconos ASCII (`>` / `-`). No hay Nerd Font.
 - Previews: `ffmpeg`, `poppler-utils`, ImageMagick, `fd`, `rg`, `fzf`, `7z`
+
+---
+
+## Shortcuts overlay
+
+`KeysPanel.qml` + `KeysMap.qml`. Super+/ abre el popup Quickshell (no Slint).
+
+- `/` abre el buscador (no está activo al abrir).
+- Badges `1`–`9`/`0`, `hjkl`/flechas, Enter o segundo clic reasignan.
+- Combo duplicado: diálogo con la acción que lo usa; Reemplazar deja a esa acción sin atajo.
+- Persistencia: `~/.config/zoi/keys.json` → `qs-keys-apply` (también `exec_always` en Sway).
+
+---
+
+## Trigger
+
+`TriggerPanel.qml` — menú nativo al estilo Omarchy Trigger (sin Install/AUR). Super+G o Apps → Trigger.
+
+| Acción | Qué hace |
+|---|---|
+| Markdown | Yazi elige un `.md` y lo abre Inlyne (`qs-md-open`) |
+| Screenshot | `qs-screenshot` (región) |
+| Grabar pantalla | `qs-screenrecord` (Alt+Print para parar) |
+| Clipboard | overlay de historial |
+| Archivos | Yazi |
+| Reminders | overlay |
+| Vigilia / Night light / DND | toggles |
+
+---
+
+## Herdr
+
+Multiplexer de terminales para agentes ([herdr.dev](https://herdr.dev/)). `install.sh` lo instala y siembra `~/.config/herdr/config.toml` (fish, toasts, onboarding off). `zoi-theme` escribe `[theme.custom]` y recarga con `herdr server reload-config`. Doc: [herdr.md](herdr.md).
+
+---
+
+## Learn
+
+`LearnPanel.qml` — docs desde el Menú principal: ZOI (local `qs-docs` → Inlyne), Sway wiki, Quickshell guide, Helix, Fish y Bash.
+
+---
+
+## Markdown viewer
+
+[Inlyne](https://github.com/Inlyne-Project/inlyne) — ventana GPU, sin motor de navegador. No hay overlay Quickshell ni Mermaid.
+
+| Helper | Qué hace |
+|---|---|
+| `qs-md <file>` | `inlyne view` |
+| `qs-docs [readme.md]` | docs ZOI locales |
+| `qs-md-open [dir]` | Yazi chooser → `qs-md` |
+
+MIME: `inlyne.desktop`. Tema: `zoi-theme` → `~/.config/inlyne/inlyne.toml`.

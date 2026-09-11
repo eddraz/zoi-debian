@@ -18,3 +18,7 @@ state/
 .codegraph/
 # Local Pi runtime state
 .atl/
+
+# Slint / Rust
+/apps/target/
+**/*.rs.bk

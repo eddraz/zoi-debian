@@ -19,8 +19,12 @@ if [ -d "$HOME/.config/quickshell" ]; then
   mv "$HOME/.config/quickshell" "$HOME/.config/quickshell.bak.$(date +%s)"
 fi
 
-log "Removing qs-* and zoi-theme scripts from ~/.local/bin."
-rm -f $HOME/.local/bin/qs-* $HOME/.local/bin/zoi-theme
+log "Removing qs-*, zoi-theme and Inlyne from ~/.local/bin."
+rm -f $HOME/.local/bin/qs-* $HOME/.local/bin/zoi-theme $HOME/.local/bin/inlyne
+rm -f $HOME/.config/zoi/keys.json $HOME/.config/zoi/keys-apply.json
+rm -f "$HOME/.local/share/applications/inlyne.desktop" \
+     "$HOME/.local/share/applications/zoi-markdown.desktop"
+rm -rf "$HOME/.config/inlyne"
 
 log "Cleaning up state directories in ~/.local/state/zoi and ~/.local/state/quickshell."
 rm -rf $HOME/.local/state/zoi $HOME/.local/state/quickshell
@@ -29,8 +33,10 @@ if [ -f "$HOME/.config/sway/config" ]; then
   log "Cleaning up quickshell autostart entries in sway/config."
   sed -i '/exec_always .*\/qs -n --daemonize/d' "$HOME/.config/sway/config"
   sed -i '/exec_always .*\/qs-idle/d' "$HOME/.config/sway/config"
+  sed -i '/qs-keys-apply/d' "$HOME/.config/sway/config"
 fi
 
 log "Done. Los paquetes apt NO se desinstalaron. Para hacerlo:"
+log "Herdr, Pi e Inlyne (si quedó otro binario) son de usuario. Config: ~/.config/herdr ~/.config/inlyne ~/.config/yazi"
 log "  sudo apt remove quickshell swaybg swayidle wlsunset figlet python3-terminaltexteffects btop bc libqrencode4"
 log "Restart Sway with: swaymsg reload"

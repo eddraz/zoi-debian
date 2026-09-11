@@ -1,0 +1,10 @@
+# Copy to variables.overlay.toml in this directory to override theme variables.
+# Merged on top of the palette that zoi-theme writes.
+#
+#   cp variables.overlay.toml.example variables.overlay.toml
+#   zoi-theme set wallpaper   # or any palette
+#
+# login_title = "welcome"
+# password_title = "pass"
+# password_echo = "*"
+# accent = "#fbad60"
