@@ -12,7 +12,7 @@ sudo ./scripts/lemurs-setup.sh apply
 # reboot — login en TTY2
 ```
 
-`apply` solo hace `enable`. No arranca Lemurs en caliente.
+`apply` solo hace `enable`. No arranca Lemurs en caliente. Si `install.sh` avisó fallo pero `systemctl is-enabled lemurs` es `enabled`, era un trap `RETURN`/`set -u` (ya corregido).
 
 ## Tema (automático)
 

@@ -67,13 +67,16 @@ install_binary() {
 
   local work efi
   work="$(mktemp -d)"
-  trap 'rm -rf "$work"' RETURN
   log "Descargando Lemurs $LEMURS_VERSION."
   curl -fsSL -o "$work/lemurs.tar.xz" "$LEMURS_URL"
   tar -xJf "$work/lemurs.tar.xz" -C "$work"
   efi="$(find "$work" -type f -name lemurs -perm /111 | head -1)"
-  [ -n "$efi" ] || die "El tarball no trae el binario lemurs."
+  if [ -z "$efi" ]; then
+    rm -rf "$work"
+    die "El tarball no trae el binario lemurs."
+  fi
   $SUDO install -m 0755 "$efi" /usr/local/bin/lemurs
+  rm -rf "$work"
 }
 
 write_wallpaper_fallback_vars() {
