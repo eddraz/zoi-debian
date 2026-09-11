@@ -29,8 +29,8 @@ Esta tabla lista todos los binds de Sway + atajos internos de Quickshell.
 | `Super+B` | Splith | `splith` |
 | `Super+Ctrl+V` | Splitv | `splitv` |
 | `Super+S` | Stacking | `layout stacking` |
-| `Super+W` | Tabbed | `layout tabbed` |
-| `Super+Shift+W` | Cerrar ventana | `kill` |
+| `Super+W` | Cerrar ventana activa | `kill` |
+| `Super+Shift+W` | Cerrar todas las ventanas del workspace | `[workspace="__focused__"] kill` |
 | `Super+E` | Toggle split | `layout toggle split` |
 | `Super+F` | Fullscreen | `fullscreen` |
 | `Super+Shift+Space` | Floating toggle | `floating toggle` |

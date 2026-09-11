@@ -115,7 +115,8 @@ Ver [docs/features.md](docs/features.md) para detalle.
 | `Super+Shift+B` | Bar visual editor |
 | `Super+Shift+N` | Reminders overlay |
 | `Super+Shift+R` | Media arm (1/2/3 = prev/play/next) |
-| `Super+Shift+W` | Cerrar ventana |
+| `Super+W` | Cerrar ventana activa |
+| `Super+Shift+W` | Cerrar todas las ventanas del workspace |
 | `Super+Return` | Terminal (foot + fish) |
 | `Super+Shift+Return` | Mullvad Browser |
 

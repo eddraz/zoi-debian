@@ -6,6 +6,7 @@
 - **Optional Limine UEFI helper**: `scripts/limine-setup.sh` (dry-run by default) copies upstream `BOOTX64.EFI`, writes `limine.conf` under `/boot/limine` (so it can be recolored), and can add an NVRAM entry without removing GRUB. Documented in `docs/limine.md`. Not invoked by `install.sh`.
 - **Limine follows zoi-theme**: `limine.conf.tpl` maps the 22-color palette onto Limine `term_*` / `interface_*` options. Theme apply writes `~/.config/zoi/themed/limine.conf` and merges it into `/boot/limine/limine.conf` when that directory is writable.
 - **Lemurs display manager**: TUI login (TTY2) with `lemurs-variables.toml.tpl`. First install extracts the palette from `assets/default-wallpaper.jpg` (Baby Yoda) instead of tokyo-night. LightDM stays installed as fallback.
+- **Window close bindings**: Super+W kills the focused window; Super+Shift+W kills every window on the focused workspace. Tabbed layout is no longer on Super+W (stacking Super+S, split Super+E remain).
 - **Mullvad Browser is the default browser**: official Mullvad APT repo in `install.sh`, Sway `$browser`, and XDG http/https. LibreWolf is no longer pulled by default.
 - **Foot + fish are the setup terminal/shell**: `foot.ini` runs fish, Sway `$term` is foot+fish, login shell is fish, and `conf.d/zoi.fish` puts `~/.local/bin` on PATH without clobbering an existing `config.fish`.
 - **Default file manager is foot + Yazi + Sixel**: `qs-files`, `yazi.desktop` as `inode/directory`, official Yazi APT repo in `install.sh`, and `yazi-theme.toml.tpl` dispatched by `zoi-theme`. Super+Shift+F.
