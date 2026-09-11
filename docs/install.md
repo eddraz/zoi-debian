@@ -35,16 +35,17 @@ Por defecto clona el repo en `~/projects/zoi-debian`. Variables de entorno:
    - `~/.config/sway/config`
    - `~/.config/foot/foot.ini`
    - `~/.local/bin/` (`zoi-theme` CLI + 18 scripts auxiliares `qs-*`)
-5. **Pone wallpaper por defecto** (`baby-yoda-cartoon.jpg`).
-6. **Inicializa** `~/.local/state/quickshell/wallpaper`, `~/.config/quickshell/screensaver.txt` y aplica el tema base con `zoi-theme`.
-7. **Cambia la shell** a `fish`.
-8. **Agrega** `exec_always /usr/bin/qs -n --daemonize` y `exec_always ~/.local/bin/qs-idle` al `sway/config`.
-9. Verifica binarios y avisa si falta alguno.
+5. **Pone wallpaper por defecto** (`assets/default-wallpaper.jpg` → `~/Imágenes/baby-yoda-cartoon.jpg`).
+6. Extrae la paleta de ese fondo y la aplica con `zoi-theme apply-json`.
+7. **Instala Lemurs** como DM (TTY2); LightDM queda de fallback.
+8. **Cambia la shell** a `fish`.
+9. **Agrega** `exec_always` de qs + qs-idle al `sway/config`.
+10. Verifica binarios.
 
 ### 3. Cerrá sesión y volvé a entrar
 
 Importante: el primer arranque de `qs` necesita:
-- `lightdm` con sesión Sway (o `sway` directo desde TTY).
+- `lemurs` en TTY2 con sesión Sway (o `sway` directo desde TTY). LightDM es fallback.
 - `wireplumber` corriendo (audio).
 - `NetworkManager` para wifi (NetworkPanel + BT).
 - `bluez` para Bluetooth.
@@ -81,7 +82,7 @@ Importante: el primer arranque de `qs` necesita:
 | `python3-terminaltexteffects` | TTE effects para el screensaver |
 | `brightnessctl` | Brillo (Power panel) |
 | `light` | Brillo de teclado |
-| `lightdm` | Display manager |
+| `lightdm` | Fallback display manager (deshabilitado si Lemurs se instaló) |
 | `librewolf` | Browser default |
 | `fish` | Default shell |
 | `bc` | Cálculos matemáticos en scripts auxiliares |
@@ -210,7 +211,8 @@ Importante: el primer arranque de `qs` necesita:
 
 ```sh
 systemctl --user enable --now wireplumber
-sudo systemctl enable --now NetworkManager bluetooth lightdm
+sudo systemctl enable --now NetworkManager bluetooth
+# Lemurs lo habilita install.sh / lemurs-setup.sh apply (próximo boot, TTY2)
 ```
 
 ### Verificar
@@ -233,3 +235,5 @@ Si no se ve nada, mirá `~/.cache/quickshell/crashes/<shell>/`.
 ## Bootloader (opcional)
 
 `install.sh` no cambia GRUB. Si querés Limine en UEFI, ver [limine.md](limine.md).
+
+Display manager: [lemurs.md](lemurs.md).

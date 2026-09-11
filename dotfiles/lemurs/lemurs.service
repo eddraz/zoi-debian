@@ -1,0 +1,17 @@
+[Unit]
+Description=Lemurs
+After=systemd-user-sessions.service plymouth-quit-wait.service
+After=getty@tty2.service
+Conflicts=getty@tty2.service
+
+[Service]
+ExecStart=/usr/local/bin/lemurs
+StandardInput=tty
+TTYPath=/dev/tty2
+TTYReset=yes
+TTYVHangup=yes
+Type=idle
+
+[Install]
+Alias=display-manager.service
+WantedBy=graphical.target

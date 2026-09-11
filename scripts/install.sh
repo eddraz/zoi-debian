@@ -146,9 +146,20 @@ if [ ! -f "$HOME/.config/quickshell/shell.json" ]; then
   cp "$ZOI_DIR/dotfiles/quickshell/shell.json" "$HOME/.config/quickshell/shell.json"
 fi
 
-# ---------------------------------------------------------------- initialize theme
-log "Aplicando tema base con zoi-theme."
-"$HOME/.local/bin/zoi-theme" set tokyo-night || warn "No se pudo aplicar tema inicial; corré 'zoi-theme set tokyo-night' manualmente."
+# ---------------------------------------------------------------- initialize theme from default wallpaper
+log "Aplicando paleta extraída de baby-yoda-cartoon.jpg."
+WALL="$HOME/Imágenes/baby-yoda-cartoon.jpg"
+if [ -x "$HOME/.local/bin/qs-theme-from-wallpaper" ] && [ -f "$WALL" ]; then
+  PAL="$("$HOME/.local/bin/qs-theme-from-wallpaper" --json "$WALL")" || PAL=""
+  if [ -n "$PAL" ]; then
+    "$HOME/.local/bin/zoi-theme" apply-json "$PAL" || warn "zoi-theme apply-json falló."
+  else
+    warn "No pude extraer paleta; fallback tokyo-night."
+    "$HOME/.local/bin/zoi-theme" set tokyo-night || true
+  fi
+else
+  "$HOME/.local/bin/zoi-theme" set tokyo-night || warn "No se pudo aplicar tema inicial."
+fi
 
 # ---------------------------------------------------------------- fish as default
 if command -v fish >/dev/null && ! grep -qE "^/.*/fish$" /etc/shells 2>/dev/null; then
@@ -156,6 +167,12 @@ if command -v fish >/dev/null && ! grep -qE "^/.*/fish$" /etc/shells 2>/dev/null
 fi
 if [ -n "${SUDO}" ] && [ "$(getent passwd "$USER" | cut -d: -f7)" != "$(command -v fish)" ]; then
   $SUDO chsh -s "$(command -v fish)" "$USER" || warn "Cambiar shell por defecto falló; hacelo a mano."
+fi
+
+# ---------------------------------------------------------------- lemurs display manager
+if [ -x "$ZOI_DIR/scripts/lemurs-setup.sh" ]; then
+  log "Instalando Lemurs (TUI DM) temeado. LightDM queda instalado pero deshabilitado."
+  "$ZOI_DIR/scripts/lemurs-setup.sh" apply || warn "Lemurs no se pudo instalar; LightDM sigue como fallback."
 fi
 
 # ---------------------------------------------------------------- exec_always in sway

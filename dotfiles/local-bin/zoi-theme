@@ -385,6 +385,7 @@ class ZoiThemeManager:
         self._dispatch_gtk(rendered_files.get("gtk-3.0.css"), rendered_files.get("gtk-4.0.css"), pal)
         self._dispatch_herdr(pal)
         self._dispatch_limine(rendered_files.get("limine.conf"))
+        self._dispatch_lemurs(rendered_files.get("lemurs-variables.toml"))
         self._dispatch_state(pal, colors_json_content, sh_lines)
         self._run_hooks(theme_id)
 
@@ -787,6 +788,24 @@ class ZoiThemeManager:
         lines.append("")
         return "\n".join(lines)
 
+
+    def _dispatch_lemurs(self, content):
+        """Write Lemurs color variables. Live file is /etc/lemurs/variables.toml when writable."""
+        if not content:
+            return
+        themed_path = os.path.join(self.home, ".config/zoi/themed/lemurs-variables.toml")
+        os.makedirs(os.path.dirname(themed_path), exist_ok=True)
+        with open(themed_path, "w", encoding="utf-8") as f:
+            f.write(content.rstrip() + "\n")
+        live = "/etc/lemurs/variables.toml"
+        if os.path.isfile(live) and os.access(live, os.W_OK):
+            try:
+                tmp = live + ".tmp"
+                with open(tmp, "w", encoding="utf-8") as f:
+                    f.write(content.rstrip() + "\n")
+                os.replace(tmp, live)
+            except OSError:
+                pass
 
     def _dispatch_state(self, pal, json_str, sh_lines):
         with open(os.path.join(self.qs_state_dir, "colors.json"), "w", encoding="utf-8") as f:

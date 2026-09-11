@@ -143,6 +143,7 @@ Aplicaciones compiladas automáticamente:
 - **GTK 3.0 y GTK 4.0 / LibreWolf**: `~/.config/gtk-3.0/gtk.css` y `~/.config/gtk-4.0/gtk.css` + `gsettings prefer-dark/prefer-light`
 - **Herdr**: `~/.config/herdr/config.toml`
 - **Limine** (si está instalado): `~/.config/zoi/themed/limine.conf` + merge a `/boot/limine/limine.conf`. Ver [limine.md](limine.md).
+- **Lemurs**: `~/.config/zoi/themed/lemurs-variables.toml` → `/etc/lemurs/variables.toml` si es escribible. Ver [lemurs.md](lemurs.md).
 
 ### 3. Comandos CLI `zoi-theme`
 
@@ -198,15 +199,11 @@ set -gx PATH ~/.local/bin $PATH
 set -gx EDITOR hx   # o nano, vim, lo que prefieras
 ```
 
-## LightDM
+## Lemurs (display manager)
 
-Si querés autologin, editá `/etc/lightdm/lightdm.conf`:
+TUI en TTY2. Colores desde `/etc/lemurs/variables.toml` (lo escribe `zoi-theme`). Guía: [lemurs.md](lemurs.md).
 
-```ini
-[Seat:*]
-autologin-user=eddraz
-autologin-session=sway
-```
+LightDM queda como paquete de fallback, no como unidad activa.
 
 ## Variables de entorno relevantes
 
