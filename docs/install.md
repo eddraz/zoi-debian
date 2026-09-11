@@ -83,7 +83,7 @@ Importante: el primer arranque de `qs` necesita:
 | `brightnessctl` | Brillo (Power panel) |
 | `light` | Brillo de teclado |
 | `lightdm` | Fallback display manager (deshabilitado si Lemurs se instaló) |
-| `librewolf` | Browser default |
+| `mullvad-browser` | Browser default. Repo APT oficial `repository.mullvad.net` |
 | `yazi` | File manager (foot + Sixel). Repo APT oficial `yazi-rs.github.io/builds` |
 | `ffmpeg` `poppler-utils` `fd-find` `ripgrep` `fzf` `imagemagick` `p7zip-full` | Previews de Yazi |
 | `fish` | Login shell + shell de foot |

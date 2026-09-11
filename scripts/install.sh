@@ -50,7 +50,6 @@ PKGS=(
   figlet python3-terminaltexteffects
   brightnessctl
   lightdm
-  librewolf
   fish
   jq
   bc
@@ -84,6 +83,25 @@ if [ ! -f /etc/apt/sources.list.d/yazi.list ]; then
 fi
 log "Instalando yazi (file manager, previews Sixel en foot)."
 $SUDO apt-get install -y --no-install-recommends yazi || warn "No se pudo instalar yazi desde el repo oficial."
+
+# ---------------------------------------------------------------- Mullvad Browser (official APT repo)
+if [ ! -f /etc/apt/sources.list.d/mullvad.list ]; then
+  log "Agregando el repo APT oficial de Mullvad."
+  curl -fsSL https://repository.mullvad.net/deb/mullvad-keyring.asc | $SUDO tee /usr/share/keyrings/mullvad-keyring.asc >/dev/null
+  echo "deb [signed-by=/usr/share/keyrings/mullvad-keyring.asc arch=$(dpkg --print-architecture)] https://repository.mullvad.net/deb/stable stable main" | $SUDO tee /etc/apt/sources.list.d/mullvad.list >/dev/null
+  $SUDO apt-get update -y
+fi
+log "Instalando Mullvad Browser (browser default)."
+$SUDO apt-get install -y --no-install-recommends mullvad-browser || warn "No se pudo instalar mullvad-browser."
+for desk in mullvad-browser.desktop net.mullvad.MullvadBrowser.desktop mullvadbrowser.desktop; do
+  if [ -f "/usr/share/applications/$desk" ] || [ -f "$HOME/.local/share/applications/$desk" ]; then
+    xdg-settings set default-web-browser "$desk" 2>/dev/null || true
+    xdg-mime default "$desk" x-scheme-handler/http 2>/dev/null || true
+    xdg-mime default "$desk" x-scheme-handler/https 2>/dev/null || true
+    xdg-mime default "$desk" text/html 2>/dev/null || true
+    break
+  fi
+done
 
 # ---------------------------------------------------------------- user dirs
 log "Inicializando xdg-user-dirs."
@@ -234,7 +252,7 @@ fi
 # ---------------------------------------------------------------- sanity
 log "Verificando binarios clave."
 MISSING=0
-for b in sway qs swaymsg playerctl wlsunset foot fish yazi qs-files cliphist wl-copy wtype grim slurp wf-recorder wireplumber btop bc zoi-theme; do
+for b in sway qs swaymsg playerctl wlsunset foot fish yazi qs-files mullvad-browser cliphist wl-copy wtype grim slurp wf-recorder wireplumber btop bc zoi-theme; do
   command -v "$b" >/dev/null || { warn "Falta binario: $b"; MISSING=$((MISSING+1)); }
 done
 

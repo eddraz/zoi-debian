@@ -7,10 +7,10 @@ Esta tabla lista todos los binds de Sway + atajos internos de Quickshell.
 | Combo | Acción | Comando |
 |---|---|---|
 | `Super+Return` | Terminal (foot + fish) | `$term` |
-| `Super+Shift+Return` | LibreWolf | `/usr/bin/librewolf` |
+| `Super+Shift+Return` | Mullvad Browser | `$browser` |
 | `Super+Shift+F` | File manager (foot + yazi, Sixel) | `$files` (`qs-files`) |
 | `Super+KP_Enter` | Terminal | `$term` |
-| `Super+Shift+KP_Enter` | LibreWolf | `/usr/bin/librewolf` |
+| `Super+Shift+KP_Enter` | Mullvad Browser | `$browser` |
 | `Super+Escape` | Session panel | `qs ipc call session toggle` |
 | `Super+Q` | Cerrar popup / panel | `qs ipc call popups close` |
 | `Super+C` | Calendar panel | `qs ipc call popups toggle calendar` |

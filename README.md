@@ -30,7 +30,7 @@ Después de instalar, cerrá sesión y volvé a entrar (para que `systemd --user
 - **Quickshell 0.3.0** desde trixie-backports.
 - **PipeWire** implícito vía los servicios de QS.
 - **ZOI Theme Engine (`zoi-theme`)**: Motor de temas declarativo (arquitectura Omarchy Quatro) con 17 paletas estándar, 22 colores normalizados (`colors.toml`), plantillas (`*.tpl`) y propagación atómica en vivo a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK 3/4 y Herdr.
-- Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `btop` `bc` `libqrencode4` `librewolf` (default browser).
+- Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `btop` `bc` `libqrencode4` `mullvad-browser` (default browser).
 - **Yazi** en **foot** (Sixel) como file manager (`Super+Shift+F`).
 - **Fish** shell (default interactive shell).
 - Fuente: **Noto Color Emoji** para el picker de emojis. No instalamos Nerd Font (los íconos del bar son Canvas / QPainter).
@@ -117,7 +117,7 @@ Ver [docs/features.md](docs/features.md) para detalle.
 | `Super+Shift+R` | Media arm (1/2/3 = prev/play/next) |
 | `Super+Shift+W` | Cerrar ventana |
 | `Super+Return` | Terminal (foot + fish) |
-| `Super+Shift+Return` | LibreWolf |
+| `Super+Shift+Return` | Mullvad Browser |
 
 Ver [docs/shortcuts.md](docs/shortcuts.md) para el mapa completo.
 
