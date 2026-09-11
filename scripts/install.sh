@@ -127,11 +127,23 @@ if [ -f "$HOME/.config/sway/config" ] && [ ! -L "$HOME/.config/sway/config" ]; t
 fi
 cp "$ZOI_DIR/dotfiles/sway/config" "$HOME/.config/sway/config"
 
-# ---------------------------------------------------------------- foot
-log "Instalando config de foot."
+# ---------------------------------------------------------------- foot + fish
+log "Instalando foot + fish como terminal y shell default."
 mkdir -p "$HOME/.config/foot"
 if [ -f "$ZOI_DIR/dotfiles/config/foot/foot.ini" ]; then
   cp "$ZOI_DIR/dotfiles/config/foot/foot.ini" "$HOME/.config/foot/foot.ini"
+fi
+mkdir -p "$HOME/.config/fish/conf.d"
+if [ -f "$ZOI_DIR/dotfiles/config/fish/conf.d/zoi.fish" ]; then
+  cp "$ZOI_DIR/dotfiles/config/fish/conf.d/zoi.fish" "$HOME/.config/fish/conf.d/zoi.fish"
+fi
+if [ ! -f "$HOME/.config/fish/config.fish" ] && [ -f "$ZOI_DIR/dotfiles/config/fish/config.fish" ]; then
+  cp "$ZOI_DIR/dotfiles/config/fish/config.fish" "$HOME/.config/fish/config.fish"
+fi
+if [ -f /usr/share/applications/foot.desktop ]; then
+  mkdir -p "$HOME/.local/share/applications" "$HOME/.config"
+  xdg-mime default foot.desktop x-scheme-handler/terminal 2>/dev/null || true
+  printf 'foot.desktop\n' > "$HOME/.config/xdg-terminals.list"
 fi
 
 # ---------------------------------------------------------------- local-bin
@@ -185,12 +197,21 @@ else
   "$HOME/.local/bin/zoi-theme" set tokyo-night || warn "No se pudo aplicar tema inicial."
 fi
 
-# ---------------------------------------------------------------- fish as default
-if command -v fish >/dev/null && ! grep -qE "^/.*/fish$" /etc/shells 2>/dev/null; then
-  $SUDO sh -c "command -v fish >> /etc/shells"
-fi
-if [ -n "${SUDO}" ] && [ "$(getent passwd "$USER" | cut -d: -f7)" != "$(command -v fish)" ]; then
-  $SUDO chsh -s "$(command -v fish)" "$USER" || warn "Cambiar shell por defecto falló; hacelo a mano."
+# ---------------------------------------------------------------- fish as login shell
+FISH_BIN="$(command -v fish || true)"
+LOGIN_USER="${SUDO_USER:-$USER}"
+if [ -n "$FISH_BIN" ]; then
+  if ! grep -qxF "$FISH_BIN" /etc/shells 2>/dev/null; then
+    log "Agregando $FISH_BIN a /etc/shells."
+    printf '%s\n' "$FISH_BIN" | $SUDO tee -a /etc/shells >/dev/null
+  fi
+  CURRENT_SHELL="$(getent passwd "$LOGIN_USER" | cut -d: -f7 || true)"
+  if [ "$CURRENT_SHELL" != "$FISH_BIN" ]; then
+    log "Login shell de $LOGIN_USER → fish."
+    $SUDO chsh -s "$FISH_BIN" "$LOGIN_USER" || warn "chsh falló; corré: chsh -s $FISH_BIN $LOGIN_USER"
+  else
+    log "Login shell ya es fish ($LOGIN_USER)."
+  fi
 fi
 
 # ---------------------------------------------------------------- lemurs display manager
@@ -213,7 +234,7 @@ fi
 # ---------------------------------------------------------------- sanity
 log "Verificando binarios clave."
 MISSING=0
-for b in sway qs swaymsg playerctl wlsunset foot yazi qs-files cliphist wl-copy wtype grim slurp wf-recorder wireplumber btop bc zoi-theme; do
+for b in sway qs swaymsg playerctl wlsunset foot fish yazi qs-files cliphist wl-copy wtype grim slurp wf-recorder wireplumber btop bc zoi-theme; do
   command -v "$b" >/dev/null || { warn "Falta binario: $b"; MISSING=$((MISSING+1)); }
 done
 

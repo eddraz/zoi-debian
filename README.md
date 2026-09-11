@@ -26,7 +26,7 @@ Después de instalar, cerrá sesión y volvé a entrar (para que `systemd --user
 
 ## Qué se instala
 
-- **Sway** (WM) + **foot** (terminal). El bar por defecto es **Quickshell** (no waybar).
+- **Sway** (WM) + **foot** (terminal) + **fish** (login shell y shell de foot). El bar por defecto es **Quickshell** (no waybar).
 - **Quickshell 0.3.0** desde trixie-backports.
 - **PipeWire** implícito vía los servicios de QS.
 - **ZOI Theme Engine (`zoi-theme`)**: Motor de temas declarativo (arquitectura Omarchy Quatro) con 17 paletas estándar, 22 colores normalizados (`colors.toml`), plantillas (`*.tpl`) y propagación atómica en vivo a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK 3/4 y Herdr.
@@ -62,6 +62,7 @@ zoi-debian/
 │   ├── themes/                17 temas base (colors.toml) + templates/ (*.tpl)
 │   ├── sway/config            bindings + autoexec
 │   ├── config/foot/foot.ini
+│   ├── config/fish/conf.d/zoi.fish
 │   └── local-bin/             zoi-theme CLI y scripts auxiliares qs-*
 ├── assets/
 │   └── default-wallpaper.jpg  baby-yoda

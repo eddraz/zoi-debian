@@ -193,11 +193,16 @@ Cambiá `font=` para usar otra tipografía (no requiere Nerd Font; los íconos d
 
 ## Fish
 
-`~/.config/fish/config.fish` (lo crea `fish` por defecto). Seteá:
+El setup instala **foot + fish** juntos:
+
+- Login shell: `chsh -s /usr/bin/fish`
+- Foot: `shell=/usr/bin/fish` en `foot.ini` y `$term = /usr/bin/foot /usr/bin/fish` en Sway
+- `~/.config/fish/conf.d/zoi.fish` agrega `~/.local/bin` al PATH (no pisa tu `config.fish`)
+- `config.fish` de stock solo se copia si todavía no existe
 
 ```fish
-set -gx PATH ~/.local/bin $PATH
-set -gx EDITOR hx   # o nano, vim, lo que prefieras
+# conf.d/zoi.fish
+fish_add_path ~/.local/bin
 ```
 
 ## Lemurs (display manager)

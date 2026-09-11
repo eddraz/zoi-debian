@@ -66,7 +66,7 @@ Importante: el primer arranque de `qs` necesita:
 | `swaybg` | Wallpaper (alternativa a `swaymsg output * bg`) |
 | `swaylock` | Lock screen (PAM: `Quickshell.Services.Pam`) |
 | `swayidle` | Idle / DPMS / lock timers |
-| `foot` | Terminal Wayland (con soporte IME) |
+| `foot` | Terminal Wayland default (Sixel, shell=fish) |
 | `foot-themes` | Temas para foot |
 | `pipewire` + `wireplumber` | Audio (latencia baja) |
 | `wlsunset` | Night light (control de temperatura) |
@@ -86,7 +86,7 @@ Importante: el primer arranque de `qs` necesita:
 | `librewolf` | Browser default |
 | `yazi` | File manager (foot + Sixel). Repo APT oficial `yazi-rs.github.io/builds` |
 | `ffmpeg` `poppler-utils` `fd-find` `ripgrep` `fzf` `imagemagick` `p7zip-full` | Previews de Yazi |
-| `fish` | Default shell |
+| `fish` | Login shell + shell de foot |
 | `bc` | Cálculos matemáticos en scripts auxiliares |
 | `btop` | Monitor de recursos del sistema (themeado por zoi-theme) |
 | `python3-gi` + `gir1.2-gdkpixbuf-2.0` | Extracción de paleta de 22 colores desde wallpapers |
