@@ -186,6 +186,7 @@ grim -g "$(swaymsg -t get_tree | python3 -c '...')" /tmp/x.png
 - Don't add new colors to `Color.qml` without a corresponding `Color.focusFill` decision — focus must always match hover visually.
 - Don't reorder `hostOrder` without checking that nothing depends on the previous order.
 - Don't add `qs.Ui` or `$OMARCHY_PATH` — first-party only.
+- Don't try to reload `foot` terminal config with `pkill -SIGUSR1 foot`. Foot does NOT support signal-based reloading. Use the OSC escape sequence mechanism implemented in `zoi-theme._osc_reload_foot` (writes directly to `/dev/pts/*`).
 
 ## When to update the docs
 

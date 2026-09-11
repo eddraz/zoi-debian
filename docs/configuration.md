@@ -134,7 +134,7 @@ Ubicadas en `~/.config/zoi/themed/*.tpl` (o `dotfiles/themes/templates/*.tpl`):
 - `{{ mix c1 c2 25% }}`: Mezcla dos colores con un ratio porcentual o decimal.
 
 Aplicaciones compiladas automáticamente:
-- **Foot Terminal**: `~/.config/foot/foot.ini`
+- **Foot Terminal**: `~/.config/foot/foot.ini` (Se recargan los colores en terminales activas en tiempo real enviando secuencias de escape OSC al PTY).
 - **Sway Window Manager**: `~/.config/sway/theme.conf` + bordes dinámicos vía `swaymsg`
 - **btop**: `~/.config/btop/themes/zoi.theme` + `btop.conf`
 - **Helix Editor**: `~/.config/helix/themes/zoi.toml` + `config.toml`

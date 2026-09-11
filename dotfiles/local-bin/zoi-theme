@@ -398,6 +398,74 @@ class ZoiThemeManager:
         if os.path.isdir(os.path.dirname(repo_foot)):
             with open(repo_foot, "w", encoding="utf-8") as f:
                 f.write(content)
+        # Live-update running foot terminals via OSC escape sequences
+        self._osc_reload_foot(content)
+
+    def _osc_reload_foot(self, content):
+        """Send OSC escape sequences to all foot terminals to update colors live."""
+        # Parse colors from the rendered foot.ini content
+        colors = {}
+        for line in content.splitlines():
+            line = line.strip()
+            if "=" in line and not line.startswith("[") and not line.startswith("#"):
+                key, _, val = line.partition("=")
+                colors[key.strip()] = val.strip()
+
+        # Build OSC sequences
+        # OSC 10 = foreground, OSC 11 = background, OSC 12 = cursor
+        # OSC 4;N = palette color N (0-15)
+        seqs = []
+        if "foreground" in colors:
+            seqs.append(f"\033]10;#{colors['foreground']}\033\\")
+        if "background" in colors:
+            seqs.append(f"\033]11;#{colors['background']}\033\\")
+            seqs.append(f"\033]12;#{colors.get('foreground', 'ffffff')}\033\\")
+
+        # Map foot.ini keys to ANSI color indices
+        regular_keys = [
+            "regular0", "regular1", "regular2", "regular3",
+            "regular4", "regular5", "regular6", "regular7",
+        ]
+        bright_keys = [
+            "bright0", "bright1", "bright2", "bright3",
+            "bright4", "bright5", "bright6", "bright7",
+        ]
+        for i, key in enumerate(regular_keys):
+            if key in colors:
+                seqs.append(f"\033]4;{i};#{colors[key]}\033\\")
+        for i, key in enumerate(bright_keys):
+            if key in colors:
+                seqs.append(f"\033]4;{8 + i};#{colors[key]}\033\\")
+
+        if not seqs:
+            return
+
+        osc_payload = "".join(seqs)
+
+        # Find all PTYs belonging to foot child processes and write OSC sequences
+        try:
+            foot_pids = subprocess.run(
+                ["pgrep", "foot"], capture_output=True, text=True, timeout=5
+            ).stdout.strip().split()
+            for fpid in foot_pids:
+                if not fpid:
+                    continue
+                # Find child shell processes of foot
+                children = subprocess.run(
+                    ["pgrep", "-P", fpid], capture_output=True, text=True, timeout=5
+                ).stdout.strip().split()
+                for cpid in children:
+                    if not cpid:
+                        continue
+                    try:
+                        tty = os.readlink(f"/proc/{cpid}/fd/0")
+                        if tty.startswith("/dev/pts/"):
+                            with open(tty, "w") as f:
+                                f.write(osc_payload)
+                    except (OSError, IOError):
+                        pass
+        except Exception:
+            pass
 
     def _dispatch_btop(self, content):
         if not content:
