@@ -39,7 +39,7 @@ Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1`
 - **Quickshell 0.3.0** desde trixie-backports.
 - **PipeWire** implícito vía los servicios de QS.
 - **ZOI Theme Engine (`zoi-theme`)**: Motor de temas declarativo (arquitectura Omarchy Quatro) con 17 paletas estándar, 22 colores normalizados (`colors.toml`), plantillas (`*.tpl`) y propagación atómica en vivo a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK 3/4, Herdr, Yazi, Inlyne y Lemurs (`vtrgb` en TTY).
-- Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `btop` `bc` `libqrencode4` `mullvad-browser` (XDG default al instalar). Super+Shift+Return usa `qs-browser` (sigue el default actual).
+- Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `btop` `bc` `libqrencode4` `mullvad-browser` (se instala). XDG default = **Thorium** si está, si no Mullvad. Super+Shift+Return usa `qs-browser`.
 - **Yazi** en **foot** (Sixel) como file manager (`Super+Shift+F`). Íconos ASCII (no Nerd Font).
 - **Inlyne** visor markdown GPU (`qs-md`). Learn, Trigger y Yazi lo usan.
 - **mpv** video, **Amberol** audio, **Loupe** imágenes (defaults XDG).

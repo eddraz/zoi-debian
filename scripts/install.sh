@@ -446,20 +446,26 @@ if arch_in "$ARCH" amd64; then
   fi
   echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/mullvad-keyring.asc] https://repository.mullvad.net/deb/stable stable main" | $SUDO tee /etc/apt/sources.list.d/mullvad.list >/dev/null
   $SUDO apt-get update -y
-  log "Instalando Mullvad Browser (XDG default)."
+  log "Instalando Mullvad Browser (fallback si no hay Thorium)."
   $SUDO apt-get install -y --no-install-recommends mullvad-browser || warn "No se pudo instalar mullvad-browser."
 else
   warn "Mullvad Browser no tiene paquete para $ARCH; salteo."
 fi
-for desk in mullvad-browser.desktop net.mullvad.MullvadBrowser.desktop mullvadbrowser.desktop; do
+# XDG default: Thorium if present, else Mullvad.
+browser_set=""
+for desk in thorium-browser.desktop mullvad-browser.desktop net.mullvad.MullvadBrowser.desktop mullvadbrowser.desktop; do
   if [ -f "/usr/share/applications/$desk" ] || [ -f "$HOME/.local/share/applications/$desk" ]; then
     xdg-settings set default-web-browser "$desk" 2>/dev/null || true
     xdg-mime default "$desk" x-scheme-handler/http 2>/dev/null || true
     xdg-mime default "$desk" x-scheme-handler/https 2>/dev/null || true
     xdg-mime default "$desk" text/html 2>/dev/null || true
+    browser_set="$desk"
     break
   fi
 done
+if [ -n "$browser_set" ]; then
+  log "Navegador XDG default: $browser_set"
+fi
 
 # ---------------------------------------------------------------- user dirs
 log "Inicializando xdg-user-dirs."
@@ -710,7 +716,7 @@ MISSING=0
 for b in sway qs swaymsg playerctl wlsunset foot fish yazi qs-files qs-browser qs-keys-apply qs-md inlyne cliphist wl-copy wtype grim slurp wf-recorder wireplumber btop bc zoi-theme git mpv amberol loupe; do
   command -v "$b" >/dev/null || { warn "Falta binario: $b"; MISSING=$((MISSING+1)); }
 done
-command -v mullvad-browser >/dev/null || warn "Falta mullvad-browser (XDG default del install; Super+Shift+Return igual usa qs-browser)."
+command -v thorium-browser >/dev/null || command -v mullvad-browser >/dev/null || warn "No hay Thorium ni Mullvad; Super+Shift+Return usa qs-browser (XDG)."
 command -v herdr >/dev/null || warn "Falta binario: herdr (curl -fsSL https://herdr.dev/install.sh | sh)."
 command -v pi >/dev/null || warn "Falta binario: pi (reiniciá la shell o agregá el PATH de pi.dev)."
 

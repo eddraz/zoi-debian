@@ -106,7 +106,7 @@ Importante: el primer arranque de `qs` necesita:
 | `lightdm` | Fallback display manager (deshabilitado si Lemurs se instaló) |
 | `kbd` | `setvtrgb` para la paleta VGA de Lemurs en TTY2 |
 | `lemurs` | **No es paquete apt.** Tarball GitHub v0.4 → `/usr/local/bin/lemurs` (amd64). PAM + `/etc/lemurs/vtrgb` |
-| `mullvad-browser` | Browser XDG default al instalar (repo APT oficial). Super+Shift+Return lanza `qs-browser` |
+| `mullvad-browser` | Se instala (amd64). XDG default = Thorium si existe, si no Mullvad. `qs-browser` sigue XDG |
 | `yazi` | File manager (foot + Sixel). Repo APT oficial, `deb [arch=$ARCH …]` (amd64/arm64) |
 | `inlyne` | **No es paquete apt.** Release GitHub v0.5.3 → `~/.local/bin/inlyne` (amd64/arm64) |
 | `herdr` | Multiplexer de terminales para agentes. Instalador oficial `herdr.dev/install.sh` |
