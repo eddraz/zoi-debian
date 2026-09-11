@@ -10,11 +10,10 @@ Cómo arrancar Debian 13 UEFI con [Limine](https://github.com/Limine-Bootloader/
    ./scripts/limine-setup.sh
    ```
 
-2. Si el preview de `limine.conf` y los kernels están bien:
+2. Si el preview está bien (fish: un comando; `sudo curl` a veces no resuelve GitHub):
 
    ```sh
-   sudo ./scripts/limine-setup.sh apply
-   sudo ./scripts/limine-setup.sh apply --make-default   # solo cuando quieras que Limine gane a GRUB
+   bash ./scripts/apply-limine.sh --make-default
    ```
 
 3. Reboot. En el menú debería aparecer `Debian <versión>` (el más nuevo primero).

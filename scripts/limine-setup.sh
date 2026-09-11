@@ -20,7 +20,7 @@ LIMINE_EFI_DIR="EFI/limine"
 LIMINE_LABEL="${LIMINE_LABEL:-Limine}"
 LIVE_CONF="${LIVE_CONF:-/boot/limine/limine.conf}"
 
-log()  { printf '\033[1;35m[limine]\033[0m %s\n' "$*"; }
+log()  { printf '\033[1;35m[limine]\033[0m %s\n' "$*" >&2; }
 warn() { printf '\033[1;33m[warn]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31m[fail]\033[0m %s\n' "$*" >&2; exit 1; }
 
@@ -183,16 +183,38 @@ print_plan() {
 }
 
 download_efi() {
-  local work
+  local work tarf efi out
   work="$(mktemp -d)"
-  trap 'rm -rf "$work"' RETURN
-  log "Descargando Limine $LIMINE_VERSION (binary tarball)."
-  curl -fsSL -o "$work/limine-binary.tar.xz" "$LIMINE_URL"
-  tar -xJf "$work/limine-binary.tar.xz" -C "$work"
-  local efi
+  out="$(mktemp)"
+  tarf="$work/limine-binary.tar.xz"
+  if [ -n "${LIMINE_TARBALL:-}" ]; then
+    [ -f "$LIMINE_TARBALL" ] || die "LIMINE_TARBALL no existe: $LIMINE_TARBALL"
+    log "Usando tarball local $LIMINE_TARBALL"
+    cp -a "$LIMINE_TARBALL" "$tarf"
+  else
+    log "Descargando Limine $LIMINE_VERSION (binary tarball)."
+    if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+      tarf="/tmp/limine-${SUDO_USER}-$$.tar.xz"
+      if ! sudo -u "$SUDO_USER" -H curl -fsSL -o "$tarf" "$LIMINE_URL"; then
+        rm -rf "$work" "$out"
+        die "curl no resolvió GitHub como root. Bajá el tarball como tu usuario y reintentá."
+      fi
+    else
+      if ! curl -fsSL -o "$tarf" "$LIMINE_URL"; then
+        rm -rf "$work" "$out"
+        die "curl no pudo bajar $LIMINE_URL (¿red/DNS?)."
+      fi
+    fi
+  fi
+  tar -xJf "$tarf" -C "$work" || { rm -rf "$work" "$out"; die "tar falló al extraer Limine."; }
   efi="$(find "$work" -name 'BOOTX64.EFI' | head -1)"
-  [ -n "$efi" ] || die "El tarball no trae BOOTX64.EFI."
-  printf '%s\n' "$efi"
+  if [ -z "$efi" ]; then
+    rm -rf "$work" "$out"
+    die "El tarball no trae BOOTX64.EFI."
+  fi
+  cp -a "$efi" "$out"
+  rm -rf "$work"
+  printf '%s\n' "$out"
 }
 
 apply_install() {
