@@ -32,7 +32,7 @@ curl -fsSL https://raw.githubusercontent.com/<owner>/zoi-debian/main/scripts/ins
   | sudo ZOI_REPO=https://github.com/<owner>/zoi-debian.git bash
 ```
 
-El script pide: Wi‑Fi si no hay red; locale / teclado / timezone; nombre/email de GitHub; usuario+contraseña sudo (si sos root); instala Pi + el escritorio; y al final pregunta si reiniciás.
+El script pide **solo lo que falta**: Wi‑Fi si no hay red; locale / teclado / timezone si el sistema no los tiene; git si no hay `user.name`/`user.email`; usuario sudo solo si corrés como root sin `SUDO_USER`. Re-correr en un PC ya configurado no vuelve a preguntar eso.
 
 Variables de entorno:
 
@@ -55,7 +55,7 @@ Variables de entorno:
    - `~/.config/foot/foot.ini`
    - `~/.local/bin/` (`zoi-theme`, `inlyne`, helpers `qs-*` incl. `qs-md` / `qs-docs` / `qs-md-open`)
 6. **Pone wallpaper por defecto** (`assets/default-wallpaper.jpg` → `~/Imágenes/baby-yoda-cartoon.jpg`).
-7. Extrae la paleta de ese fondo y la aplica con `zoi-theme apply-json` (también pinta Inlyne y Yazi).
+7. Extrae la paleta de ese fondo **solo en el primer install** (`zoi-theme apply-json`). Un re-run no pisa el tema activo.
 8. **Instala Lemurs** como DM (TTY2) en amd64; LightDM queda de fallback.
 9. **Cambia la shell** a `fish`.
 10. **Agrega** `exec_always` de qs + qs-idle al `sway/config`.
@@ -95,8 +95,8 @@ Importante: el primer arranque de `qs` necesita:
 | `wf-recorder` | Grabación de pantalla |
 | `playerctl` | MPRIS CLI |
 | `mpv` + `mpv-mpris` | Video default (XDG) + lofi/MPRIS |
-| `amberol` | Reproductor de audio default |
-| `loupe` | Visor de imágenes default |
+| `amberol` | Reproductor de audio default (Debian `main`; `install.sh` lo instala) |
+| `loupe` | Visor de imágenes default (Debian `main`; `install.sh` lo instala) |
 | `yt-dlp` | Lo fi radio streaming |
 | `cliphist` | Historial de clipboard |
 | `figlet` | Banner ZOI para el screensaver |

@@ -167,6 +167,24 @@ pip install terminaltexteffects
 sudo apt install python3-terminaltexteffects
 ```
 
+## `install.sh`: `work: variable sin asignar` (Lemurs)
+
+Era un `trap RETURN` sobre una variable `local`. Lemurs igual quedaba installed/enabled. Ya está arreglado en `lemurs-setup.sh`. Si ves el warning viejo: `systemctl is-enabled lemurs` y `lemurs --version`.
+
+## Falta `amberol` / `loupe`
+
+Están en Debian `main`. Si el sanity del install los marcó:
+
+```sh
+sudo apt install -y amberol loupe
+```
+
+`install.sh` ahora los incluye en `PKGS`.
+
+## `cp: -r not specified; omitting directory .../__pycache__`
+
+El glob `local-bin/*` copiaba el directorio de bytecode y, con `set -e`, cortaba el setup. Ahora `find -type f`.
+
 ## Inlyne no abre / `qs-md` falla
 
 ```sh

@@ -9,8 +9,9 @@
 #   curl -fsSL https://raw.githubusercontent.com/<you>/zoi-debian/main/scripts/install.sh \
 #     | sudo ZOI_REPO=https://github.com/<you>/zoi-debian.git bash
 #
-# Prompts: Wi-Fi, locale/keyboard/timezone, GitHub name/email, sudo user.
-# Then Pi + desktop. Idempotent.
+# Prompts only what is missing: Wi-Fi if offline; locale/keyboard/timezone if unset;
+# git identity if user.name/email missing; sudo user only as root without SUDO_USER.
+# Then Pi + desktop. Idempotent. Re-run does not re-ask or re-theme an existing desktop.
 #
 # Env: ZOI_REPO ZOI_BRANCH ZOI_DIR ZOI_NONINTERACTIVE=1 ZOI_SKIP_REBOOT=1
 #      ZOI_LANG ZOI_XKB ZOI_TZ GIT_NAME GIT_EMAIL TARGET_USER
@@ -160,29 +161,90 @@ if [ "${ZOI_BOOTSTRAPPED:-}" != "1" ]; then
         ZOI_XKB="${ZOI_XKB:-latam,us}"
         ZOI_TZ="${ZOI_TZ:-America/Bogota}"
   else
-    log "Identidad de GitHub / git."
-    GIT_NAME="$(ask "Nombre para git (GitHub): ")"
-    GIT_EMAIL="$(ask "Email para git (GitHub): ")"
-    [ -n "$GIT_NAME" ] || die "Nombre git vacío."
-    [ -n "$GIT_EMAIL" ] || die "Email git vacío."
+    git_cfg() {
+      local key="$1"
+      if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$SUDO_USER" -H git config --global --get "$key" 2>/dev/null || true
+      else
+        git config --global --get "$key" 2>/dev/null || true
+      fi
+    }
+    _def_name="$(git_cfg user.name)"
+    _def_email="$(git_cfg user.email)"
+    if [ -n "$_def_name" ] && [ -n "$_def_email" ]; then
+      GIT_NAME="$_def_name"
+      GIT_EMAIL="$_def_email"
+      log "Git ya configurado: $GIT_NAME <$GIT_EMAIL>"
+    else
+      log "Identidad de GitHub / git."
+      GIT_NAME="$(ask "Nombre para git (GitHub)${_def_name:+ [$_def_name]}: ")"
+      GIT_EMAIL="$(ask "Email para git (GitHub)${_def_email:+ [$_def_email]}: ")"
+      GIT_NAME="${GIT_NAME:-$_def_name}"
+      GIT_EMAIL="${GIT_EMAIL:-$_def_email}"
+      [ -n "$GIT_NAME" ] || die "Nombre git vacío."
+      [ -n "$GIT_EMAIL" ] || die "Email git vacío."
+    fi
 
-
-        log "Idioma, teclado y zona horaria."
+    read_kv() {
+      local file="$1" key="$2"
+      [ -r "$file" ] || return 0
+      awk -F= -v k="$key" '
+        $1 == k {
+          v=$2
+          gsub(/^[ 	"]+|[ 	"]+$/, "", v)
+          print v
+          exit
+        }
+      ' "$file"
+    }
+    _cur_lang="$(read_kv /etc/default/locale LANG)"
+    _cur_xkb="$(read_kv /etc/default/keyboard XKBLAYOUT)"
+    _cur_tz=""
+    if [ -r /etc/timezone ]; then
+      _cur_tz="$(tr -d "[:space:]" < /etc/timezone)"
+    elif command -v timedatectl >/dev/null; then
+      _cur_tz="$(timedatectl show -p Timezone --value 2>/dev/null || true)"
+    fi
+    if [ -z "${ZOI_LANG:-}" ]; then
+      if [ -n "$_cur_lang" ]; then
+        ZOI_LANG="$_cur_lang"
+      else
         _lang="$(ask "Locale [es_CO.UTF-8]: ")"
         ZOI_LANG="${_lang:-es_CO.UTF-8}"
+      fi
+    fi
+    if [ -z "${ZOI_XKB:-}" ]; then
+      if [ -n "$_cur_xkb" ]; then
+        ZOI_XKB="$_cur_xkb"
+      else
         _xkb="$(ask "Teclado XKB [latam,us]: ")"
         ZOI_XKB="${_xkb:-latam,us}"
+      fi
+    fi
+    if [ -z "${ZOI_TZ:-}" ]; then
+      if [ -n "$_cur_tz" ]; then
+        ZOI_TZ="$_cur_tz"
+      else
         _tz="$(ask "Timezone [America/Bogota]: ")"
         ZOI_TZ="${_tz:-America/Bogota}"
+      fi
+    fi
+    log "Locale=$ZOI_LANG  teclado=$ZOI_XKB  tz=$ZOI_TZ"
 
     if [ "$(id -u)" -eq 0 ]; then
-      log "Usuario de ingreso (sudo)."
-      TARGET_USER="$(ask "Nombre de usuario: ")"
-      echo "$TARGET_USER" | grep -Eq '^[a-z_][a-z0-9_-]*$' || die "Usuario inválido (minúsculas, números, _-)."
-      PASS1="$(ask_secret "Contraseña: ")"
-      PASS2="$(ask_secret "Repetí la contraseña: ")"
-      [ "$PASS1" = "$PASS2" ] || die "Las contraseñas no coinciden."
-      [ -n "$PASS1" ] || die "Contraseña vacía."
+      if [ -z "${TARGET_USER:-}" ] && [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        TARGET_USER="$SUDO_USER"
+        log "Usuario: $TARGET_USER (sudo). No creo otro."
+      fi
+      if [ -z "${TARGET_USER:-}" ]; then
+        log "Usuario de ingreso (sudo)."
+        TARGET_USER="$(ask "Nombre de usuario: ")"
+        echo "$TARGET_USER" | grep -Eq '^[a-z_][a-z0-9_-]*$' || die "Usuario inválido (minúsculas, números, _-)."
+        PASS1="$(ask_secret "Contraseña: ")"
+        PASS2="$(ask_secret "Repetí la contraseña: ")"
+        [ "$PASS1" = "$PASS2" ] || die "Las contraseñas no coinciden."
+        [ -n "$PASS1" ] || die "Contraseña vacía."
+      fi
     else
       TARGET_USER="${SUDO_USER:-$USER}"
       log "Corriendo como $TARGET_USER (no root): no creo otro usuario."
@@ -204,6 +266,15 @@ if [ "${ZOI_BOOTSTRAPPED:-}" != "1" ]; then
     fi
   fi
 
+      _now_lang="$(awk -F= '/^LANG=/ {gsub(/"/,"",$2); print $2; exit}' /etc/default/locale 2>/dev/null || true)"
+      _now_xkb="$(awk -F= '/^XKBLAYOUT=/ {gsub(/"/,"",$2); print $2; exit}' /etc/default/keyboard 2>/dev/null || true)"
+      _now_tz=""
+      if [ -r /etc/timezone ]; then
+        _now_tz="$(tr -d "[:space:]" < /etc/timezone)"
+      fi
+      if [ "$_now_lang" = "$ZOI_LANG" ] && [ "$_now_xkb" = "$ZOI_XKB" ] && [ "$_now_tz" = "$ZOI_TZ" ]; then
+        log "Locale/teclado/tz ya están así; no reescribo."
+      else
       log "Aplicando locale=$ZOI_LANG  teclado=$ZOI_XKB  tz=$ZOI_TZ"
       if [ ! -f "/usr/share/zoneinfo/$ZOI_TZ" ]; then
         die "Timezone inexistente: $ZOI_TZ"
@@ -223,6 +294,7 @@ BACKSPACE="guess"
 EOF
       $SUDO setupcon 2>/dev/null || true
       $SUDO localectl set-x11-keymap "${ZOI_XKB}" pc105 "" grp:alt_shift_toggle 2>/dev/null || true
+      fi
 
   TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
   [ -n "$TARGET_HOME" ] || die "No pude resolver el home de $TARGET_USER."
@@ -326,6 +398,7 @@ PKGS=(
   pulseaudio-utils
   xdg-utils xdg-user-dirs
   pavucontrol
+  amberol loupe
   ffmpeg poppler-utils fd-find ripgrep fzf imagemagick p7zip-full
   git curl ca-certificates
 )
@@ -441,8 +514,7 @@ fi
 # ---------------------------------------------------------------- local-bin
 log "Instalando scripts auxiliares y CLI zoi-theme en ~/.local/bin."
 mkdir -p "$HOME/.local/bin"
-cp "$ZOI_DIR/dotfiles/local-bin/"* "$HOME/.local/bin/"
-chmod +x "$HOME/.local/bin/"*
+find "$ZOI_DIR/dotfiles/local-bin" -maxdepth 1 -type f ! -name '*.pyc'   -exec install -m 755 {} "$HOME/.local/bin/" \;
 
 # ---------------------------------------------------------------- inlyne (GPU markdown viewer; amd64/arm64)
 INLYNE_VER="0.5.3"
@@ -529,6 +601,9 @@ if [ ! -f "$HOME/.config/quickshell/shell.json" ]; then
 fi
 
 # ---------------------------------------------------------------- initialize theme from default wallpaper
+if [ -f "$HOME/.local/state/quickshell/theme" ] || [ -f "$HOME/.local/state/quickshell/colors.json" ]; then
+  log "Tema ya existe; no piso la paleta con baby-yoda."
+else
 log "Aplicando paleta extraída de baby-yoda-cartoon.jpg."
 WALL="$HOME/Imágenes/baby-yoda-cartoon.jpg"
 if [ -x "$HOME/.local/bin/qs-theme-from-wallpaper" ] && [ -f "$WALL" ]; then
@@ -541,6 +616,8 @@ if [ -x "$HOME/.local/bin/qs-theme-from-wallpaper" ] && [ -f "$WALL" ]; then
   fi
 else
   "$HOME/.local/bin/zoi-theme" set tokyo-night || warn "No se pudo aplicar tema inicial."
+fi
+
 fi
 
 # ---------------------------------------------------------------- fish as login shell
@@ -564,7 +641,13 @@ fi
 if [ -x "$ZOI_DIR/scripts/lemurs-setup.sh" ]; then
   if arch_in "$ARCH" amd64; then
     log "Instalando Lemurs (TUI DM) temeado. LightDM queda instalado pero deshabilitado."
-    "$ZOI_DIR/scripts/lemurs-setup.sh" apply || warn "Lemurs no se pudo instalar; LightDM sigue como fallback."
+    if ! "$ZOI_DIR/scripts/lemurs-setup.sh" apply; then
+      if systemctl is-enabled lemurs >/dev/null 2>&1 || command -v lemurs >/dev/null; then
+        warn "lemurs-setup apply salió !=0, pero Lemurs está instalado/enabled."
+      else
+        warn "Lemurs no se pudo instalar; LightDM sigue como fallback."
+      fi
+    fi
   else
     warn "Lemurs upstream es binario x86_64; salteo en $ARCH (LightDM queda)."
   fi

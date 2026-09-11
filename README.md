@@ -25,11 +25,11 @@ curl -fsSL https://raw.githubusercontent.com/<owner>/zoi-debian/main/scripts/ins
 El instalador, en orden:
 
 1. Si no hay red, pide SSID y clave Wi‑Fi.
-2. Pide locale, teclado XKB y timezone.
-3. Pide nombre y email de GitHub (`git config --global`).
-4. Pide usuario + contraseña y crea un usuario **sudo** (si corriste como root).
-5. Instala Pi (`pi.dev`), Herdr (`herdr.dev`), Sway, Quickshell, foot+fish, Yazi, Inlyne, Mullvad Browser, Lemurs, temas. Terceros (Yazi/Mullvad/Lemurs/Inlyne) según arquitectura.
-6. Pregunta si reiniciás para comprobar el login.
+2. Locale / teclado / timezone **solo si el sistema no los tiene**.
+3. Git name/email **solo si faltan** en `git config --global`.
+4. Usuario sudo **solo si corrés como root** sin `SUDO_USER`.
+5. Instala Pi, Herdr, Sway, Quickshell, foot+fish, Yazi, Inlyne, Mullvad, Lemurs, Amberol, Loupe, temas. Terceros según arquitectura.
+6. Pregunta si reiniciás. Un re-run no vuelve a preguntar lo ya configurado ni pisa la paleta activa.
 
 Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1` usa env `TARGET_USER` / `GIT_NAME` / `GIT_EMAIL` / `ZOI_LANG` / `ZOI_XKB` / `ZOI_TZ`.
 

@@ -3,7 +3,8 @@
 ## Unreleased
 
 ### Features
-- **Media defaults:** mpv (video), Amberol (audio), Loupe (imágenes) vía `xdg-mime`.
+- **Media defaults:** mpv (video), Amberol (audio), Loupe (imágenes) vía apt + `xdg-mime`.
+- **Idempotent setup:** `install.sh` no re-pregunta git/locale/teclado/tz/usuario si ya están; no pisa la paleta en un re-run; copia `local-bin` sin `__pycache__`.
 - **Markdown viewer:** Inlyne (`qs-md` / `inlyne view`) en lugar del overlay Quickshell. Learn y Yazi lo usan; `zoi-theme` pinta `~/.config/inlyne/inlyne.toml`.
 - **Arch gating:** `install.sh` lee `dpkg --print-architecture` y pinnea/salta Yazi, Mullvad, Lemurs e Inlyne.
 - **Yazi 26:** reglas `url`/`mime`; íconos ASCII (sin Nerd Font).
@@ -17,7 +18,7 @@
 - **Optional Limine UEFI helper**: `scripts/limine-setup.sh` (dry-run by default) copies upstream `BOOTX64.EFI`, writes `limine.conf` under `/boot/limine` (so it can be recolored), and can add an NVRAM entry without removing GRUB. Documented in `docs/limine.md`. Not invoked by `install.sh`.
 - **Limine follows zoi-theme**: `limine.conf.tpl` maps the 22-color palette onto Limine `term_*` / `interface_*` options. Theme apply writes `~/.config/zoi/themed/limine.conf` and merges it into `/boot/limine/limine.conf` when that directory is writable.
 - **Lemurs display manager**: TUI login (TTY2) with `lemurs-variables.toml.tpl`. First install extracts the palette from `assets/default-wallpaper.jpg` (Baby Yoda) instead of tokyo-night. LightDM stays installed as fallback.
-- **Locale, keyboard, timezone**: `install.sh` prompts for LANG (default `es_CO.UTF-8`), XKB layout (default `latam,us`), and timezone (default `America/Bogota`), then applies them to the system and Sway.
+- **Locale, keyboard, timezone**: `install.sh` only prompts when unset (defaults `es_CO.UTF-8`, `latam,us`, `America/Bogota`). Re-apply is skipped if the system already matches.
 - **Terminal Debian bootstrap**: `install.sh` configures Wi-Fi if offline, creates a sudo login user, sets GitHub git identity, installs Pi (`pi.dev`), then the desktop stack, and offers a reboot.
 - **Window close bindings**: Super+W kills the focused window; Super+Shift+W kills every window on the focused workspace. Tabbed layout is no longer on Super+W (stacking Super+S, split Super+E remain).
 - **Mullvad Browser is the default browser**: official Mullvad APT repo in `install.sh`, Sway `$browser`, and XDG http/https. LibreWolf is no longer pulled by default.
