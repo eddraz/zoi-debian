@@ -44,7 +44,7 @@ Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1`
 - **Inlyne** visor markdown GPU (`qs-md`). Learn, Trigger y Yazi lo usan.
 - **mpv** video, **Amberol** audio, **Loupe** imágenes (defaults XDG).
 - **Herdr** multiplexer de terminales para agentes (`herdr.dev`). Config en `~/.config/herdr/config.toml`; `zoi-theme` pinta la paleta.
-- **Lemurs** TUI en TTY2 (amd64). Paleta VGA (`/etc/lemurs/vtrgb` + `setvtrgb`); LightDM queda de fallback. No pinta el jpg.
+- **Lemurs** TUI en TTY2 (amd64). Paleta VGA (`/etc/lemurs/vtrgb` + `setvtrgb`); LightDM queda de fallback. Sway entra con **seatd** y el usuario en grupos `video`+`render` (`scripts/apply-lemurs-seatd.sh`).
 - **Fish** shell (default interactive shell).
 - Fuente: **Noto Color Emoji** para el picker de emojis. No instalamos Nerd Font (los íconos del bar son Canvas / QPainter).
 

@@ -9,7 +9,7 @@
 | [architecture.md](architecture.md) | PluginRegistry, IPC, singletons, hot reload. |
 | [troubleshooting.md](troubleshooting.md) | Problemas frecuentes y fix. |
 | [limine.md](limine.md) | Bootloader Limine opcional (UEFI). No lo instala `install.sh`. |
-| [lemurs.md](lemurs.md) | Lemurs TTY2: vtrgb, PAM Debian, LightDM fallback. |
+| [lemurs.md](lemurs.md) | Lemurs TTY2: vtrgb, PAM, seatd, grupo `render`. |
 | [herdr.md](herdr.md) | Herdr multiplexer, install y tema. |
 
 Empezá por [install.md](install.md) si vas a hacer una instalación nueva. Si vas a extender el shell, [architecture.md](architecture.md) primero y después [skills/zoi-debian/SKILL.md](../skills/zoi-debian/SKILL.md).

@@ -421,6 +421,9 @@ if [ -x /usr/sbin/seatd ] || [ -x /usr/bin/seatd ]; then
   $SUDO systemctl daemon-reload
   $SUDO systemctl enable --now seatd || warn "No pude habilitar seatd."
 fi
+# renderD128 is 0660 render; Lemurs+seatd does not get logind uaccess ACLs.
+$SUDO usermod -aG render,video,seat "${SUDO_USER:-$USER}" 2>/dev/null || \
+  $SUDO usermod -aG render,video "${SUDO_USER:-$USER}" 2>/dev/null || true
 
 # ---------------------------------------------------------------- yazi (official APT repo; amd64/arm64)
 if arch_in "$ARCH" amd64 arm64; then

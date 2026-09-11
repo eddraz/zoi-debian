@@ -14,7 +14,14 @@ sudo ./scripts/lemurs-setup.sh apply
 
 `apply` solo hace `enable`. No arranca Lemurs en caliente.
 
-Sway lo lanza `/etc/lemurs/wayland/sway` con **seatd** (logind no le da seat al compositor cuando Lemurs es un unit systemd). Sin eso: pantalla negra y `Unable to create backend`.
+Sway lo lanza `/etc/lemurs/wayland/sway` con **seatd** (`LIBSEAT_BACKEND=seatd`). Logind no le da seat al compositor cuando Lemurs es un unit systemd.
+
+Sin seatd: pantalla negra (`Unable to create backend` / VT 0). Seatd up pero sin grupo **`render`**: Sway muere al toque (`renderD128: Permission denied`) y volvés al greeter.
+
+```sh
+sudo bash ~/projects/zoi-debian/scripts/apply-lemurs-seatd.sh   # seatd + wrapper + grupos
+# reboot — login en TTY2, sesión sway
+```
 
 ## Authentication failed (contraseña bien)
 

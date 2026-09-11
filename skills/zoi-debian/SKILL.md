@@ -198,6 +198,8 @@ grim -g "$(swaymsg -t get_tree | python3 -c '...')" /tmp/x.png
 - Don't put hex colors in Lemurs `config.toml` for TTY2. Kernel VT ignores truecolor. Write `/etc/lemurs/vtrgb` and `ExecStartPre=setvtrgb`; config uses ANSI names (`black`, `light yellow`).
 - Lemurs `cache_path` is a **file** (`/var/cache/lemurs/state`). mkdir of that path as a directory breaks remember-username/session.
 - Don't point Lemurs `xsessions_path` at `/usr/share/xsessions`. Debian's `sway.desktop` there is X11 (`Exec=sway`); Lemurs waits 60s for Xorg. Use empty `/etc/lemurs/xsessions` + `/etc/lemurs/wayland/sway`.
+- Don't drop-in `ExecStart=/usr/bin/seatd` (Debian binary is `/usr/sbin/seatd`, unit already `-g video`). 203/EXEC → no socket → black screen.
+- Lemurs+seatd does not get logind `uaccess` on `/dev/dri/renderD128`. User must be in group **`render`** (and `video`) or Sway exits and the greeter returns. `scripts/apply-lemurs-seatd.sh`; reboot after `usermod`.
 
 ## When to update the docs
 

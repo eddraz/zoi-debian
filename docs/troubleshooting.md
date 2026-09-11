@@ -205,9 +205,25 @@ Si todavía apunta a `/usr/share/...`, copiá `dotfiles/lemurs/config.toml` a `/
 
 ## Lemurs: login OK y pantalla negra (Sway no arranca)
 
-`/var/log/lemurs.client.log` muestra `Timeout waiting session to become active` / `Unable to create backend` / `VT 0`. Lemurs es un servicio systemd: logind le da a Sway la sesión del greeter (sin seat). El wrapper `/etc/lemurs/wayland/sway` usa **seatd** (`LIBSEAT_BACKEND=seatd`) y `install.sh` habilita `seatd -g video`.
+`/var/log/lemurs.client.log` muestra `Timeout waiting session to become active` / `Unable to create backend` / `VT 0`. Lemurs es un servicio systemd: logind le da a Sway la sesión del greeter (sin seat).
 
-Comprobar: `systemctl is-active seatd`, `ls /run/seatd.sock`, `cat /etc/lemurs/wayland/sway`. No hace falta relogin por el grupo `seat` si el socket es grupo `video`.
+El wrapper `/etc/lemurs/wayland/sway` pone `LIBSEAT_BACKEND=seatd`. El unit de Debian es `/usr/sbin/seatd -g video` — **no** uses un drop-in a `/usr/bin/seatd` (falla `203/EXEC` y no hay socket).
+
+```sh
+sudo bash ~/projects/zoi-debian/scripts/apply-lemurs-seatd.sh
+# seatd: active  y  /run/seatd.sock
+sudo reboot
+```
+
+## Lemurs: Sway arranca y volvés al greeter (`renderD128`)
+
+`/var/log/lemurs.client.log`: `failed to open /dev/dri/renderD128: Permission denied` y `Failed to create renderer`. El nodo es `0660` grupo `render`. Con TTY+logind hay ACL `uaccess`; con Lemurs+seatd no. El usuario tiene que estar en **`render`** (y `video`).
+
+```sh
+sudo usermod -aG render,video $USER
+id -nG $USER   # tiene que listar render (en un login nuevo)
+sudo reboot
+```
 
 ## `install.sh`: `work: variable sin asignar` (Lemurs)
 

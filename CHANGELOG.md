@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Fixes
+- **Lemurs + Sway DRM:** seatd (`/usr/sbin/seatd -g video`, no drop-in a `/usr/bin/seatd`) and grupo `render` for `/dev/dri/renderD128`. Helper `scripts/apply-lemurs-seatd.sh`.
 - **Lemurs Sway session:** the greeter no longer scans `/usr/share/xsessions`. Debian's `sway.desktop` there is X11; Lemurs waited 60s for Xorg. Only `/etc/lemurs/wayland/sway` is offered.
 - **Lemurs login:** Debian PAM no usa más `include login`. `pam_loginuid` queda `optional` para que una contraseña válida no termine en *authentication failed* (sesión systemd / EPERM). Cache en `/var/cache/lemurs/state` (archivo, no directorio). PAM y unit se instalan `root:root`.
 - **Lemurs TTY colors:** el kernel ignora hex. `zoi-theme` escribe `/etc/lemurs/vtrgb`; la unit corre `setvtrgb` antes de Lemurs; el config usa nombres ANSI (`black` / `light yellow` = accent).
