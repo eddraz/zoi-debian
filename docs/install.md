@@ -84,6 +84,8 @@ Importante: el primer arranque de `qs` necesita:
 | `light` | Brillo de teclado |
 | `lightdm` | Fallback display manager (deshabilitado si Lemurs se instaló) |
 | `librewolf` | Browser default |
+| `yazi` | File manager (foot + Sixel). Repo APT oficial `yazi-rs.github.io/builds` |
+| `ffmpeg` `poppler-utils` `fd-find` `ripgrep` `fzf` `imagemagick` `p7zip-full` | Previews de Yazi |
 | `fish` | Default shell |
 | `bc` | Cálculos matemáticos en scripts auxiliares |
 | `btop` | Monitor de recursos del sistema (themeado por zoi-theme) |

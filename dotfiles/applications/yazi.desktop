@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Yazi
+Comment=Terminal file manager (foot + Sixel)
+Exec=foot -a yazi -T Yazi -e yazi %F
+Terminal=false
+StartupNotify=false
+MimeType=inode/directory;
+Icon=folder
+Categories=System;FileTools;FileManager;
+Keywords=File;Manager;Browser;Explorer;
+StartupWMClass=yazi

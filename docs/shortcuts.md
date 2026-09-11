@@ -8,6 +8,7 @@ Esta tabla lista todos los binds de Sway + atajos internos de Quickshell.
 |---|---|---|
 | `Super+Return` | Terminal (foot + fish) | `$term` |
 | `Super+Shift+Return` | LibreWolf | `/usr/bin/librewolf` |
+| `Super+Shift+F` | File manager (foot + yazi, Sixel) | `$files` (`qs-files`) |
 | `Super+KP_Enter` | Terminal | `$term` |
 | `Super+Shift+KP_Enter` | LibreWolf | `/usr/bin/librewolf` |
 | `Super+Escape` | Session panel | `qs ipc call session toggle` |

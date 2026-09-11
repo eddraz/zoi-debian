@@ -64,6 +64,7 @@ PKGS=(
   pulseaudio-utils
   xdg-utils xdg-user-dirs
   pavucontrol
+  ffmpeg poppler-utils fd-find ripgrep fzf imagemagick p7zip-full
 )
 
 # quickshell 0.3+ está en backports
@@ -73,6 +74,16 @@ log "Instalando paquetes base (puede tardar 1-3 min)."
 $SUDO apt-get install -y --no-install-recommends "${PKGS[@]}"
 log "Asegurando paquetes de backports."
 $SUDO apt-get install -y --no-install-recommends -t trixie-backports "${BP_PKGS[@]}"
+
+# ---------------------------------------------------------------- yazi (official APT repo)
+if [ ! -f /etc/apt/sources.list.d/yazi.list ]; then
+  log "Agregando el repo APT oficial de Yazi."
+  curl -fsSL https://yazi-rs.github.io/builds/yazi-keyring.gpg | $SUDO tee /usr/share/keyrings/yazi-keyring.gpg >/dev/null
+  echo 'deb [signed-by=/usr/share/keyrings/yazi-keyring.gpg] https://yazi-rs.github.io/builds/ stable main' | $SUDO tee /etc/apt/sources.list.d/yazi.list >/dev/null
+  $SUDO apt-get update -y
+fi
+log "Instalando yazi (file manager, previews Sixel en foot)."
+$SUDO apt-get install -y --no-install-recommends yazi || warn "No se pudo instalar yazi desde el repo oficial."
 
 # ---------------------------------------------------------------- user dirs
 log "Inicializando xdg-user-dirs."
@@ -128,6 +139,19 @@ log "Instalando scripts auxiliares y CLI zoi-theme en ~/.local/bin."
 mkdir -p "$HOME/.local/bin"
 cp "$ZOI_DIR/dotfiles/local-bin/"* "$HOME/.local/bin/"
 chmod +x "$HOME/.local/bin/"*
+
+log "Configurando Yazi (foot + Sixel) como file manager default."
+mkdir -p "$HOME/.config/yazi" "$HOME/.local/share/applications"
+if [ -f "$ZOI_DIR/dotfiles/yazi/yazi.toml" ]; then
+  cp "$ZOI_DIR/dotfiles/yazi/yazi.toml" "$HOME/.config/yazi/yazi.toml"
+fi
+if [ -f "$ZOI_DIR/dotfiles/applications/yazi.desktop" ]; then
+  cp "$ZOI_DIR/dotfiles/applications/yazi.desktop" "$HOME/.local/share/applications/yazi.desktop"
+fi
+if command -v xdg-mime >/dev/null && [ -f "$HOME/.local/share/applications/yazi.desktop" ]; then
+  xdg-mime default yazi.desktop inode/directory || true
+  xdg-mime default yazi.desktop inode/mount-point || true
+fi
 
 # ---------------------------------------------------------------- wallpaper
 log "Poniendo wallpaper por defecto."
@@ -189,7 +213,7 @@ fi
 # ---------------------------------------------------------------- sanity
 log "Verificando binarios clave."
 MISSING=0
-for b in sway qs swaymsg playerctl wlsunset foot cliphist wl-copy wtype grim slurp wf-recorder wireplumber btop bc zoi-theme; do
+for b in sway qs swaymsg playerctl wlsunset foot yazi qs-files cliphist wl-copy wtype grim slurp wf-recorder wireplumber btop bc zoi-theme; do
   command -v "$b" >/dev/null || { warn "Falta binario: $b"; MISSING=$((MISSING+1)); }
 done
 

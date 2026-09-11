@@ -1,0 +1,3 @@
+#!/bin/sh
+# Default zoi-debian file manager: foot + yazi (Sixel previews).
+exec /usr/bin/foot -a yazi -T Yazi -e yazi "$@"

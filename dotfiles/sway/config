@@ -15,6 +15,8 @@ set $up k
 set $right l
 # Your preferred terminal emulator
 set $term /usr/bin/foot /usr/bin/fish
+# File manager: foot + yazi (Sixel previews)
+set $files ~/.local/bin/qs-files
 # Your preferred application launcher
 set $menu /usr/bin/qs ipc call launcher toggle
 
@@ -71,6 +73,7 @@ input type:touchpad {
     bindsym $mod+Return exec $term
     bindsym $mod+KP_Enter exec $term
     bindsym $mod+Shift+Return exec /usr/bin/librewolf
+    bindsym $mod+Shift+f exec $files
     bindsym $mod+Shift+KP_Enter exec /usr/bin/librewolf
     bindsym $mod+Escape exec /usr/bin/qs ipc call session toggle
     bindsym $mod+a exec /usr/bin/qs ipc call popups toggle apps

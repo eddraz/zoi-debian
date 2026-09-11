@@ -30,3 +30,6 @@ bright7={{ bright_foreground_strip }}
 ## Selection
 selection-foreground={{ dark_background_strip }}
 selection-background={{ accent_strip }}
+
+[tweak]
+sixel=yes

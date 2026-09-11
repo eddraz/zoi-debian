@@ -453,3 +453,15 @@ Ver `docs/architecture.md` para detalle.
 - `qs-screenrecord`: `wf-recorder -g "$(slurp)" -f ~/Vídeos/records/<timestamp>.mp4`
 
 Wallpaper picker **omite** `screenshots/` y `records/`.
+
+---
+
+## File manager (foot + Yazi + Sixel)
+
+El file manager default es **Yazi** dentro de **foot**. Foot tiene `sixel=yes`; Yazi elige Sixel solo (`TERM=foot`).
+
+- Wrapper: `~/.local/bin/qs-files` → `foot -a yazi -e yazi`
+- Atajo: `Super+Shift+F`
+- MIME: `yazi.desktop` es default de `inode/directory`
+- Tema: `zoi-theme` escribe `~/.config/yazi/theme.toml`
+- Previews: `ffmpeg`, `poppler-utils`, ImageMagick, `fd`, `rg`, `fzf`, `7z`

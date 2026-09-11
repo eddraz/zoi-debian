@@ -144,6 +144,7 @@ Aplicaciones compiladas automáticamente:
 - **Herdr**: `~/.config/herdr/config.toml`
 - **Limine** (si está instalado): `~/.config/zoi/themed/limine.conf` + merge a `/boot/limine/limine.conf`. Ver [limine.md](limine.md).
 - **Lemurs**: `~/.config/zoi/themed/lemurs-variables.toml` → `/etc/lemurs/variables.toml` si es escribible. Ver [lemurs.md](lemurs.md).
+- **Yazi**: `~/.config/yazi/theme.toml` (file manager en foot con Sixel).
 
 ### 3. Comandos CLI `zoi-theme`
 
