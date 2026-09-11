@@ -58,6 +58,13 @@ print_plan() {
 }
 
 install_binary() {
+  if command -v lemurs >/dev/null 2>&1; then
+    if lemurs --version 2>/dev/null | grep -q "$LEMURS_VERSION"; then
+      log "Lemurs v$LEMURS_VERSION ya está instalado. Saltando descarga."
+      return 0
+    fi
+  fi
+
   local work efi
   work="$(mktemp -d)"
   trap 'rm -rf "$work"' RETURN
@@ -71,7 +78,7 @@ install_binary() {
 
 write_wallpaper_fallback_vars() {
   local vars="$1"
-  $SUDO tee "$vars" >/dev/null <<'EOF'
+  $SUDO tee "$vars" >/dev/null <<'EOF_VARS'
 background = "#1c1c1c"
 foreground = "#e6e6e6"
 accent = "#fbad60"
@@ -86,7 +93,7 @@ peach = "#fbad60"
 yellow = "#fbfb60"
 login_title = "ZOI"
 password_title = "password"
-EOF
+EOF_VARS
 }
 
 apply_install() {
@@ -100,11 +107,26 @@ apply_install() {
 
   install_binary
 
-  log "Instalando /etc/lemurs."
+  log "Instalando y verificando archivos en /etc/lemurs."
   $SUDO mkdir -p /etc/lemurs/wayland /etc/lemurs/wms /var/cache/lemurs
-  $SUDO cp -a "$DOT_LEMURS/lemurs.pam" /etc/pam.d/lemurs
-  $SUDO install -m 0755 "$DOT_LEMURS/wayland-sway" /etc/lemurs/wayland/sway
-  $SUDO cp -a "$DOT_LEMURS/lemurs.service" /etc/systemd/system/lemurs.service
+  
+  if [ -f /etc/pam.d/lemurs ] && cmp -s "$DOT_LEMURS/lemurs.pam" /etc/pam.d/lemurs; then
+    : # Sin cambios
+  else
+    $SUDO cp -a "$DOT_LEMURS/lemurs.pam" /etc/pam.d/lemurs
+  fi
+
+  if [ -f /etc/lemurs/wayland/sway ] && cmp -s "$DOT_LEMURS/wayland-sway" /etc/lemurs/wayland/sway; then
+    : # Sin cambios
+  else
+    $SUDO install -m 0755 "$DOT_LEMURS/wayland-sway" /etc/lemurs/wayland/sway
+  fi
+
+  if [ -f /etc/systemd/system/lemurs.service ] && cmp -s "$DOT_LEMURS/lemurs.service" /etc/systemd/system/lemurs.service; then
+    : # Sin cambios
+  else
+    $SUDO cp -a "$DOT_LEMURS/lemurs.service" /etc/systemd/system/lemurs.service
+  fi
 
   local owner home share user_cfg stock_cfg themed vars example
   owner="$(owner_name)"
@@ -113,27 +135,44 @@ apply_install() {
   user_cfg="$home/.config/zoi/lemurs/config.toml"
   stock_cfg="$DOT_LEMURS/config.toml"
   example="$REPO_ROOT/dotfiles/config/zoi/lemurs/variables.overlay.toml.example"
+  
   mkdir -p "$share" "$home/.config/zoi/lemurs"
-  cp -a "$stock_cfg" "$share/config.toml"
+  
+  [ -f "$share/config.toml" ] || cp -a "$stock_cfg" "$share/config.toml"
+  
   if [ -f "$example" ] && [ ! -f "$home/.config/zoi/lemurs/variables.overlay.toml.example" ]; then
     cp -a "$example" "$home/.config/zoi/lemurs/variables.overlay.toml.example"
   fi
+
+  local target_cfg
   if [ -f "$user_cfg" ]; then
-    log "Layout de usuario: $user_cfg"
-    $SUDO cp -a "$user_cfg" /etc/lemurs/config.toml
+    target_cfg="$user_cfg"
   else
-    $SUDO cp -a "$stock_cfg" /etc/lemurs/config.toml
+    target_cfg="$stock_cfg"
+  fi
+
+  if [ -f /etc/lemurs/config.toml ] && cmp -s "$target_cfg" /etc/lemurs/config.toml; then
+    : # Sin cambios
+  else
+    $SUDO cp -a "$target_cfg" /etc/lemurs/config.toml
   fi
 
   themed="$home/.config/zoi/themed/lemurs-variables.toml"
   vars=/etc/lemurs/variables.toml
   if [ -f "$themed" ]; then
-    log "Paleta activa desde wallpaper/tema: $themed"
-    $SUDO cp -a "$themed" "$vars"
+    if [ -f "$vars" ] && cmp -s "$themed" "$vars"; then
+      : # Sin cambios
+    else
+      log "Actualizando paleta desde wallpaper/tema: $themed"
+      $SUDO cp -a "$themed" "$vars"
+    fi
   else
-    log "Sin themed aún: paleta del wallpaper default (Baby Yoda), no tokyo-night."
-    write_wallpaper_fallback_vars "$vars"
+    if [ ! -f "$vars" ]; then
+      log "Sin themed aún: paleta del wallpaper default (Baby Yoda), no tokyo-night."
+      write_wallpaper_fallback_vars "$vars"
+    fi
   fi
+  
   $SUDO chown "$owner:$owner" "$vars" /etc/lemurs/config.toml
   $SUDO chmod 0644 "$vars" /etc/lemurs/config.toml
 
@@ -141,16 +180,18 @@ apply_install() {
     $SUDO usermod -aG seat "$owner" || true
   fi
 
-  log "Deshabilitando LightDM / display-manager previo (el paquete no se borra)."
+  log "Verificando estado de los servicios."
   $SUDO systemctl disable --now lightdm.service 2>/dev/null || true
   $SUDO systemctl disable display-manager.service 2>/dev/null || true
   $SUDO systemctl disable getty@tty2.service 2>/dev/null || true
 
-  log "Enable Lemurs para el próximo boot (no se arranca ahora)."
   $SUDO systemctl daemon-reload
-  $SUDO systemctl enable lemurs.service
+  if ! systemctl is-enabled lemurs.service >/dev/null 2>&1; then
+    log "Habilitando Lemurs para el próximo boot."
+    $SUDO systemctl enable lemurs.service
+  fi
 
-  log "Listo. El login TUI aparece en TTY2 después de reboot."
+  log "Listo. El script finalizó exitosamente."
 }
 
 print_status() {
