@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""Apply ~/.config/zoi/keys-apply.json to the running Sway session."""
+import json
+import os
+import subprocess
+import sys
+
+path = os.path.expanduser("~/.config/zoi/keys-apply.json")
+if not os.path.isfile(path):
+    sys.exit(0)
+
+try:
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh) or {}
+except (OSError, json.JSONDecodeError):
+    sys.exit(0)
+
+unbind = data.get("unbind") or []
+bind = data.get("bind") or []
+if not unbind and not bind:
+    sys.exit(0)
+
+def sway(cmd: str) -> None:
+    subprocess.run(
+        ["swaymsg", cmd],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+
+for key in unbind:
+    if key:
+        sway(f"unbindsym {key}")
+for item in bind:
+    key = (item or {}).get("key") or ""
+    command = (item or {}).get("command") or ""
+    if key and command:
+        sway(f"bindsym {key} {command}")

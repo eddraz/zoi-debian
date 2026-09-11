@@ -11,20 +11,39 @@ Item {
     implicitHeight: column.implicitHeight
     property string query: ""
     property bool findOpen: false
+    property int cursor: 0
+    property bool capturing: false
+    property bool conflictOpen: false
+    property string captureId: ""
+    property string statusLine: ""
+    property string conflictKeys: ""
+    property string conflictAction: ""
+    property var pendingCombo: null
 
     function beginSearch() {
+        if (capturing || conflictOpen)
+            return;
         findOpen = true;
         Qt.callLater(() => searchField.forceActiveFocus());
     }
 
-    property int cursor: 0
-
     function nextSection(back) {
-        if (flatCount <= 0) return;
+        if (flatCount <= 0)
+            return;
         cursor = back ? (cursor - 1 + flatCount) % flatCount : (cursor + 1) % flatCount;
     }
 
     function handleEscape() {
+        if (conflictOpen) {
+            cancelConflict();
+            return true;
+        }
+        if (capturing) {
+            capturing = false;
+            captureId = "";
+            statusLine = "";
+            return true;
+        }
         if (findOpen || query !== "") {
             findOpen = false;
             query = "";
@@ -40,8 +59,33 @@ Item {
             query = "";
             findOpen = false;
             cursor = 0;
+            capturing = false;
+            conflictOpen = false;
+            statusLine = "";
             Popups.isSearching = false;
         }
+    }
+
+    readonly property var filteredSections: {
+        KeysMap.revision;
+        const needle = query.trim().toLowerCase();
+        const out = [];
+        let last = null;
+        for (let i = 0; i < KeysMap.catalog.length; i++) {
+            const action = KeysMap.catalog[i];
+            const keys = KeysMap.displayKeys(action);
+            if (needle) {
+                const hay = (action.section + " " + action.label + " " + keys + " " + action.defaultKeys).toLowerCase();
+                if (hay.indexOf(needle) < 0)
+                    continue;
+            }
+            if (!last || last.title !== action.section) {
+                last = { "title": action.section, "rows": [] };
+                out.push(last);
+            }
+            last.rows.push(action);
+        }
+        return out;
     }
 
     readonly property int flatCount: {
@@ -58,6 +102,19 @@ Item {
         return n + rowIdx;
     }
 
+    function actionAt(flat) {
+        let n = 0;
+        for (let s = 0; s < filteredSections.length; s++) {
+            const rows = filteredSections[s].rows || [];
+            for (let r = 0; r < rows.length; r++) {
+                if (n === flat)
+                    return rows[r];
+                n++;
+            }
+        }
+        return null;
+    }
+
     function focusItem(entry) {
         cursor = Math.max(0, Math.min(Math.max(0, flatCount - 1), entry.index));
     }
@@ -68,14 +125,115 @@ Item {
         for (let s = 0; s < filteredSections.length; s++) {
             const rows = filteredSections[s].rows || [];
             for (let r = 0; r < rows.length; r++) {
-                e.push({ "label": String(rows[r].keys || "") + " " + String(rows[r].action || ""), "index": n });
+                e.push({ "label": KeysMap.displayKeys(rows[r]) + " " + rows[r].label, "index": n });
                 n++;
             }
         }
         return e;
     }
 
+    function beginCapture(action) {
+        if (!action)
+            action = actionAt(cursor);
+        if (!action)
+            return;
+        if (!action.command) {
+            statusLine = "Ese atajo es de hardware / grupo y no se reasigna acá.";
+            capturing = false;
+            return;
+        }
+        capturing = true;
+        captureId = action.id;
+        conflictOpen = false;
+        statusLine = "Oprimí el nuevo atajo para «" + action.label + "»  ·  Esc cancela";
+    }
+
+    function applyCombo(combo) {
+        const result = KeysMap.assign(captureId, combo);
+        if (result.ok) {
+            capturing = false;
+            captureId = "";
+            statusLine = "";
+            return;
+        }
+        if (result.reason === "conflict") {
+            pendingCombo = combo;
+            conflictKeys = formatCombo(combo);
+            conflictAction = result.action.label;
+            conflictOpen = true;
+            capturing = false;
+            statusLine = "";
+            return;
+        }
+        capturing = false;
+        statusLine = "No se puede reasignar.";
+    }
+
+    function formatCombo(combo) {
+        if (!combo)
+            return "—";
+        const parts = [];
+        if (combo.logo)
+            parts.push("Super");
+        if (combo.ctrl)
+            parts.push("Ctrl");
+        if (combo.alt)
+            parts.push("Alt");
+        if (combo.shift)
+            parts.push("Shift");
+        let key = combo.key || "";
+        if (key === "slash")
+            key = "/";
+        else if (key === "period")
+            key = ".";
+        else if (key === "minus")
+            key = "-";
+        else if (key === "space")
+            key = "Space";
+        else if (key.length === 1)
+            key = key.toUpperCase();
+        parts.push(key);
+        return parts.join("+");
+    }
+
+    function confirmReplace() {
+        if (!conflictOpen || !pendingCombo || !captureId)
+            return;
+        KeysMap.replace(captureId, pendingCombo);
+        conflictOpen = false;
+        pendingCombo = null;
+        captureId = "";
+        statusLine = "";
+    }
+
+    function cancelConflict() {
+        conflictOpen = false;
+        pendingCombo = null;
+        captureId = "";
+        capturing = false;
+        statusLine = "";
+    }
+
     function handleKey(event) {
+        if (conflictOpen) {
+            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.text === "y" || event.text === "Y") {
+                confirmReplace();
+                return true;
+            }
+            if (event.text === "n" || event.text === "N") {
+                cancelConflict();
+                return true;
+            }
+            return true;
+        }
+        if (capturing) {
+            if (event.key === Qt.Key_Escape)
+                return handleEscape();
+            const combo = KeysMap.comboFromEvent(event);
+            if (combo)
+                applyCombo(combo);
+            return true;
+        }
         if (searchField.activeFocus)
             return false;
         const jump = KeyNav.jump(event, flatCount);
@@ -83,141 +241,20 @@ Item {
             cursor = jump;
             return true;
         }
-        if (KeyNav.isNext(event) || KeyNav.isDown(event)) {
+        if (KeyNav.isNext(event) || KeyNav.isDown(event) || KeyNav.isRight(event)) {
             cursor = Math.min(Math.max(0, flatCount - 1), cursor + 1);
             return true;
         }
-        if (KeyNav.isPrev(event) || KeyNav.isUp(event)) {
+        if (KeyNav.isPrev(event) || KeyNav.isUp(event) || KeyNav.isLeft(event)) {
             cursor = Math.max(0, cursor - 1);
+            return true;
+        }
+        if (KeyNav.isActivate(event)) {
+            beginCapture();
             return true;
         }
         return false;
     }
-
-    readonly property var filteredSections: {
-        const needle = query.trim().toLowerCase();
-        const out = [];
-        for (let s = 0; s < sections.length; s++) {
-            const section = sections[s];
-            const rows = [];
-            const src = section.rows || [];
-            for (let r = 0; r < src.length; r++) {
-                const row = src[r];
-                if (!needle) {
-                    rows.push(row);
-                    continue;
-                }
-                const keys = String(row.keys || "").toLowerCase();
-                const action = String(row.action || "").toLowerCase();
-                const title = String(section.title || "").toLowerCase();
-                if (keys.indexOf(needle) >= 0 || action.indexOf(needle) >= 0 || title.indexOf(needle) >= 0)
-                    rows.push(row);
-            }
-            if (rows.length > 0)
-                out.push({ "title": section.title, "rows": rows });
-        }
-        return out;
-    }
-
-    readonly property var sections: [
-        {
-            "title": "Apps",
-            "rows": [
-                { "keys": "Super+Return", "action": "Terminal" },
-                { "keys": "Super+Shift+Return", "action": "LibreWolf" },
-                { "keys": "Super+Space", "action": "App launcher" },
-                { "keys": "Super+A", "action": "Native Apps panel" },
-                { "keys": "Super+V", "action": "Clipboard history" },
-                { "keys": "Super+.", "action": "Emoji picker (latam: Super+Shift+,)" },
-                { "keys": "Alt+Shift / LATAM chip", "action": "Cycle keyboard layout" },
-                { "keys": "Super+Shift+W", "action": "Close window" },
-                { "keys": "Super+Shift+C", "action": "Reload Sway" },
-                { "keys": "Super+Shift+E", "action": "Exit Sway" },
-                { "keys": "Super+Escape", "action": "Session menu" },
-                { "keys": "Stay awake", "action": "Apps: inhibit idle/lock" },
-                { "keys": "Screensaver", "action": "TTE ZOI after 2.5 min idle" },
-                { "keys": "Night light", "action": "Apps: warm display 4000K" },
-                { "keys": "pkexec", "action": "Polkit: themed password dialog" },
-                { "keys": "Theme", "action": "Apps: colors, wallpaper, screensaver text" }
-            ]
-        },
-        {
-            "title": "Focus & move",
-            "rows": [
-                { "keys": "Super+H J K L", "action": "Focus (vim)" },
-                { "keys": "Super+Arrows", "action": "Focus" },
-                { "keys": "Super+Shift+H J K L", "action": "Move window" },
-                { "keys": "Super+Shift+Arrows", "action": "Move window" },
-                { "keys": "Super+Shift+A", "action": "Focus parent" },
-                { "keys": "Super+D", "action": "Focus tiling/floating" },
-                { "keys": "Super+Shift+Space", "action": "Toggle floating" }
-            ]
-        },
-        {
-            "title": "Workspaces",
-            "rows": [
-                { "keys": "Super+1 … 0", "action": "Workspace 1–10" },
-                { "keys": "Super+Tab", "action": "Next workspace" },
-                { "keys": "Super+Shift+Tab", "action": "Previous workspace" },
-                { "keys": "Super+Shift+1 … 0", "action": "Move to workspace" }
-            ]
-        },
-        {
-            "title": "Layout",
-            "rows": [
-                { "keys": "Super+B", "action": "Split horizontal" },
-                { "keys": "Super+Ctrl+V", "action": "Split vertical" },
-                { "keys": "Super+E", "action": "Toggle split" },
-                { "keys": "Super+S", "action": "Stacking" },
-                    { "keys": "Super+W", "action": "Tabbed" },
-                                { "keys": "Super+F", "action": "Fullscreen" },
-                { "keys": "Super+R", "action": "Resize mode" },
-                { "keys": "H J K L / Arrows", "action": "Resize (in mode)" },
-                { "keys": "Enter / Esc", "action": "Leave resize" }
-            ]
-        },
-        {
-            "title": "Scratchpad",
-            "rows": [
-                { "keys": "Super+Shift+-", "action": "Send to scratchpad" },
-                { "keys": "Super+-", "action": "Show scratchpad" }
-            ]
-        },
-        {
-            "title": "Bar panels",
-            "rows": [
-                { "keys": "Super+A", "action": "Native Apps" },
-                { "keys": "Super+C", "action": "Calendar" },
-                { "keys": "Super+T", "action": "Weather" },
-                { "keys": "Super+N", "action": "Notifications" },
-                { "keys": "Right-click bell / DND chip", "action": "Do not disturb" },
-                { "keys": "Super+Shift+N", "action": "Reminder" },
-                { "keys": "Super+M", "action": "Audio / volume" },
-                { "keys": "Super+Ctrl+R", "action": "Reproductor / Media" },
-                { "keys": "Super+P", "action": "Power / battery" },
-                { "keys": "Super+I", "action": "Network / Wi-Fi" },
-                { "keys": "Super+U", "action": "Bluetooth" },
-                { "keys": "Super+Escape", "action": "Session" },
-                { "keys": "Super+Q", "action": "Close panel" }
-            ]
-        },
-        {
-            "title": "System",
-            "rows": [
-                { "keys": "Volume keys", "action": "Mute / volume" },
-                { "keys": "Media keys", "action": "Play / prev / next (MPRIS)" },
-                { "keys": "Super+Shift+R", "action": "Lofi Radio: Play / Stop" },
-                { "keys": "Super+Ctrl+R (1 2 3)", "action": "Reproductor: prev / play / next" },
-                                                                { "keys": "Brightness keys", "action": "Brightness + OSD" },
-                { "keys": "Print / Super+Shift+S", "action": "Screenshot region" },
-                { "keys": "Alt+Print", "action": "Start/stop recording" },
-                { "keys": "Super + drag", "action": "Move floating" },
-                { "keys": "Super+Q", "action": "Close panel" },
-                { "keys": "H J K L / Arrows", "action": "Navigate panels" },
-                { "keys": "Enter / Space", "action": "Activate option" }
-            ]
-        }
-    ]
 
     Column {
         id: column
@@ -241,7 +278,7 @@ Item {
                 color: Color.popupMuted
                 font.family: Style.fontFamily
                 font.pixelSize: Style.fontCaption
-                text: "Search shortcuts"
+                text: "Filtrar opciones..."
             }
 
             TextInput {
@@ -273,8 +310,22 @@ Item {
                         event.accepted = true;
                         return;
                     }
+                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                        root.beginCapture();
+                        event.accepted = true;
+                    }
                 }
             }
+        }
+
+        Text {
+            visible: root.statusLine !== ""
+            width: column.width
+            wrapMode: Text.WordWrap
+            color: root.capturing ? Color.accent : Color.popupMuted
+            font.family: Style.fontFamily
+            font.pixelSize: Style.fontCaption
+            text: root.statusLine
         }
 
         Repeater {
@@ -303,44 +354,164 @@ Item {
                         required property int index
                         readonly property int flat: root.flatIndex(sectionIdx, index)
                         width: column.width
-                        height: Math.max(keysText.implicitHeight, actionText.implicitHeight) + 6
+                        height: 42
                         radius: Style.radius
-                        color: root.cursor === flat ? Color.focusFill : "transparent"
+                        color: root.cursor === flat ? Color.focusFill : Color.surface
                         border.width: root.cursor === flat ? 1 : 0
                         border.color: Color.accent
 
                         Row {
                             anchors.fill: parent
-                            anchors.leftMargin: 6
-                            anchors.rightMargin: 6
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
                             spacing: 8
 
-                            Text {
-                                id: keysText
+                            IndexBadge {
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: (column.width - 12) * 0.48
-                                color: Color.accent
-                                font.family: Style.fontFamily
-                                font.pixelSize: Style.fontCaption
-                                text: modelData.keys
-                                wrapMode: Text.WordWrap
+                                slot: flat
                             }
 
-                            Text {
-                                id: actionText
+                            Column {
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: (column.width - 12) * 0.48
-                                color: Color.popupText
-                                font.family: Style.fontFamily
-                                font.pixelSize: Style.fontCaption
-                                text: modelData.action
-                                wrapMode: Text.WordWrap
+                                width: parent.width - 36
+                                spacing: 2
+                                Text {
+                                    width: parent.width
+                                    color: Color.accent
+                                    font.family: Style.fontFamily
+                                    font.pixelSize: Style.fontCaption
+                                    font.bold: true
+                                    text: KeysMap.displayKeys(modelData)
+                                }
+                                Text {
+                                    width: parent.width
+                                    color: Color.popupText
+                                    font.family: Style.fontFamily
+                                    font.pixelSize: Style.fontCaption
+                                    text: modelData.label
+                                }
                             }
                         }
 
                         HoverMouse {
-                            z: -1
-                            onClicked: root.cursor = flat
+                            onClicked: {
+                                if (root.cursor === flat)
+                                    root.beginCapture(modelData);
+                                else
+                                    root.cursor = flat;
+                            }
+                            onDoubleClicked: {
+                                root.cursor = flat;
+                                root.beginCapture(modelData);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Rectangle {
+        visible: root.conflictOpen
+        anchors.fill: parent
+        color: Color.dimOverlay
+        z: 20
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: root.cancelConflict()
+        }
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: Math.min(parent.width - 16, 360)
+            height: conflictCol.implicitHeight + 24
+            radius: Style.cardRadius
+            color: Color.popupBackground
+            border.width: 1
+            border.color: Color.urgent
+
+            MouseArea {
+                anchors.fill: parent
+            }
+
+            Column {
+                id: conflictCol
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 12
+                spacing: 10
+
+                Text {
+                    width: parent.width
+                    color: Color.urgent
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontTitle
+                    font.bold: true
+                    text: "Este atajo ya existe"
+                }
+
+                Text {
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    color: Color.popupText
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontBody
+                    text: root.conflictKeys + "  ejecuta:  " + root.conflictAction
+                }
+
+                Text {
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    color: Color.popupMuted
+                    font.family: Style.fontFamily
+                    font.pixelSize: Style.fontCaption
+                    text: "Reemplazar deja a «" + root.conflictAction + "» sin atajo."
+                }
+
+                Row {
+                    spacing: 8
+                    anchors.right: parent.right
+
+                    Rectangle {
+                        height: 32
+                        width: 96
+                        radius: Style.radius
+                        color: Color.surface
+                        border.width: 1
+                        border.color: Color.subtleBorder
+
+                        Text {
+                            anchors.centerIn: parent
+                            color: Color.popupText
+                            font.family: Style.fontFamily
+                            font.pixelSize: Style.fontCaption
+                            text: "Cancelar"
+                        }
+
+                        HoverMouse {
+                            onClicked: root.cancelConflict()
+                        }
+                    }
+
+                    Rectangle {
+                        height: 32
+                        width: 110
+                        radius: Style.radius
+                        color: Color.urgent
+
+                        Text {
+                            anchors.centerIn: parent
+                            color: Color.crust
+                            font.family: Style.fontFamily
+                            font.pixelSize: Style.fontCaption
+                            font.bold: true
+                            text: "Reemplazar"
+                        }
+
+                        HoverMouse {
+                            onClicked: root.confirmReplace()
                         }
                     }
                 }

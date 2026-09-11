@@ -18,7 +18,7 @@ set $term /usr/bin/foot /usr/bin/fish
 # File manager: foot + yazi (Sixel previews)
 set $files ~/.local/bin/qs-files
 # Default browser
-set $browser mullvad-browser
+set $browser ~/.local/bin/qs-browser
 # Your preferred application launcher
 set $menu /usr/bin/qs ipc call launcher toggle
 
@@ -43,6 +43,7 @@ include /etc/sway/config-vars.d/*
 exec_always ~/.local/bin/qs-idle
 exec_always ~/.local/bin/qs-clipwatch
 exec_always ~/.local/bin/qs-wallpaper restore
+exec_always ~/.local/bin/qs-keys-apply
 
 ### Input configuration
 #
@@ -76,9 +77,12 @@ input type:touchpad {
     bindsym $mod+KP_Enter exec $term
     bindsym $mod+Shift+Return exec $browser
     bindsym $mod+Shift+f exec $files
+    bindsym $mod+slash exec /usr/bin/qs ipc call popups toggle keys
     bindsym $mod+Shift+KP_Enter exec $browser
     bindsym $mod+Escape exec /usr/bin/qs ipc call session toggle
     bindsym $mod+a exec /usr/bin/qs ipc call popups toggle apps
+    bindsym $mod+Mod1+Space exec /usr/bin/qs ipc call popups toggle apps
+    bindsym $mod+g exec /usr/bin/qs ipc call popups toggle trigger
     bindsym $mod+q exec /usr/bin/qs ipc call popups close
     bindsym $mod+c exec /usr/bin/qs ipc call popups toggle calendar
     bindsym $mod+t exec /usr/bin/qs ipc call popups toggle weather
@@ -275,3 +279,4 @@ for_window [app_id="qs-screensaver"] fullscreen enable, border none
 exec_always /usr/bin/qs -n --daemonize
 
 include /etc/sway/config.d/*
+

@@ -7,10 +7,10 @@ Esta tabla lista todos los binds de Sway + atajos internos de Quickshell.
 | Combo | Acción | Comando |
 |---|---|---|
 | `Super+Return` | Terminal (foot + fish) | `$term` |
-| `Super+Shift+Return` | Mullvad Browser | `$browser` |
+| `Super+Shift+Return` | Navegador predeterminado | `$browser` (`qs-browser`) |
 | `Super+Shift+F` | File manager (foot + yazi, Sixel) | `$files` (`qs-files`) |
 | `Super+KP_Enter` | Terminal | `$term` |
-| `Super+Shift+KP_Enter` | Mullvad Browser | `$browser` |
+| `Super+Shift+KP_Enter` | Navegador predeterminado | `$browser` (`qs-browser`) |
 | `Super+Escape` | Session panel | `qs ipc call session toggle` |
 | `Super+Q` | Cerrar popup / panel | `qs ipc call popups close` |
 | `Super+C` | Calendar panel | `qs ipc call popups toggle calendar` |
@@ -22,7 +22,10 @@ Esta tabla lista todos los binds de Sway + atajos internos de Quickshell.
 | `Super+I` | Network panel | `qs ipc call popups toggle network` |
 | `Super+U` | Bluetooth panel | `qs ipc call popups toggle bluetooth` |
 | `Super+Shift+B` | Bar visual editor | `qs ipc call popups toggle bar` |
-| `Super+Space` | Launcher | `$menu` (`zoi-launcher`) |
+| `Super+Space` | Launcher | `$menu` (`qs ipc call launcher toggle`) |
+| `Super+Alt+Space` | Menú principal | `qs ipc call popups toggle apps` |
+| `Super+/` | Shortcuts overlay | `qs ipc call popups toggle keys` |
+| `Super+G` | Trigger (screenshot, Yazi, Inlyne, …) | `qs ipc call popups toggle trigger` |
 | `Super+V` | Clipboard history | `qs ipc call clipboard toggle` |
 | `Super+.` | Emoji picker | `qs ipc call emojis toggle` |
 | `Super+Shift+,` | Emoji picker (latam) | `qs ipc call emojis toggle` |
@@ -179,6 +182,11 @@ Esta tabla lista todos los binds de Sway + atajos internos de Quickshell.
 - `Enter` = abrir URI
 - `H` o `Delete` = descartar
 
+### Trigger → Markdown
+- Cierra el panel y abre Yazi (`qs-md-open`); Enter en un `.md` lanza Inlyne.
+- Learn (Menú principal) abre docs ZOI con `qs-docs` → `qs-md`.
+- No hay overlay ni atajo global de visor: `qs-md archivo.md`.
+
 ### Keys (Shortcuts) panel
 - `/` = mostrar buscador
 - `↑/↓` = navegar
@@ -230,3 +238,20 @@ qs ipc call media toggle|next|previous|toggleArm
 ```
 
 Donde `<name>` es uno de: `media`, `audio`, `power`, `network`, `bluetooth`, `session`, `notifs`, `keys`, `wallpaper`, `theme`, `keyboard`, `weather`, `calendar`, `bar`.
+
+
+## Personalizar atajos (Keys panel)
+
+El panel Quickshell (`Super+/`) usa la misma navegación que el resto de popups:
+
+| Tecla | Acción |
+|---|---|
+| `/` | Abrir buscador (no está activo al abrir) |
+| `1`–`9`, `0` | Foco en el ítem del badge |
+| `h j k l` / flechas | Navegar |
+| `Enter` / `Space` | Reasignar el atajo del ítem |
+| `Esc` | Cerrar buscador, cancelar captura, o cerrar |
+
+Si el combo ya existe, muestra qué acción lo usa. Cancelar no cambia nada; Reemplazar deja a esa acción sin atajo (`—`).
+
+Los cambios viven en `~/.config/zoi/keys.json` y Sway los aplica con `qs-keys-apply` (también en `exec_always`).
