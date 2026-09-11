@@ -12,3 +12,5 @@ PowerPanel 1.0 PowerPanel.qml
 SessionPanel 1.0 SessionPanel.qml
 ThemePanel 1.0 ThemePanel.qml
 WeatherPanel 1.0 WeatherPanel.qml
+TriggerPanel 1.0 TriggerPanel.qml
+LearnPanel 1.0 LearnPanel.qml

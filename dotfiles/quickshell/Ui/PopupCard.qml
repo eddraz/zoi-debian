@@ -221,6 +221,11 @@ PanelWindow {
         }
 
         Keys.onPressed: event => {
+            const livePanel = root.visiblePanel();
+            if (livePanel && (livePanel.capturing || livePanel.conflictOpen) && typeof livePanel.handleKey === "function") {
+                event.accepted = !!livePanel.handleKey(event);
+                return;
+            }
             if (event.key === Qt.Key_Q && (event.modifiers & Qt.MetaModifier)) {
                 root.dismissed();
                 event.accepted = true;

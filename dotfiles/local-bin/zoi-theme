@@ -387,6 +387,7 @@ class ZoiThemeManager:
         self._dispatch_limine(rendered_files.get("limine.conf"))
         self._dispatch_lemurs(rendered_files.get("lemurs-variables.toml"))
         self._dispatch_yazi(rendered_files.get("yazi-theme.toml"))
+        self._dispatch_inlyne(pal)
         self._dispatch_state(pal, colors_json_content, sh_lines)
         self._run_hooks(theme_id)
 
@@ -791,23 +792,121 @@ class ZoiThemeManager:
 
 
     def _dispatch_lemurs(self, content):
-        """Write Lemurs color variables. Live file is /etc/lemurs/variables.toml when writable."""
-        if not content:
-            return
-        themed_path = os.path.join(self.home, ".config/zoi/themed/lemurs-variables.toml")
-        os.makedirs(os.path.dirname(themed_path), exist_ok=True)
-        with open(themed_path, "w", encoding="utf-8") as f:
-            f.write(content.rstrip() + "\n")
-        live = "/etc/lemurs/variables.toml"
-        if os.path.isfile(live) and os.access(live, os.W_OK):
-            try:
-                tmp = live + ".tmp"
-                with open(tmp, "w", encoding="utf-8") as f:
-                    f.write(content.rstrip() + "\n")
-                os.replace(tmp, live)
-            except OSError:
-                pass
+        """Write Lemurs variables + optional user layout. Live files under /etc/lemurs when writable."""
+        if content:
+            overlay = os.path.join(self.home, ".config/zoi/lemurs/variables.overlay.toml")
+            merged = self._merge_flat_toml(content, overlay)
+            themed_path = os.path.join(self.home, ".config/zoi/themed/lemurs-variables.toml")
+            os.makedirs(os.path.dirname(themed_path), exist_ok=True)
+            with open(themed_path, "w", encoding="utf-8") as f:
+                f.write(merged.rstrip() + "\n")
+            self._write_if_writable("/etc/lemurs/variables.toml", merged)
+        self._dispatch_lemurs_config()
 
+    def _dispatch_lemurs_config(self):
+        user_cfg = os.path.join(self.home, ".config/zoi/lemurs/config.toml")
+        stock = os.path.join(self.home, ".local/share/zoi/lemurs/config.toml")
+        src = None
+        if os.path.isfile(user_cfg):
+            src = user_cfg
+        elif os.path.isfile(stock):
+            src = stock
+        else:
+            alt = os.path.join(self.repo_root, "dotfiles/lemurs/config.toml")
+            if os.path.isfile(alt):
+                src = alt
+        if not src:
+            return
+        try:
+            with open(src, encoding="utf-8") as f:
+                body = f.read()
+        except OSError:
+            return
+        themed = os.path.join(self.home, ".config/zoi/themed/lemurs-config.toml")
+        os.makedirs(os.path.dirname(themed), exist_ok=True)
+        with open(themed, "w", encoding="utf-8") as f:
+            f.write(body if body.endswith("\n") else body + "\n")
+        self._write_if_writable("/etc/lemurs/config.toml", body)
+
+    @staticmethod
+    def _merge_flat_toml(base_text, overlay_path):
+        if not overlay_path or not os.path.isfile(overlay_path):
+            return base_text
+        overlay = {}
+        try:
+            with open(overlay_path, encoding="utf-8") as f:
+                for line in f:
+                    raw = line.strip()
+                    if not raw or raw.startswith("#") or "=" not in raw:
+                        continue
+                    key, val = raw.split("=", 1)
+                    overlay[key.strip()] = val.strip()
+        except OSError:
+            return base_text
+        if not overlay:
+            return base_text
+        lines = []
+        seen = set()
+        for line in base_text.splitlines():
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#") and "=" in stripped:
+                key = stripped.split("=", 1)[0].strip()
+                if key in overlay:
+                    lines.append(f"{key} = {overlay[key]}")
+                    seen.add(key)
+                    continue
+            lines.append(line)
+        for key, val in overlay.items():
+            if key not in seen:
+                lines.append(f"{key} = {val}")
+        return "\n".join(lines) + "\n"
+
+    @staticmethod
+    def _write_if_writable(path, content):
+        if not os.path.isfile(path) or not os.access(path, os.W_OK):
+            return
+        try:
+            tmp = path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                f.write(content if content.endswith("\n") else content + "\n")
+            os.replace(tmp, path)
+        except OSError:
+            pass
+
+
+
+    def _dispatch_inlyne(self, pal):
+        """Write ~/.config/inlyne/inlyne.toml from the active palette."""
+        def hx(key, fallback):
+            raw = str(pal.get(key) or fallback).strip().lstrip("#")
+            if len(raw) == 3:
+                raw = "".join(c * 2 for c in raw)
+            if len(raw) != 6:
+                raw = fallback.lstrip("#")
+            return "0x" + raw.lower()
+
+        dest = os.path.join(self.home, ".config/inlyne/inlyne.toml")
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        body = (
+            'theme = "Dark"\n'
+            "page-width = 860\n"
+            "\n"
+            "[dark-theme]\n"
+            f"text-color = {hx('foreground', 'e6e6e6')}\n"
+            f"background-color = {hx('background', '1c1c1c')}\n"
+            f"code-color = {hx('magenta', 'f06ac4')}\n"
+            f"quote-block-color = {hx('darker_background', '0d0d0d')}\n"
+            f"link-color = {hx('accent', 'fbad60')}\n"
+            f"select-color = {hx('selection', '3d3d3d')}\n"
+            f"checkbox-color = {hx('green', '60fbfb')}\n"
+            'code-highlighter = "base16-ocean-dark"\n'
+            "\n"
+            "[font-options]\n"
+            'regular-font = "DejaVu Sans"\n'
+            'monospace-font = "DejaVu Sans Mono"\n'
+        )
+        with open(dest, "w", encoding="utf-8") as f:
+            f.write(body)
 
     def _dispatch_yazi(self, content):
         """Write Yazi theme.toml for the foot+Sixel file manager."""

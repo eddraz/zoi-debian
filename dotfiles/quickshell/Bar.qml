@@ -154,6 +154,10 @@ Variants {
                 item.openTheme.connect(() => Popups.open("theme"));
             if (item.openBar !== undefined)
                 item.openBar.connect(() => Popups.open("bar"));
+            if (item.openTrigger !== undefined)
+                item.openTrigger.connect(() => Popups.open("trigger"));
+            if (item.openLearn !== undefined)
+                item.openLearn.connect(() => Popups.open("learn"));
         }
 
         component ChipLoader: Loader {

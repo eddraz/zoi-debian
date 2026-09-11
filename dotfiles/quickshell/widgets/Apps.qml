@@ -26,7 +26,7 @@ Item {
         onClicked: root.togglePanel()
         onContainsMouseChanged: {
             if (containsMouse)
-                HoverTip.show(root, Radio.playing ? "Apps · Lofi Radio ON" : "Native Apps", "Super+A");
+                HoverTip.show(root, Radio.playing ? "Menú principal · Lofi Radio ON" : "Menú principal", "Super+Alt+Space");
             else
                 HoverTip.hide();
         }

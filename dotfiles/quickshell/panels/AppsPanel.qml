@@ -15,8 +15,24 @@ Column {
     signal openBar
     signal openKeys
     signal openTheme
+    signal openTrigger
+    signal openLearn
 
     readonly property var items: [
+        {
+            "id": "learn",
+            "name": "Learn",
+            "desc": "Manuales ZOI, Sway, Quickshell, Helix, Fish, Bash",
+            "status": "Docs",
+            "active": false
+        },
+        {
+            "id": "trigger",
+            "name": "Trigger",
+            "desc": "Captura, share, reminders y toggles",
+            "status": "Super+G",
+            "active": false
+        },
         {
             "id": "lofi",
             "name": "Lofi Radio",
@@ -119,6 +135,10 @@ Column {
             Quickshell.execDetached(["/usr/bin/qs", "ipc", "call", "emojis", "toggle"]);
         } else if (it.id === "keys") {
             root.openKeys();
+        } else if (it.id === "trigger") {
+            root.openTrigger();
+        } else if (it.id === "learn") {
+            root.openLearn();
         }
     }
 

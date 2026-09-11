@@ -1,0 +1,34 @@
+#!/bin/sh
+# Open a ZOI docs markdown file in Inlyne.
+# Usage: qs-docs [install.md|features.md|...]
+set -eu
+name="${1:-README.md}"
+name="${name#docs/}"
+case "$name" in
+    *.md|*.markdown) ;;
+    *) name="${name}.md" ;;
+esac
+
+docs_dir=""
+for d in \
+    "${ZOI_DIR:+$ZOI_DIR/docs}" \
+    "$HOME/zoi-debian/docs" \
+    "$HOME/projects/zoi-debian/docs"
+do
+    if [ -n "$d" ] && [ -d "$d" ]; then
+        docs_dir="$d"
+        break
+    fi
+done
+
+if [ -z "$docs_dir" ]; then
+    notify-send "ZOI docs" "No encontré el directorio docs/."
+    exit 1
+fi
+
+file="$docs_dir/$name"
+if [ ! -f "$file" ]; then
+    notify-send "ZOI docs" "No existe $name"
+    exit 1
+fi
+exec qs-md "$file"

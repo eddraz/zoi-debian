@@ -178,6 +178,30 @@ Scope {
                         font.pixelSize: Style.fontCaption
                         text: root.busy ? "Unlocking…" : (root.status !== "" ? root.status : "Enter password")
                     }
+
+                        Rectangle {
+                            width: parent.width
+                            height: 34
+                            radius: Style.radius
+                            color: Color.accent
+                            opacity: root.busy || root.password === "" ? 0.45 : 1
+
+                            Text {
+                                anchors.centerIn: parent
+                                color: Color.background
+                                font.family: Style.fontFamily
+                                font.pixelSize: Style.fontBody
+                                font.bold: true
+                                text: "Unlock"
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                enabled: !root.busy && root.password !== ""
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.tryUnlock()
+                            }
+                        }
                 }
 
                 SystemClock {

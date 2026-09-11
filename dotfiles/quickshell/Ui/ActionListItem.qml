@@ -34,6 +34,7 @@ Item {
     property int itemHeight: 42
 
     signal clicked()
+    signal doubleClicked()
 
     width: parent ? parent.width : 252
     height: itemHeight
@@ -147,5 +148,6 @@ Item {
     // Hover overlay + click handler
     HoverMouse {
         onClicked: root.clicked()
+        onDoubleClicked: root.doubleClicked()
     }
 }

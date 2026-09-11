@@ -38,7 +38,7 @@ Singleton {
             "source": "../widgets/Apps.qml",
             "popup": "apps",
             "panel": "../panels/AppsPanel.qml",
-            "title": "Native Apps",
+            "title": "Menú principal",
             "defaultSection": "left",
             "cardWidth": 320
         },
@@ -178,6 +178,22 @@ Singleton {
             "title": "Plugin Registry",
             "centerCard": true,
             "cardWidth": 480
+        },
+        "learn": {
+            "kinds": ["panel"],
+            "popup": "learn",
+            "panel": "../panels/LearnPanel.qml",
+            "title": "Learn",
+            "centerCard": true,
+            "cardWidth": 320
+        },
+        "trigger": {
+            "kinds": ["panel"],
+            "popup": "trigger",
+            "panel": "../panels/TriggerPanel.qml",
+            "title": "Trigger",
+            "centerCard": true,
+            "cardWidth": 320
         },
         "keys": {
             "kinds": ["panel"],

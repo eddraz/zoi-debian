@@ -6,6 +6,7 @@ singleton HoverTip 1.0 HoverTip.qml
 singleton Notifs 1.0 Notifs.qml
 singleton Popups 1.0 Popups.qml
 singleton KeyNav 1.0 KeyNav.qml
+singleton KeysMap 1.0 KeysMap.qml
 singleton Idle 1.0 Idle.qml
 singleton Media 1.0 Media.qml
 singleton NightLight 1.0 NightLight.qml
