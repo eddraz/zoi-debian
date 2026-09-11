@@ -12,7 +12,9 @@ sudo ./scripts/lemurs-setup.sh apply
 # reboot — login en TTY2
 ```
 
-`apply` solo hace `enable`. No arranca Lemurs en caliente. Si `install.sh` avisó fallo pero `systemctl is-enabled lemurs` es `enabled`, era un trap `RETURN`/`set -u` (ya corregido).
+`apply` solo hace `enable`. No arranca Lemurs en caliente.
+
+Sway lo lanza `/etc/lemurs/wayland/sway` con **seatd** (logind no le da seat al compositor cuando Lemurs es un unit systemd). Sin eso: pantalla negra y `Unable to create backend`.
 
 ## Authentication failed (contraseña bien)
 

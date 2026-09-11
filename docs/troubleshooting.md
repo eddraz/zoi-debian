@@ -203,6 +203,12 @@ grep sessions_path /etc/lemurs/config.toml
 
 Si todavía apunta a `/usr/share/...`, copiá `dotfiles/lemurs/config.toml` a `/etc/lemurs/config.toml` (writable por el usuario de escritorio). Lemurs relee el config en el próximo arranque del servicio, no en caliente.
 
+## Lemurs: login OK y pantalla negra (Sway no arranca)
+
+`/var/log/lemurs.client.log` muestra `Timeout waiting session to become active` / `Unable to create backend` / `VT 0`. Lemurs es un servicio systemd: logind le da a Sway la sesión del greeter (sin seat). El wrapper `/etc/lemurs/wayland/sway` usa **seatd** (`LIBSEAT_BACKEND=seatd`) y `install.sh` habilita `seatd -g video`.
+
+Comprobar: `systemctl is-active seatd`, `ls /run/seatd.sock`, `cat /etc/lemurs/wayland/sway`. No hace falta relogin por el grupo `seat` si el socket es grupo `video`.
+
 ## `install.sh`: `work: variable sin asignar` (Lemurs)
 
 Era un `trap RETURN` sobre una variable `local`. Lemurs igual quedaba installed/enabled. Ya está arreglado en `lemurs-setup.sh`. Si ves el warning viejo: `systemctl is-enabled lemurs` y `lemurs --version`.

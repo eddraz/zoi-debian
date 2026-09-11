@@ -1,5 +1,15 @@
 #!/bin/sh
+# Lemurs runs as a systemd service on TTY2. pam_systemd then hands Sway
+# XDG_SESSION_ID of the greeter (no seat, VT 0). wlroots waits 10s and
+# dies: "Timeout waiting session to become active" / black screen.
+# seatd owns DRM; video group can use the socket (see install.sh drop-in).
 export XDG_SESSION_TYPE=wayland
 export XDG_SESSION_DESKTOP=sway
 export XDG_CURRENT_DESKTOP=sway
+export XDG_VTNR="${XDG_VTNR:-2}"
+unset DISPLAY WAYLAND_DISPLAY SWAYSOCK I3SOCK
+unset XDG_SESSION_ID
+if [ -S /run/seatd.sock ]; then
+    export LIBSEAT_BACKEND=seatd
+fi
 exec /usr/bin/sway

@@ -259,7 +259,7 @@ if [ "${ZOI_BOOTSTRAPPED:-}" != "1" ]; then
     else
       log "El usuario $TARGET_USER ya existe."
     fi
-    usermod -aG sudo,video,render,audio,netdev,plugdev "$TARGET_USER" 2>/dev/null || usermod -aG sudo "$TARGET_USER"
+    usermod -aG sudo,video,render,audio,netdev,plugdev,seat "$TARGET_USER" 2>/dev/null || usermod -aG sudo,video,seat "$TARGET_USER" 2>/dev/null || usermod -aG sudo "$TARGET_USER"
     if [ ! -f /etc/sudoers.d/zoi-sudo ]; then
       echo "%sudo ALL=(ALL:ALL) ALL" >/etc/sudoers.d/zoi-sudo
       chmod 440 /etc/sudoers.d/zoi-sudo
@@ -400,6 +400,7 @@ PKGS=(
   xdg-utils xdg-user-dirs
   pavucontrol
   amberol loupe
+  seatd
   ffmpeg poppler-utils fd-find ripgrep fzf imagemagick p7zip-full
   git curl ca-certificates
 )
@@ -410,6 +411,18 @@ log "Instalando paquetes base (puede tardar 1-3 min)."
 $SUDO apt-get install -y --no-install-recommends "${PKGS[@]}"
 log "Asegurando paquetes de backports."
 $SUDO apt-get install -y --no-install-recommends -t trixie-backports "${BP_PKGS[@]}"
+
+# seatd: Lemurs is a systemd service, so logind never gives Sway an active seat.
+if command -v seatd >/dev/null; then
+  $SUDO mkdir -p /etc/systemd/system/seatd.service.d
+  $SUDO tee /etc/systemd/system/seatd.service.d/video.conf >/dev/null <<'EOF'
+[Service]
+ExecStart=
+ExecStart=/usr/bin/seatd -g video
+EOF
+  $SUDO systemctl daemon-reload
+  $SUDO systemctl enable --now seatd || warn "No pude habilitar seatd."
+fi
 
 # ---------------------------------------------------------------- yazi (official APT repo; amd64/arm64)
 if arch_in "$ARCH" amd64 arm64; then
