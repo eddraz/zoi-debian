@@ -56,7 +56,8 @@ print_plan() {
   echo "  Cache:       /var/cache/lemurs/state  (file, not a directory)"
   echo "  User layout: ~/.config/zoi/lemurs/config.toml  (optional override)"
   echo "  Overlay:     ~/.config/zoi/lemurs/variables.overlay.toml"
-  echo "  Wayland:     /etc/lemurs/wayland/sway"
+  echo "  Wayland:     /etc/lemurs/wayland/sway  (only greeter session)"
+  echo "  Sessions:    /etc/lemurs/xsessions + wayland-sessions (empty; skip Debian Sway-as-X11)"
   echo "  Unit:        /etc/systemd/system/lemurs.service  (TTY2, alias display-manager)"
   echo "  PAM:         /etc/pam.d/lemurs  (common-auth, loginuid optional)"
   echo "  LightDM:     se deshabilita; el paquete queda como fallback"
@@ -118,7 +119,7 @@ apply_install() {
   install_binary
 
   log "Instalando y verificando archivos en /etc/lemurs."
-  $SUDO mkdir -p /etc/lemurs/wayland /etc/lemurs/wms /var/cache/lemurs
+  $SUDO mkdir -p /etc/lemurs/wayland /etc/lemurs/wms /etc/lemurs/xsessions /etc/lemurs/wayland-sessions /var/cache/lemurs
 
   # 16-color VT map (hex is ignored on TTY2). Prefer the themed file from zoi-theme.
   

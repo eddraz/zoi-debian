@@ -116,8 +116,13 @@ xserver_path = "/usr/bin/X"
 xauth_path = "/usr/bin/xauth"
 scripts_path = "/etc/lemurs/wms"
 xsetup_path = "/etc/lemurs/xsetup.sh"
-xsessions_path = "/usr/share/xsessions"
+# Empty on purpose. Debian ships /usr/share/xsessions/sway.desktop
+# (Exec=sway); Lemurs treats every xsessions entry as X11 and waits
+# 60s for Xorg. Do not point this at /usr/share/xsessions.
+xsessions_path = "/etc/lemurs/xsessions"
 
 [wayland]
 scripts_path = "/etc/lemurs/wayland"
-wayland_sessions_path = "/usr/share/wayland-sessions"
+# Empty on purpose so the greeter only shows /etc/lemurs/wayland/sway.
+# /usr/share/wayland-sessions also has Name=Sway (duplicate + cache trap).
+wayland_sessions_path = "/etc/lemurs/wayland-sessions"

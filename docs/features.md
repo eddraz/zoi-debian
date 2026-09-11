@@ -533,6 +533,6 @@ TUI en TTY2 ([coastalwhite/lemurs](https://github.com/coastalwhite/lemurs) v0.4)
 
 PAM Debian: `@include common-auth`, `pam_loginuid` optional. No `include login` (eso muestra *authentication failed* con la clave bien).
 
-Cache: archivo `/var/cache/lemurs/state`. Sin cache el primer entorno es XFCE; en el switcher elegí **sway**.
+Cache: archivo `/var/cache/lemurs/state`. El greeter solo lista `/etc/lemurs/wayland/sway` (no escanea xsessions de Debian: ese `Sway` es X11 y se cuelga 60s).
 
 Guía: [lemurs.md](lemurs.md). `scripts/lemurs-setup.sh apply` solo hace `enable`.

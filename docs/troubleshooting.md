@@ -185,7 +185,23 @@ No es la contraseña. En `/var/log/lemurs.log` vas a ver `Validated account` y d
 sudo install -m 0644 -o root -g root dotfiles/lemurs/lemurs.pam /etc/pam.d/lemurs
 ```
 
-El próximo intento en TTY2 alcanza. En el switcher usá **sway** (sin cache el default es XFCE).
+El próximo intento en TTY2 alcanza. La sesión tiene que ser **sway** (Wayland), no **Sway** de xsessions.
+
+## Lemurs entra pero Sway no carga (vuelve al login)
+
+La contraseña está bien. Lemurs arrancó el `Sway` de `/usr/share/xsessions` como **X11**. En `/var/log/lemurs.log` aparece `X { xinitrc_path: "sway" }` y después `Timeout while waiting for X server to start`.
+
+En TTY2 el switcher tiene que quedar en **sway** (minúscula, script Wayland), no **Sway**.
+
+Para que no vuelva a pasar, el greeter no escanea `/usr/share/xsessions` ni `/usr/share/wayland-sessions`:
+
+```sh
+grep sessions_path /etc/lemurs/config.toml
+# xsessions_path = "/etc/lemurs/xsessions"
+# wayland_sessions_path = "/etc/lemurs/wayland-sessions"
+```
+
+Si todavía apunta a `/usr/share/...`, copiá `dotfiles/lemurs/config.toml` a `/etc/lemurs/config.toml` (writable por el usuario de escritorio). Lemurs relee el config en el próximo arranque del servicio, no en caliente.
 
 ## `install.sh`: `work: variable sin asignar` (Lemurs)
 

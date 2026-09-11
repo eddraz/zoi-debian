@@ -23,7 +23,7 @@ sudo install -m 0644 -o root -g root dotfiles/lemurs/lemurs.pam /etc/pam.d/lemur
 # No hace falta reiniciar Lemurs: el próximo intento en TTY2 relee PAM.
 ```
 
-En el switcher elegí **sway**. Sin cache, el primer entorno suele ser XFCE (`startxfce4`).
+El switcher solo ofrece **sway** (script Wayland en `/etc/lemurs/wayland/sway`). No uses **Sway** de xsessions: Debian lo registra como X11 y Lemurs espera 60s a Xorg.
 
 ## Tema (automático)
 
@@ -84,4 +84,4 @@ sudo systemctl start lightdm
 - [ ] `grep ExecStartPre /etc/systemd/system/lemurs.service` muestra `setvtrgb`
 - [ ] `/etc/pam.d/lemurs` incluye `common-auth` (no `include login`)
 - [ ] Después de `apply`, `systemctl is-enabled lemurs` es `enabled`
-- [ ] Reboot → TTY2 → switcher **sway** (sin cache el primero es XFCE)
+- [ ] Reboot → TTY2 → sesión **sway** (Wayland). Si ves **Sway** (X11) el config todavía apunta a `/usr/share/xsessions`.

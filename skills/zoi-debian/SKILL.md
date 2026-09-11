@@ -196,7 +196,8 @@ grim -g "$(swaymsg -t get_tree | python3 -c '...')" /tmp/x.png
 - Don't `systemctl start lemurs` from a live graphical session; `lemurs-setup.sh apply` only enables the unit. Don't remove the lightdm package when switching to Lemurs.
 - Don't `include login` in `/etc/pam.d/lemurs` (Debian `pam_loginuid` required → *authentication failed* after a valid password). Use `@include common-auth` and `session optional pam_loginuid.so`.
 - Don't put hex colors in Lemurs `config.toml` for TTY2. Kernel VT ignores truecolor. Write `/etc/lemurs/vtrgb` and `ExecStartPre=setvtrgb`; config uses ANSI names (`black`, `light yellow`).
-- Lemurs `cache_path` is a **file** (`/var/cache/lemurs/state`). mkdir of that path as a directory breaks remember-username/session (defaults to XFCE).
+- Lemurs `cache_path` is a **file** (`/var/cache/lemurs/state`). mkdir of that path as a directory breaks remember-username/session.
+- Don't point Lemurs `xsessions_path` at `/usr/share/xsessions`. Debian's `sway.desktop` there is X11 (`Exec=sway`); Lemurs waits 60s for Xorg. Use empty `/etc/lemurs/xsessions` + `/etc/lemurs/wayland/sway`.
 
 ## When to update the docs
 
