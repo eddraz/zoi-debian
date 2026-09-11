@@ -1,3 +1,20 @@
 #!/bin/sh
-# Default zoi-debian file manager: foot + yazi (Sixel previews).
-exec /usr/bin/foot -a yazi -T Yazi -e yazi "$@"
+# Default zoi-debian file manager: foot + yazi (Sixel).
+# Accepts a path or a file:// URI (Thorium/Chrome "Show in folder").
+set -eu
+
+if [ $# -eq 0 ]; then
+    exec /usr/bin/foot -a yazi -T Yazi -e yazi
+fi
+
+path=$1
+case "$path" in
+    file://*) path=${path#file://} ;;
+esac
+path=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.unquote(sys.argv[1]))' "$path")
+
+if [ -f "$path" ]; then
+    path=$(dirname "$path")
+fi
+
+exec /usr/bin/foot -a yazi -T Yazi -e yazi "$path"

@@ -22,6 +22,8 @@ border_style = { fg = "{{ muted }}" }
 [tabs]
 active = { fg = "{{ background }}", bg = "{{ accent }}", bold = true }
 inactive = { fg = "{{ foreground }}", bg = "{{ lighter_background }}" }
+sep_inner = { open = "", close = "" }
+sep_outer = { open = "", close = "" }
 
 [mode]
 normal_main = { fg = "{{ background }}", bg = "{{ accent }}", bold = true }
@@ -87,8 +89,34 @@ footer = { fg = "{{ background }}", bg = "{{ foreground }}" }
 title_info = { fg = "{{ green }}" }
 title_warn = { fg = "{{ yellow }}" }
 title_error = { fg = "{{ red }}" }
+icon_info = "i"
+icon_warn = "!"
+icon_error = "x"
 
 [tasks]
 border = { fg = "{{ accent }}" }
 title = { fg = "{{ accent }}" }
 hovered = { fg = "{{ magenta }}", underline = true }
+
+[indicator]
+padding = { open = "", close = "" }
+
+
+[cmp]
+icon_file = "-"
+icon_folder = ">"
+icon_command = "$"
+
+# No Nerd Fonts in ZOI; use ASCII so DejaVu in foot can render them.
+[icon]
+globs = []
+dirs = []
+files = []
+exts = []
+conds = [
+	{ if = "dir", text = ">" },
+	{ if = "exec", text = "*" },
+	{ if = "link", text = "@" },
+	{ if = "orphan", text = "!" },
+	{ if = "dummy", text = "?" },
+]

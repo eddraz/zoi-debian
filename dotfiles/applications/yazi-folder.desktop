@@ -9,6 +9,5 @@ StartupNotify=false
 MimeType=inode/directory;inode/mount-point;
 Icon=folder
 Categories=System;FileTools;FileManager;
-Keywords=File;Manager;Browser;Explorer;Yazi;
+Keywords=File;Manager;Folder;Yazi;
 StartupWMClass=yazi
-NoDisplay=false

@@ -16,3 +16,15 @@ scrolloff = 5
 max_width = 1200
 max_height = 1800
 image_delay = 30
+
+[opener]
+markdown = [
+  { run = 'qs-md "$@"', orphan = true, desc = "Inlyne", for = "unix" },
+]
+
+[open]
+prepend_rules = [
+  { url = "*.md", use = [ "markdown", "open" ] },
+  { url = "*.markdown", use = [ "markdown", "open" ] },
+  { mime = "text/markdown", use = [ "markdown", "open" ] },
+]
