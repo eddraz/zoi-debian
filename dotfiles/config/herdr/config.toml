@@ -1,0 +1,17 @@
+# ZOI default Herdr config. zoi-theme overwrites [theme.custom] and [ui] accent.
+# Official docs: https://herdr.dev/docs/configuration/
+onboarding = false
+
+[terminal]
+default_shell = "/usr/bin/fish"
+shell_mode = "login"
+
+[theme]
+name = "catppuccin"
+auto_switch = false
+
+[ui]
+show_agent_labels_on_pane_borders = true
+
+[ui.toast]
+delivery = "herdr"
