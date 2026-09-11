@@ -148,77 +148,16 @@ Column {
         text: "Brightness"
     }
 
-    Rectangle {
-        width: parent.width
-        height: 30
-        radius: Style.radius
-        color: root.cursor === 0 ? Color.focusFill : Color.surface
-        border.width: root.cursor === 0 ? 1 : 0
-        border.color: Color.accent
-        Behavior on color { ColorAnimation { duration: Style.animDuration } }
-
-        Row {
-            spacing: 8
-            anchors.fill: parent
-            anchors.leftMargin: 8
-            anchors.rightMargin: 8
-
-            IndexBadge {
-                slot: 0
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                color: Color.popupText
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption
-                font.bold: true
-                text: "BRT"
-            }
-
-            Rectangle {
-                id: slider
-                anchors.verticalCenter: parent.verticalCenter
-                width: parent.width - 96
-                height: 8
-                radius: 4
-                color: Color.crust
-                border.width: root.cursor === 0 ? 1 : 0
-                border.color: Color.yellow
-
-                Rectangle {
-                    height: parent.height
-                    width: parent.width * Math.max(0, Math.min(Brightness.percent, 100)) / 100
-                    radius: 4
-                    color: Color.yellow
-                    Behavior on width { NumberAnimation { duration: 80 } }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    anchors.topMargin: -8
-                    anchors.bottomMargin: -8
-                    cursorShape: Qt.PointingHandCursor
-                    onPressed: event => {
-                        root.cursor = 0;
-                        Brightness.setPercent(event.x / slider.width * 100);
-                    }
-                    onPositionChanged: event => {
-                        if (pressed)
-                            Brightness.setPercent(event.x / slider.width * 100);
-                    }
-                }
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                width: 36
-                color: Color.popupText
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption
-                text: Brightness.percent + "%"
-            }
+    VolumeSlider {
+        selected: root.cursor === 0
+        slot: 0
+        label: "BRT"
+        percent: Brightness.percent
+        muted: false
+        accentColor: Color.yellow
+        onSetVolume: fraction => {
+            root.cursor = 0;
+            Brightness.setPercent(fraction * 100);
         }
     }
 
@@ -236,97 +175,21 @@ Column {
         Repeater {
             model: [PowerProfile.PowerSaver, PowerProfile.Balanced, PowerProfile.Performance]
 
-            Rectangle {
-                id: profileBox
+            ActionListItem {
                 required property var modelData
                 required property int index
 
-                readonly property bool isSelected: root.cursor === index + 1
-                readonly property bool isCurrent: PowerProfiles.profile === modelData
-
                 width: root.width
-                height: 42
-                radius: Style.radius
-                color: isSelected ? Color.focusFill : Color.surface
-                border.width: isSelected ? 1 : 0
-                border.color: Color.accent
-                Behavior on color { ColorAnimation { duration: Style.animDuration } }
                 visible: modelData !== PowerProfile.Performance || PowerProfiles.hasPerformanceProfile
-
-                Rectangle {
-                    width: 3
-                    height: profileBox.isSelected ? 20 : 0
-                    radius: 1.5
-                    color: Color.accent
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: profileBox.isSelected
-                    Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
-                }
-
-                IndexBadge {
-                    slot: index + 1
-                    anchors.left: parent.left
-                    anchors.leftMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                Column {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 32
-                    anchors.right: statusBadge.left
-                    anchors.rightMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 2
-
-                    Text {
-                        width: parent.width
-                        elide: Text.ElideRight
-                        color: profileBox.isCurrent ? Color.accent : Color.popupText
-                        font.family: Style.fontFamily
-                        font.pixelSize: Style.fontBody
-                        font.bold: true
-                        text: root.profileLabel(modelData)
-                    }
-
-                    Text {
-                        width: parent.width
-                        elide: Text.ElideRight
-                        color: Color.popupMuted
-                        font.family: Style.fontFamily
-                        font.pixelSize: Style.fontCaption
-                        text: root.profileDesc(modelData)
-                    }
-                }
-
-                Rectangle {
-                    id: statusBadge
-                    anchors.right: parent.right
-                    anchors.rightMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
-                    height: 20
-                    width: badgeText.implicitWidth + 12
-                    radius: 4
-                    color: profileBox.isCurrent ? Color.focusFill : (profileBox.isSelected ? Color.surface : Color.background)
-                    border.width: 1
-                    border.color: profileBox.isCurrent ? Color.accent : (profileBox.isSelected ? Color.subtleBorder : "transparent")
-
-                    Text {
-                        id: badgeText
-                        anchors.centerIn: parent
-                        font.family: Style.fontFamily
-                        font.pixelSize: Style.fontCaption - 1
-                        font.bold: true
-                        color: profileBox.isCurrent ? Color.accent : Color.popupMuted
-                        text: profileBox.isCurrent ? "ACTIVO" : "PERFIL"
-                    }
-                }
-
-                HoverMouse {
-                    onClicked: {
-                        root.cursor = index + 1;
-                        PowerProfiles.profile = modelData;
-                    }
+                selected: root.cursor === index + 1
+                slot: index + 1
+                highlighted: PowerProfiles.profile === modelData
+                title: root.profileLabel(modelData)
+                description: root.profileDesc(modelData)
+                badge: PowerProfiles.profile === modelData ? "ACTIVO" : "PERFIL"
+                onClicked: {
+                    root.cursor = index + 1;
+                    PowerProfiles.profile = modelData;
                 }
             }
         }

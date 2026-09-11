@@ -1,5 +1,7 @@
+ActionListItem 1.0 ActionListItem.qml
 HoverMouse 1.0 HoverMouse.qml
 HoverTipLayer 1.0 HoverTipLayer.qml
 IndexBadge 1.0 IndexBadge.qml
 PopupCard 1.0 PopupCard.qml
 StatusIcon 1.0 StatusIcon.qml
+VolumeSlider 1.0 VolumeSlider.qml

@@ -83,71 +83,17 @@ Column {
     Repeater {
         model: Weather.days
 
-        Rectangle {
+        ActionListItem {
             required property var modelData
             required property int index
+
             width: root.width
-            height: 42
-            radius: Style.radius
-            color: root.cursor === index + 1 ? Color.focusFill : Color.surface
-            border.width: 1
-            border.color: root.cursor === index + 1 ? Color.accent : Color.subtleBorder
-
-            HoverMouse {
-                z: -1
-                onClicked: root.cursor = index + 1
-            }
-
-            Column {
-                anchors.left: parent.left
-                anchors.leftMargin: 12
-                anchors.right: weatherBadge.left
-                anchors.rightMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 2
-
-                Text {
-                    width: parent.width
-                    elide: Text.ElideRight
-                    color: Color.popupText
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontBody
-                    font.bold: true
-                    text: Weather.weekday(modelData.date)
-                }
-
-                Text {
-                    width: parent.width
-                    elide: Text.ElideRight
-                    color: Color.popupMuted
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption
-                    text: Weather.conditionFor(modelData.code)
-                }
-            }
-
-            Rectangle {
-                id: weatherBadge
-                anchors.right: parent.right
-                anchors.rightMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                height: 20
-                width: weatherBadgeText.implicitWidth + 12
-                radius: 4
-                color: Color.background
-                border.width: 1
-                border.color: Color.subtleBorder
-
-                Text {
-                    id: weatherBadgeText
-                    anchors.centerIn: parent
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption - 1
-                    font.bold: true
-                    color: Color.accent
-                    text: Math.round(modelData.max) + "° / " + Math.round(modelData.min) + "°"
-                }
-            }
+            selected: root.cursor === index + 1
+            slot: index + 1
+            title: Weather.weekday(modelData.date)
+            description: Weather.conditionFor(modelData.code)
+            badge: Math.round(modelData.max) + "° / " + Math.round(modelData.min) + "°"
+            onClicked: root.cursor = index + 1
         }
     }
 }

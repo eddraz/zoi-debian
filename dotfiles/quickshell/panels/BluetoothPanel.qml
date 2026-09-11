@@ -113,189 +113,43 @@ Column {
         }
     }
 
-    Rectangle {
-        width: parent.width
-        height: 42
-        radius: Style.radius
-        color: (adapter && adapter.enabled) ? Color.accent : (root.cursor === 0 ? Color.focusFill : Color.surface)
+    // Bluetooth toggle button — uses useHighlightBg for the ON state
+    ActionListItem {
         visible: adapter !== null
-        border.width: root.cursor === 0 ? 1 : 0
-        border.color: (adapter && adapter.enabled) ? Color.background : Color.accent
-        Behavior on color { ColorAnimation { duration: Style.animDuration } }
-
-        Rectangle {
-            width: 3
-            height: root.cursor === 0 ? 20 : 0
-            radius: 1.5
-            color: (adapter && adapter.enabled) ? Color.background : Color.accent
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            visible: root.cursor === 0
-            Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
-        }
-
-        IndexBadge {
-            slot: 0
-            anchors.left: parent.left
-            anchors.leftMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-        }
-
-        Column {
-            anchors.left: parent.left
-            anchors.leftMargin: 32
-            anchors.right: toggleBadge.left
-            anchors.rightMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 2
-
-            Text {
-                width: parent.width
-                elide: Text.ElideRight
-                color: adapter && adapter.enabled ? Color.background : Color.popupText
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontBody
-                font.bold: true
-                text: "Bluetooth"
-            }
-
-            Text {
-                width: parent.width
-                elide: Text.ElideRight
-                color: adapter && adapter.enabled ? Color.background : Color.popupMuted
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption
-                text: adapter ? (adapter.enabled ? (adapter.discovering ? "Buscando dispositivos…" : "Adaptador activo y visible") : "Adaptador inalámbrico apagado") : "Sin adaptador"
-            }
-        }
-
-        Rectangle {
-            id: toggleBadge
-            anchors.right: parent.right
-            anchors.rightMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-            height: 20
-            width: toggleBadgeText.implicitWidth + 12
-            radius: 4
-            color: adapter && adapter.enabled ? Color.background : (root.cursor === 0 ? Color.surface : Color.background)
-            border.width: 1
-            border.color: adapter && adapter.enabled ? Color.background : (root.cursor === 0 ? Color.subtleBorder : "transparent")
-
-            Text {
-                id: toggleBadgeText
-                anchors.centerIn: parent
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption - 1
-                font.bold: true
-                color: adapter && adapter.enabled ? Color.accent : Color.popupMuted
-                text: adapter && adapter.enabled ? "ON" : "OFF"
-            }
-        }
-
-        HoverMouse {
-            onClicked: {
-                if (adapter)
-                    adapter.enabled = !adapter.enabled;
-            }
+        selected: root.cursor === 0
+        slot: 0
+        highlighted: adapter && adapter.enabled
+        useHighlightBg: true
+        title: "Bluetooth"
+        description: adapter ? (adapter.enabled ? (adapter.discovering ? "Buscando dispositivos…" : "Adaptador activo y visible") : "Adaptador inalámbrico apagado") : "Sin adaptador"
+        badge: adapter && adapter.enabled ? "ON" : "OFF"
+        onClicked: {
+            if (adapter)
+                adapter.enabled = !adapter.enabled;
         }
     }
 
     Repeater {
         model: root.devices
 
-        Rectangle {
-            id: deviceBox
+        ActionListItem {
             required property var modelData
             required property int index
 
-            readonly property bool selected: root.cursor === index + 1
-
             width: root.width
-            height: 42
-            radius: Style.radius
-            color: selected ? Color.focusFill : Color.surface
-            border.width: selected ? 1 : 0
-            border.color: Color.accent
-            Behavior on color { ColorAnimation { duration: Style.animDuration } }
-
-            Rectangle {
-                width: 3
-                height: deviceBox.selected ? 20 : 0
-                radius: 1.5
-                color: Color.accent
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                visible: deviceBox.selected
-                Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
-            }
-
-            IndexBadge {
-                slot: index + 1
-                anchors.left: parent.left
-                anchors.leftMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Column {
-                anchors.left: parent.left
-                anchors.leftMargin: 32
-                anchors.right: devBadge.left
-                anchors.rightMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 2
-
-                Text {
-                    width: parent.width
-                    elide: Text.ElideRight
-                    color: modelData.connected ? Color.accent : Color.popupText
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontBody
-                    font.bold: true
-                    text: root.deviceName(modelData)
-                }
-
-                Text {
-                    width: parent.width
-                    elide: Text.ElideRight
-                    color: Color.popupMuted
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption
-                    text: modelData.connected ? "Conectado · Audio y control listos" : (modelData.pairing ? "Emparejando dispositivo…" : (modelData.paired ? "Dispositivo guardado en el sistema" : "Dispositivo descubierto"))
-                }
-            }
-
-            Rectangle {
-                id: devBadge
-                anchors.right: parent.right
-                anchors.rightMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                height: 20
-                width: devBadgeText.implicitWidth + 12
-                radius: 4
-                color: modelData.connected ? Color.focusFill : (deviceBox.selected ? Color.surface : Color.background)
-                border.width: 1
-                border.color: modelData.connected ? Color.accent : (deviceBox.selected ? Color.subtleBorder : "transparent")
-
-                Text {
-                    id: devBadgeText
-                    anchors.centerIn: parent
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption - 1
-                    font.bold: true
-                    color: modelData.connected ? Color.accent : Color.popupMuted
-                    text: modelData.connected ? "CONECTADO" : (modelData.paired ? "VINCULADO" : "NUEVO")
-                }
-            }
-
-            HoverMouse {
-                onClicked: {
-                    if (modelData.connected)
-                        modelData.disconnect();
-                    else if (modelData.paired)
-                        modelData.connect();
-                    else
-                        modelData.pair();
-                }
+            selected: root.cursor === index + 1
+            slot: index + 1
+            highlighted: modelData.connected
+            title: root.deviceName(modelData)
+            description: modelData.connected ? "Conectado · Audio y control listos" : (modelData.pairing ? "Emparejando dispositivo…" : (modelData.paired ? "Dispositivo guardado en el sistema" : "Dispositivo descubierto"))
+            badge: modelData.connected ? "CONECTADO" : (modelData.paired ? "VINCULADO" : "NUEVO")
+            onClicked: {
+                if (modelData.connected)
+                    modelData.disconnect();
+                else if (modelData.paired)
+                    modelData.connect();
+                else
+                    modelData.pair();
             }
         }
     }

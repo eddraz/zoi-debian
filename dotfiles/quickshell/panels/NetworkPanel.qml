@@ -203,88 +203,17 @@ Column {
         }
     }
 
-    Rectangle {
-        id: wifiToggleBtn
-        width: parent.width
-        height: 42
-        radius: Style.radius
-        color: Networking.wifiEnabled ? Color.accent : (root.cursor === 0 ? Color.focusFill : Color.surface)
-        border.width: root.cursor === 0 ? 1 : 0
-        border.color: Networking.wifiEnabled ? Color.background : Color.accent
-        activeFocusOnTab: true
-        Behavior on color { ColorAnimation { duration: Style.animDuration } }
-
-        Rectangle {
-            width: 3
-            height: root.cursor === 0 ? 20 : 0
-            radius: 1.5
-            color: Networking.wifiEnabled ? Color.background : Color.accent
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            visible: root.cursor === 0
-            Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
-        }
-
-        IndexBadge {
-            slot: 0
-            anchors.left: parent.left
-            anchors.leftMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-        }
-
-        Column {
-            anchors.left: parent.left
-            anchors.leftMargin: 32
-            anchors.right: wifiBadge.left
-            anchors.rightMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 2
-
-            Text {
-                width: parent.width
-                elide: Text.ElideRight
-                color: Networking.wifiEnabled ? Color.background : Color.popupText
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontBody
-                font.bold: true
-                text: "Wi-Fi"
-            }
-
-            Text {
-                width: parent.width
-                elide: Text.ElideRight
-                color: Networking.wifiEnabled ? Color.background : Color.popupMuted
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption
-                text: Networking.wifiEnabled ? "Conexión inalámbrica activa y escaneando" : "Adaptador Wi-Fi apagado"
-            }
-        }
-
-        Rectangle {
-            id: wifiBadge
-            anchors.right: parent.right
-            anchors.rightMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-            height: 20
-            width: wifiBadgeText.implicitWidth + 12
-            radius: 4
-            color: Networking.wifiEnabled ? Color.background : (root.cursor === 0 ? Color.surface : Color.background)
-            border.width: 1
-            border.color: Networking.wifiEnabled ? Color.background : (root.cursor === 0 ? Color.subtleBorder : "transparent")
-
-            Text {
-                id: wifiBadgeText
-                anchors.centerIn: parent
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption - 1
-                font.bold: true
-                color: Networking.wifiEnabled ? Color.accent : Color.popupMuted
-                text: Networking.wifiEnabled ? "ON" : "OFF"
-            }
-        }
-
-        HoverMouse {
-            onClicked: Networking.wifiEnabled = !Networking.wifiEnabled
+    ActionListItem {
+        selected: root.cursor === 0
+        slot: 0
+        highlighted: Networking.wifiEnabled
+        useHighlightBg: true
+        title: "Wi-Fi"
+        description: Networking.wifiEnabled ? "Conexión inalámbrica activa y escaneando" : "Adaptador Wi-Fi apagado"
+        badge: Networking.wifiEnabled ? "ON" : "OFF"
+        onClicked: {
+            root.cursor = 0;
+            Networking.wifiEnabled = !Networking.wifiEnabled;
         }
     }
 
@@ -395,107 +324,35 @@ Column {
             width: root.width
             spacing: 4
 
-            Rectangle {
-                id: netBox
+            ActionListItem {
                 width: parent.width
-                height: 42
-                radius: Style.radius
-                color: root.cursor === index + 2 ? Color.focusFill : Color.surface
-                border.width: root.cursor === index + 2 ? 1 : 0
-                border.color: Color.accent
-                Behavior on color { ColorAnimation { duration: Style.animDuration } }
-
-                Rectangle {
-                    width: 3
-                    height: root.cursor === index + 2 ? 20 : 0
-                    radius: 1.5
-                    color: Color.accent
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: root.cursor === index + 2
-                    Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
+                selected: root.cursor === index + 2
+                slot: index + 2
+                highlighted: modelData.connected
+                title: modelData.name || "Red Oculta"
+                description: {
+                    const sig = Math.round((modelData.signalStrength || 0) * 100);
+                    if (modelData.connected)
+                        return "Conectada · Señal al " + sig + "%";
+                    if (modelData.known)
+                        return "Red guardada · Señal al " + sig + "%";
+                    if (root.needsPassword(modelData))
+                        return "Red protegida · Señal al " + sig + "%";
+                    return "Red abierta · Señal al " + sig + "%";
                 }
-
-                IndexBadge {
-                    slot: index + 2
-                    anchors.left: parent.left
-                    anchors.leftMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                Column {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 32
-                    anchors.right: netBadge.left
-                    anchors.rightMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 2
-
-                    Text {
-                        width: parent.width
-                        elide: Text.ElideRight
-                        color: modelData.connected ? Color.accent : Color.popupText
-                        font.family: Style.fontFamily
-                        font.pixelSize: Style.fontBody
-                        font.bold: true
-                        text: modelData.name || "Red Oculta"
+                badge: modelData.connected ? "CONECTADO" : (modelData.known ? "GUARDADA" : Math.round((modelData.signalStrength || 0) * 100) + "%")
+                onClicked: {
+                    root.cursor = index + 2;
+                    if (modelData.connected) {
+                        modelData.disconnect();
+                        return;
                     }
-
-                    Text {
-                        width: parent.width
-                        elide: Text.ElideRight
-                        color: Color.popupMuted
-                        font.family: Style.fontFamily
-                        font.pixelSize: Style.fontCaption
-                        text: {
-                            const sig = Math.round((modelData.signalStrength || 0) * 100);
-                            if (modelData.connected)
-                                return "Conectada · Señal al " + sig + "%";
-                            if (modelData.known)
-                                return "Red guardada · Señal al " + sig + "%";
-                            if (root.needsPassword(modelData))
-                                return "Red protegida · Señal al " + sig + "%";
-                            return "Red abierta · Señal al " + sig + "%";
-                        }
+                    if (root.needsPassword(modelData)) {
+                        root.passwordSsid = modelData.name;
+                        root.password = "";
+                        return;
                     }
-                }
-
-                Rectangle {
-                    id: netBadge
-                    anchors.right: parent.right
-                    anchors.rightMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
-                    height: 20
-                    width: netBadgeText.implicitWidth + 12
-                    radius: 4
-                    color: modelData.connected ? Color.focusFill : (root.cursor === index + 2 ? Color.surface : Color.background)
-                    border.width: 1
-                    border.color: modelData.connected ? Color.accent : (root.cursor === index + 2 ? Color.subtleBorder : "transparent")
-
-                    Text {
-                        id: netBadgeText
-                        anchors.centerIn: parent
-                        font.family: Style.fontFamily
-                        font.pixelSize: Style.fontCaption - 1
-                        font.bold: true
-                        color: modelData.connected ? Color.accent : Color.popupMuted
-                        text: modelData.connected ? "CONECTADO" : (modelData.known ? "GUARDADA" : Math.round((modelData.signalStrength || 0) * 100) + "%")
-                    }
-                }
-
-                HoverMouse {
-                    onClicked: {
-                        if (modelData.connected) {
-                            modelData.disconnect();
-                            return;
-                        }
-                        if (root.needsPassword(modelData)) {
-                            root.passwordSsid = modelData.name;
-                            root.password = "";
-                            return;
-                        }
-                        modelData.connect();
-                    }
+                    modelData.connect();
                 }
             }
 

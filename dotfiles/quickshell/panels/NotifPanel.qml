@@ -59,88 +59,18 @@ Column {
         return false;
     }
 
-    Rectangle {
-        width: parent.width
-        height: 42
-        radius: Style.radius
-        color: Notifs.dnd ? Color.urgent : (root.cursor === 0 ? Color.focusFill : Color.surface)
-        border.width: 1
-        border.color: Notifs.dnd ? Color.urgent : (root.cursor === 0 ? Color.accent : "transparent")
-        Behavior on color { ColorAnimation { duration: Style.animDuration } }
-
-        Rectangle {
-            width: 3
-            height: 20
-            radius: 1.5
-            color: Notifs.dnd ? Color.background : Color.accent
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            visible: Notifs.dnd
-        }
-
-        IndexBadge {
-            slot: 0
-            anchors.left: parent.left
-            anchors.leftMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-        }
-
-        Column {
-            anchors.left: parent.left
-            anchors.leftMargin: 32
-            anchors.right: dndBadge.left
-            anchors.rightMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 2
-
-            Text {
-                width: parent.width
-                elide: Text.ElideRight
-                color: Notifs.dnd ? Color.background : Color.popupText
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontBody
-                font.bold: true
-                text: "Modo No Molestar"
-            }
-
-            Text {
-                width: parent.width
-                elide: Text.ElideRight
-                color: Notifs.dnd ? Color.background : Color.popupMuted
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption
-                text: Notifs.dnd ? "Notificaciones emergentes silenciadas" : "Notificaciones en pantalla permitidas"
-            }
-        }
-
-        Rectangle {
-            id: dndBadge
-            anchors.right: parent.right
-            anchors.rightMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-            height: 20
-            width: dndBadgeText.implicitWidth + 12
-            radius: 4
-            color: Notifs.dnd ? Color.background : Color.background
-            border.width: 1
-            border.color: Notifs.dnd ? Color.background : Color.subtleBorder
-
-            Text {
-                id: dndBadgeText
-                anchors.centerIn: parent
-                font.family: Style.fontFamily
-                font.pixelSize: Style.fontCaption - 1
-                font.bold: true
-                color: Notifs.dnd ? Color.urgent : Color.popupMuted
-                text: Notifs.dnd ? "DND ON" : "DND OFF"
-            }
-        }
-
-        HoverMouse {
-            onClicked: {
-                root.cursor = 0;
-                Notifs.toggleDnd();
-            }
+    ActionListItem {
+        selected: root.cursor === 0
+        slot: 0
+        highlighted: Notifs.dnd
+        useHighlightBg: true
+        highlightBg: Color.urgent
+        title: "Modo No Molestar"
+        description: Notifs.dnd ? "Notificaciones emergentes silenciadas" : "Notificaciones en pantalla permitidas"
+        badge: Notifs.dnd ? "DND ON" : "DND OFF"
+        onClicked: {
+            root.cursor = 0;
+            Notifs.toggleDnd();
         }
     }
 

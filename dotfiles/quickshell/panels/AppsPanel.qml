@@ -147,98 +147,21 @@ Column {
     Repeater {
         model: root.items
 
-        Rectangle {
-            id: rowBox
+        ActionListItem {
             required property var modelData
             required property int index
 
-            readonly property bool selected: root.cursor === index
-            readonly property bool isLofi: modelData.id === "lofi"
-            readonly property bool isLofiOn: isLofi && Radio.playing
-
             width: root.width
-            height: 42
-            radius: Style.radius
-            color: isLofiOn ? Color.accent : (selected ? Color.focusFill : Color.surface)
-            border.width: selected ? 1 : 0
-            border.color: isLofiOn ? Color.background : Color.accent
-            Behavior on color { ColorAnimation { duration: Style.animDuration } }
-            Behavior on border.width { NumberAnimation { duration: Style.animDuration } }
-
-            Rectangle {
-                width: 3
-                height: rowBox.selected ? 20 : 0
-                radius: 1.5
-                color: rowBox.isLofiOn ? Color.background : Color.accent
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                visible: rowBox.selected
-                Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
-            }
-
-            IndexBadge {
-                slot: index
-                anchors.left: parent.left
-                anchors.leftMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Column {
-                anchors.left: parent.left
-                anchors.leftMargin: 32
-                anchors.right: statusBadge.left
-                anchors.rightMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 2
-
-                Text {
-                    width: parent.width
-                    elide: Text.ElideRight
-                    color: rowBox.isLofiOn ? Color.background : Color.popupText
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontBody
-                    font.bold: true
-                    text: modelData.name
-                }
-
-                Text {
-                    width: parent.width
-                    elide: Text.ElideRight
-                    color: rowBox.isLofiOn ? Color.background : Color.popupMuted
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption
-                    text: modelData.desc
-                }
-            }
-
-            Rectangle {
-                id: statusBadge
-                anchors.right: parent.right
-                anchors.rightMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                height: 20
-                width: badgeText.implicitWidth + 12
-                radius: 4
-                color: rowBox.isLofiOn ? Color.background : (modelData.active ? Color.focusFill : (rowBox.selected ? Color.surface : Color.background))
-                border.width: 1
-                border.color: rowBox.isLofiOn ? Color.background : (modelData.active ? Color.accent : (rowBox.selected ? Color.subtleBorder : "transparent"))
-
-                Text {
-                    id: badgeText
-                    anchors.centerIn: parent
-                    font.family: Style.fontFamily
-                    font.pixelSize: Style.fontCaption - 1
-                    font.bold: true
-                    color: rowBox.isLofiOn ? Color.accent : (modelData.active ? Color.accent : Color.popupMuted)
-                    text: modelData.status
-                }
-            }
-
-            HoverMouse {
-                onClicked: {
-                    root.cursor = index;
-                    root.runItem(index);
-                }
+            selected: root.cursor === index
+            slot: index
+            highlighted: modelData.active
+            useHighlightBg: modelData.id === "lofi" && modelData.active
+            title: modelData.name
+            description: modelData.desc
+            badge: modelData.status
+            onClicked: {
+                root.cursor = index;
+                root.runItem(index);
             }
         }
     }

@@ -132,101 +132,22 @@ Column {
 
             readonly property bool selected: root.cursor === index
 
-            Rectangle {
+            ActionListItem {
                 width: parent.width
-                height: 42
-                radius: Style.radius
-                color: {
-                    if (modelData.id === "shutdown" && selected)
-                        return Color.urgent;
-                    if (selected)
-                        return Color.focusFill;
-                    if (modelData.id === "shutdown")
-                        return Color.surface;
-                    return Color.surface;
-                }
-                border.width: selected ? 1 : 0
-                border.color: modelData.id === "shutdown" ? (selected ? Color.foreground : Color.urgent) : Color.accent
-                Behavior on color { ColorAnimation { duration: Style.animDuration } }
-                Behavior on border.color { ColorAnimation { duration: Style.animDuration } }
-
-                Rectangle {
-                    width: 3
-                    height: selected ? 20 : 0
-                    radius: 1.5
-                    color: modelData.id === "shutdown" ? Color.background : Color.accent
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: selected
-                    Behavior on height { NumberAnimation { duration: Style.animDuration; easing.type: Easing.OutCubic } }
-                }
-
-                IndexBadge {
-                    slot: index
-                    anchors.left: parent.left
-                    anchors.leftMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                Column {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 32
-                    anchors.right: statusBadge.left
-                    anchors.rightMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 2
-
-                    Text {
-                        width: parent.width
-                        elide: Text.ElideRight
-                        color: modelData.id === "shutdown" && selected ? Color.background : Color.popupText
-                        font.family: Style.fontFamily
-                        font.pixelSize: Style.fontBody
-                        font.bold: true
-                        text: modelData.label
-                    }
-
-                    Text {
-                        width: parent.width
-                        elide: Text.ElideRight
-                        color: modelData.id === "shutdown" && selected ? Color.background : Color.popupMuted
-                        font.family: Style.fontFamily
-                        font.pixelSize: Style.fontCaption
-                        text: modelData.desc
-                    }
-                }
-
-                Rectangle {
-                    id: statusBadge
-                    anchors.right: parent.right
-                    anchors.rightMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
-                    height: 20
-                    width: badgeText.implicitWidth + 12
-                    radius: 4
-                    color: selected ? (modelData.id === "shutdown" ? Color.background : Color.surface) : Color.background
-                    border.width: 1
-                    border.color: selected ? (modelData.id === "shutdown" ? Color.background : Color.subtleBorder) : "transparent"
-
-                    Text {
-                        id: badgeText
-                        anchors.centerIn: parent
-                        font.family: Style.fontFamily
-                        font.pixelSize: Style.fontCaption - 1
-                        font.bold: true
-                        color: modelData.id === "shutdown" && selected ? Color.urgent : Color.popupMuted
-                        text: modelData.status
-                    }
-                }
-
-                HoverMouse {
-                    onClicked: {
-                        root.cursor = index;
-                        if (modelData.confirm)
-                            root.pendingId = root.pendingId === modelData.id ? "" : modelData.id;
-                        else
-                            root.run(modelData.command);
-                    }
+                selected: parent.selected
+                slot: index
+                highlighted: modelData.id === "shutdown" && parent.selected
+                useHighlightBg: modelData.id === "shutdown" && parent.selected
+                highlightBg: Color.urgent
+                title: modelData.label
+                description: modelData.desc
+                badge: modelData.status
+                onClicked: {
+                    root.cursor = index;
+                    if (modelData.confirm)
+                        root.pendingId = root.pendingId === modelData.id ? "" : modelData.id;
+                    else
+                        root.run(modelData.command);
                 }
             }
 
