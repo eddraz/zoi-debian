@@ -9,23 +9,26 @@ Item {
 
     signal togglePanel
 
-    implicitWidth: chip.implicitWidth + 6
+    implicitWidth: row.implicitWidth + 8
     implicitHeight: Style.barHeight
 
-    Rectangle {
-        id: chip
+    Row {
+        id: row
+        spacing: 4
         anchors.centerIn: parent
-        implicitWidth: Math.max(28, label.implicitWidth + 10)
-        implicitHeight: Style.chipHeight
-        radius: Style.radius
-        color: Color.surface
+
+        StatusIcon {
+            anchors.verticalCenter: parent.verticalCenter
+            icon: Weather.ready ? Weather.icon : "cloud"
+            stroke: Weather.ready ? Color.barText : Color.muted
+        }
 
         Text {
             id: label
-            anchors.centerIn: parent
-            color: Color.barText
+            anchors.verticalCenter: parent.verticalCenter
+            color: Weather.ready ? Color.barText : Color.muted
             font.family: Style.fontFamily
-            font.pixelSize: Style.fontCaption
+            font.pixelSize: Style.fontBody
             font.bold: true
             text: Weather.label
         }
@@ -53,7 +56,7 @@ Item {
 
     readonly property string tipText: {
         if (!Weather.ready)
-            return "Weather";
+            return "Weather · fetching";
         const bits = ["Weather"];
         if (Weather.city)
             bits.push(Weather.city);

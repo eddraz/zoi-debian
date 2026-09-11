@@ -19,6 +19,7 @@ Singleton {
     readonly property int degrees: Math.round(temp)
     readonly property string label: ready ? (degrees + "°") : "…"
     readonly property string condition: conditionFor(code)
+    readonly property string icon: iconFor(code, isDay)
     readonly property string helper: Quickshell.env("HOME") + "/.local/bin/qs-weather"
 
     function conditionFor(value) {
@@ -42,6 +43,25 @@ Singleton {
         return "Weather";
     }
 
+    function iconFor(value, day) {
+        const n = Number(value);
+        if (!Number.isFinite(n) || n < 0)
+            return "cloud";
+        if (n === 0)
+            return day ? "sun" : "moon";
+        if (n <= 3)
+            return "cloud";
+        if (n <= 48)
+            return "fog";
+        if (n <= 67 || (n >= 80 && n <= 82))
+            return "rain";
+        if (n <= 77)
+            return "snow";
+        if (n >= 95)
+            return "storm";
+        return "cloud";
+    }
+
     function weekday(dateStr) {
         if (!dateStr)
             return "";
@@ -50,18 +70,25 @@ Singleton {
     }
 
     function refresh() {
-        if (!fetch.running)
-            fetch.running = true;
+        if (fetch.running)
+            fetch.running = false;
+        fetch.running = true;
     }
 
     function parse(text) {
         try {
-            const data = JSON.parse(String(text || "{}"));
+            const raw = String(text || "").trim();
+            if (!raw)
+                return;
+            const data = JSON.parse(raw);
+            const tempVal = Number(data.temp);
+            if (!data || !Number.isFinite(tempVal))
+                return;
             city = data.city || "";
             country = data.country || "";
             countryCode = data.countryCode || "";
-            temp = Number(data.temp || 0);
-            code = Number(data.code);
+            temp = tempVal;
+            code = Number.isFinite(Number(data.code)) ? Number(data.code) : -1;
             isDay = !!data.isDay;
             days = Array.isArray(data.days) ? data.days : [];
             ready = true;

@@ -30,8 +30,10 @@ Column {
     }
 
     onVisibleChanged: {
-        if (visible)
+        if (visible) {
             cursor = 0;
+            Weather.refresh();
+        }
     }
 
     function handleKey(event) {

@@ -74,6 +74,10 @@ Item {
                 root.paintQr(ctx, w, h);
             else if (root.icon === "clipboard")
                 root.paintClipboard(ctx, w, h);
+            else if (root.icon === "sun" || root.icon === "moon" || root.icon === "cloud"
+                     || root.icon === "rain" || root.icon === "snow" || root.icon === "storm"
+                     || root.icon === "fog")
+                root.paintWeather(ctx, w, h);
             else if (root.icon === "chev-left" || root.icon === "chev-right"
                      || root.icon === "chev-double-left" || root.icon === "chev-double-right")
                 root.paintChevron(ctx, w, h);
@@ -534,5 +538,80 @@ Item {
         ctx.fillRect(rightX + s - modSize, botY, modSize, modSize);
         ctx.fillRect(rightX, botY + s - modSize, modSize, modSize);
         ctx.fillRect(rightX + s - modSize, botY + s - modSize, modSize, modSize);
+    }
+
+    function paintWeather(ctx, w, h) {
+        ctx.fillStyle = "transparent";
+        const icon = root.icon;
+        if (icon === "sun") {
+            ctx.beginPath();
+            ctx.arc(w * 0.50, h * 0.50, w * 0.18, 0, Math.PI * 2);
+            ctx.stroke();
+            for (let i = 0; i < 8; i++) {
+                const a = (Math.PI * 2 * i) / 8;
+                ctx.beginPath();
+                ctx.moveTo(w * 0.50 + Math.cos(a) * w * 0.28, h * 0.50 + Math.sin(a) * h * 0.28);
+                ctx.lineTo(w * 0.50 + Math.cos(a) * w * 0.42, h * 0.50 + Math.sin(a) * h * 0.42);
+                ctx.stroke();
+            }
+            return;
+        }
+        if (icon === "moon") {
+            ctx.beginPath();
+            ctx.arc(w * 0.46, h * 0.50, w * 0.26, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(w * 0.58, h * 0.42, w * 0.20, 0, Math.PI * 2);
+            ctx.stroke();
+            return;
+        }
+        if (icon === "fog") {
+            for (let i = 0; i < 4; i++) {
+                const y = h * (0.32 + i * 0.14);
+                ctx.beginPath();
+                ctx.moveTo(w * 0.18, y);
+                ctx.lineTo(w * 0.82, y);
+                ctx.stroke();
+            }
+            return;
+        }
+        ctx.beginPath();
+        ctx.arc(w * 0.38, h * 0.46, w * 0.16, Math.PI * 0.15, Math.PI * 1.85);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(w * 0.54, h * 0.40, w * 0.18, Math.PI * 0.85, Math.PI * 2.15);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(w * 0.68, h * 0.48, w * 0.14, Math.PI * 1.15, Math.PI * 0.2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(w * 0.24, h * 0.58);
+        ctx.lineTo(w * 0.78, h * 0.58);
+        ctx.stroke();
+        if (icon === "rain" || icon === "storm") {
+            ctx.beginPath();
+            ctx.moveTo(w * 0.38, h * 0.66);
+            ctx.lineTo(w * 0.34, h * 0.84);
+            ctx.moveTo(w * 0.52, h * 0.66);
+            ctx.lineTo(w * 0.48, h * 0.84);
+            ctx.moveTo(w * 0.66, h * 0.66);
+            ctx.lineTo(w * 0.62, h * 0.84);
+            ctx.stroke();
+        }
+        if (icon === "snow") {
+            ctx.beginPath();
+            ctx.arc(w * 0.38, h * 0.76, w * 0.035, 0, Math.PI * 2);
+            ctx.arc(w * 0.52, h * 0.80, w * 0.035, 0, Math.PI * 2);
+            ctx.arc(w * 0.66, h * 0.74, w * 0.035, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        if (icon === "storm") {
+            ctx.beginPath();
+            ctx.moveTo(w * 0.58, h * 0.50);
+            ctx.lineTo(w * 0.48, h * 0.66);
+            ctx.lineTo(w * 0.60, h * 0.66);
+            ctx.lineTo(w * 0.50, h * 0.86);
+            ctx.stroke();
+        }
     }
 }
