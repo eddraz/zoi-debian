@@ -413,13 +413,11 @@ log "Asegurando paquetes de backports."
 $SUDO apt-get install -y --no-install-recommends -t trixie-backports "${BP_PKGS[@]}"
 
 # seatd: Lemurs is a systemd service, so logind never gives Sway an active seat.
-if command -v seatd >/dev/null; then
-  $SUDO mkdir -p /etc/systemd/system/seatd.service.d
-  $SUDO tee /etc/systemd/system/seatd.service.d/video.conf >/dev/null <<'EOF'
-[Service]
-ExecStart=
-ExecStart=/usr/bin/seatd -g video
-EOF
+# Debian ships /usr/sbin/seatd and unit `ExecStart=seatd -g video`. Do not
+# drop-in /usr/bin/seatd (203/EXEC, no socket).
+if [ -x /usr/sbin/seatd ] || [ -x /usr/bin/seatd ]; then
+  $SUDO rm -f /etc/systemd/system/seatd.service.d/video.conf
+  $SUDO rmdir /etc/systemd/system/seatd.service.d 2>/dev/null || true
   $SUDO systemctl daemon-reload
   $SUDO systemctl enable --now seatd || warn "No pude habilitar seatd."
 fi
