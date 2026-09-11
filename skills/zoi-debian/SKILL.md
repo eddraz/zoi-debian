@@ -194,6 +194,9 @@ grim -g "$(swaymsg -t get_tree | python3 -c '...')" /tmp/x.png
 - Don't try to reload `foot` terminal config with `pkill -SIGUSR1 foot`. Foot does NOT support signal-based reloading. Use the OSC escape sequence mechanism implemented in `zoi-theme._osc_reload_foot` (writes directly to `/dev/pts/*`).
 - Don't run `scripts/limine-setup.sh apply` unless the user explicitly asked to change the bootloader. Default is dry-run. Never call it from `install.sh`. Don't uninstall GRUB as part of Limine setup.
 - Don't `systemctl start lemurs` from a live graphical session; `lemurs-setup.sh apply` only enables the unit. Don't remove the lightdm package when switching to Lemurs.
+- Don't `include login` in `/etc/pam.d/lemurs` (Debian `pam_loginuid` required → *authentication failed* after a valid password). Use `@include common-auth` and `session optional pam_loginuid.so`.
+- Don't put hex colors in Lemurs `config.toml` for TTY2. Kernel VT ignores truecolor. Write `/etc/lemurs/vtrgb` and `ExecStartPre=setvtrgb`; config uses ANSI names (`black`, `light yellow`).
+- Lemurs `cache_path` is a **file** (`/var/cache/lemurs/state`). mkdir of that path as a directory breaks remember-username/session (defaults to XFCE).
 
 ## When to update the docs
 

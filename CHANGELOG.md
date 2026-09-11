@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixes
+- **Lemurs login:** Debian PAM no usa más `include login`. `pam_loginuid` queda `optional` para que una contraseña válida no termine en *authentication failed* (sesión systemd / EPERM). Cache en `/var/cache/lemurs/state` (archivo, no directorio). PAM y unit se instalan `root:root`.
+- **Lemurs TTY colors:** el kernel ignora hex. `zoi-theme` escribe `/etc/lemurs/vtrgb`; la unit corre `setvtrgb` antes de Lemurs; el config usa nombres ANSI (`black` / `light yellow` = accent).
+- **Lemurs docs/scripts:** README, features, architecture, install, troubleshooting, skill, `install.sh` (`kbd`), `uninstall.sh` (limpia unit/PAM/`vtrgb`) y `lemurs-setup.sh` (setvtrgb, cache file, PAM Debian) alineados con el DM real.
+
 ### Features
 - **Media defaults:** mpv (video), Amberol (audio), Loupe (imágenes) vía apt + `xdg-mime`.
 - **Idempotent setup:** `install.sh` no re-pregunta git/locale/teclado/tz/usuario si ya están; no pisa la paleta en un re-run; copia `local-bin` sin `__pycache__`.

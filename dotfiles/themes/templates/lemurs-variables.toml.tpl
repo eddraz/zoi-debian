@@ -1,5 +1,6 @@
 # Written by zoi-theme from the active palette (wallpaper or named theme).
-# Lemurs substitutes $name from this file into /etc/lemurs/config.toml.
+# Titles ($login_title, $password_title) are substituted into config.toml.
+# TTY colors are NOT these hex values: kernel VT is 16 colors via /etc/lemurs/vtrgb.
 #
 # Override any key in ~/.config/zoi/lemurs/variables.overlay.toml
 # (merged on top of this file). Layout: ~/.config/zoi/lemurs/config.toml

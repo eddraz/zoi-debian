@@ -385,6 +385,7 @@ PKGS=(
   figlet python3-terminaltexteffects
   brightnessctl
   lightdm
+  kbd
   fish
   jq
   bc
@@ -640,7 +641,7 @@ fi
 # ---------------------------------------------------------------- lemurs display manager
 if [ -x "$ZOI_DIR/scripts/lemurs-setup.sh" ]; then
   if arch_in "$ARCH" amd64; then
-    log "Instalando Lemurs (TUI DM) temeado. LightDM queda instalado pero deshabilitado."
+    log "Instalando Lemurs (TUI DM, vtrgb + PAM Debian). LightDM queda instalado pero deshabilitado."
     if ! "$ZOI_DIR/scripts/lemurs-setup.sh" apply; then
       if systemctl is-enabled lemurs >/dev/null 2>&1 || command -v lemurs >/dev/null; then
         warn "lemurs-setup apply salió !=0, pero Lemurs está instalado/enabled."

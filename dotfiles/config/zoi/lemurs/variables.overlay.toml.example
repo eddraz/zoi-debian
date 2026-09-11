@@ -1,10 +1,11 @@
-# Copy to variables.overlay.toml in this directory to override theme variables.
+# Copy to variables.overlay.toml in this directory to override titles.
 # Merged on top of the palette that zoi-theme writes.
 #
 #   cp variables.overlay.toml.example variables.overlay.toml
 #   zoi-theme set wallpaper   # or any palette
 #
+# TTY colors are NOT these hex values. Kernel VT is 16 colors via
+# /etc/lemurs/vtrgb (setvtrgb). An accent = "#…" here does not recolor TTY2.
+#
 # login_title = "welcome"
 # password_title = "pass"
-# password_echo = "*"
-# accent = "#fbad60"

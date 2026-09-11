@@ -1,5 +1,8 @@
 # ZOI Lemurs — TUI greeter. All keys required (Lemurs v0.4).
-# Colors and labels: /etc/lemurs/variables.toml ($name), written by zoi-theme.
+# TTY2 is a kernel VT: hex/truecolor is ignored. Colors come from
+# /etc/lemurs/vtrgb (setvtrgb, 16 VGA slots) written by zoi-theme.
+# Named ANSI below maps onto that table (black=bg, light yellow=accent).
+# Titles: /etc/lemurs/variables.toml ($name).
 # Customize:
 #   ~/.config/zoi/lemurs/variables.overlay.toml  — extra/override $variables
 #   ~/.config/zoi/lemurs/config.toml             — full layout (copied to /etc)
@@ -7,7 +10,7 @@
 tty = 2
 main_log_path = "/var/log/lemurs.log"
 client_log_path = "/var/log/lemurs.client.log"
-cache_path = "/var/cache/lemurs"
+cache_path = "/var/cache/lemurs/state"
 do_log = true
 pam_service = "lemurs"
 system_shell = "/bin/sh"
@@ -19,9 +22,9 @@ focus_behaviour = "username"
 show_background = true
 
 [background.style]
-color = "$background"
+color = "black"
 show_border = false
-border_color = "$accent"
+border_color = "light yellow"
 
 [power_controls]
 hint_margin = 2
@@ -29,14 +32,14 @@ entries = []
 
 [[power_controls.base_entries]]
 hint = "F1 shutdown"
-hint_color = "$muted"
+hint_color = "gray"
 hint_modifiers = ""
 key = "F1"
 cmd = "systemctl poweroff -l"
 
 [[power_controls.base_entries]]
 hint = "F2 reboot"
-hint_color = "$muted"
+hint_color = "gray"
 hint_modifiers = ""
 key = "F2"
 cmd = "systemctl reboot -l"
@@ -44,33 +47,33 @@ cmd = "systemctl reboot -l"
 [environment_switcher]
 switcher_visibility = "visible"
 toggle_hint = "Switcher %key%"
-toggle_hint_color = "$muted"
+toggle_hint_color = "gray"
 toggle_hint_modifiers = ""
 include_tty_shell = false
 remember = true
 show_movers = true
-mover_color = "$muted"
+mover_color = "gray"
 mover_modifiers = ""
-mover_color_focused = "$accent"
+mover_color_focused = "light yellow"
 mover_modifiers_focused = "bold"
 left_mover = "<"
 right_mover = ">"
 mover_margin = 1
 show_neighbours = true
-neighbour_color = "$muted"
+neighbour_color = "gray"
 neighbour_modifiers = "dim"
-neighbour_color_focused = "$foreground"
+neighbour_color_focused = "white"
 neighbour_modifiers_focused = ""
 neighbour_margin = 1
-selected_color = "$foreground"
+selected_color = "white"
 selected_modifiers = "underlined"
-selected_color_focused = "$accent"
+selected_color_focused = "light yellow"
 selected_modifiers_focused = "bold"
 max_display_length = 12
 no_envs_text = "No sessions"
-no_envs_color = "$foreground"
+no_envs_color = "white"
 no_envs_modifiers = ""
-no_envs_color_focused = "$red"
+no_envs_color_focused = "red"
 no_envs_modifiers_focused = "bold"
 
 [username_field]
@@ -79,13 +82,13 @@ remember = true
 [username_field.style]
 show_title = true
 title = "$login_title"
-title_color = "$muted"
-content_color = "$foreground"
-title_color_focused = "$accent"
-content_color_focused = "$accent"
+title_color = "gray"
+content_color = "white"
+title_color_focused = "light yellow"
+content_color_focused = "light yellow"
 show_border = true
-border_color = "$surface"
-border_color_focused = "$accent"
+border_color = "dark gray"
+border_color_focused = "light yellow"
 use_max_width = true
 max_width = 42
 
@@ -95,13 +98,13 @@ content_replacement_character = "*"
 [password_field.style]
 show_title = true
 title = "$password_title"
-title_color = "$muted"
-content_color = "$foreground"
-title_color_focused = "$accent"
-content_color_focused = "$accent"
+title_color = "gray"
+content_color = "white"
+title_color_focused = "light yellow"
+content_color_focused = "light yellow"
 show_border = true
-border_color = "$surface"
-border_color_focused = "$accent"
+border_color = "dark gray"
+border_color_focused = "light yellow"
 use_max_width = true
 max_width = 42
 

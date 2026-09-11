@@ -38,12 +38,13 @@ Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1`
 - **Sway** (WM) + **foot** (terminal) + **fish** (login shell y shell de foot). El bar por defecto es **Quickshell** (no waybar).
 - **Quickshell 0.3.0** desde trixie-backports.
 - **PipeWire** implícito vía los servicios de QS.
-- **ZOI Theme Engine (`zoi-theme`)**: Motor de temas declarativo (arquitectura Omarchy Quatro) con 17 paletas estándar, 22 colores normalizados (`colors.toml`), plantillas (`*.tpl`) y propagación atómica en vivo a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK 3/4, Herdr, Yazi e Inlyne.
+- **ZOI Theme Engine (`zoi-theme`)**: Motor de temas declarativo (arquitectura Omarchy Quatro) con 17 paletas estándar, 22 colores normalizados (`colors.toml`), plantillas (`*.tpl`) y propagación atómica en vivo a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK 3/4, Herdr, Yazi, Inlyne y Lemurs (`vtrgb` en TTY).
 - Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `btop` `bc` `libqrencode4` `mullvad-browser` (XDG default al instalar). Super+Shift+Return usa `qs-browser` (sigue el default actual).
 - **Yazi** en **foot** (Sixel) como file manager (`Super+Shift+F`). Íconos ASCII (no Nerd Font).
 - **Inlyne** visor markdown GPU (`qs-md`). Learn, Trigger y Yazi lo usan.
 - **mpv** video, **Amberol** audio, **Loupe** imágenes (defaults XDG).
 - **Herdr** multiplexer de terminales para agentes (`herdr.dev`). Config en `~/.config/herdr/config.toml`; `zoi-theme` pinta la paleta.
+- **Lemurs** TUI en TTY2 (amd64). Paleta VGA (`/etc/lemurs/vtrgb` + `setvtrgb`); LightDM queda de fallback. No pinta el jpg.
 - **Fish** shell (default interactive shell).
 - Fuente: **Noto Color Emoji** para el picker de emojis. No instalamos Nerd Font (los íconos del bar son Canvas / QPainter).
 
@@ -63,15 +64,16 @@ zoi-debian/
 │   ├── architecture.md        PluginRegistry + singletons + theme engine
 │   ├── troubleshooting.md     problemas frecuentes
 │   ├── limine.md              Limine UEFI opcional (no lo instala install.sh)
-│   ├── lemurs.md              Lemurs TUI DM temeado con ZOI
+│   ├── lemurs.md              Lemurs TUI DM (vtrgb + PAM Debian)
 │   └── herdr.md               Herdr multiplexer
 ├── scripts/
 │   ├── install.sh             bootstrap completo (curl | sh friendly)
 │   ├── limine-setup.sh        plan/apply Limine (GRUB queda de fallback)
-│   ├── lemurs-setup.sh        plan/apply Lemurs (LightDM queda de fallback)
+│   ├── lemurs-setup.sh        plan/apply Lemurs (PAM, vtrgb, LightDM fallback)
 │   └── uninstall.sh
 ├── dotfiles/
 │   ├── quickshell/            todo el árbol de QML
+│   ├── lemurs/                config.toml, PAM, unit, vtrgb, wayland/sway
 │   ├── themes/                17 temas base (colors.toml) + templates/ (*.tpl)
 │   ├── sway/config            bindings + autoexec
 │   ├── config/foot/foot.ini
@@ -109,6 +111,7 @@ zoi-debian/
 | Weather (Open-Meteo, IP geolocation) | click en el chip de weather |
 | Learn (docs ZOI en Inlyne) | Menú principal → Learn |
 | Markdown (Inlyne) | Trigger → Markdown, o `qs-md archivo.md` |
+| Lemurs (login TTY2) | reboot; switcher **sway**; paleta vía `vtrgb` |
 | Trigger | `Super+G` |
 | Bar visual editor | `Super+Shift+B` o `Session → Bar` |
 | OSD volume / brightness | botones multimedia / teclas brillo |

@@ -34,6 +34,7 @@ Detalle de cada feature, cómo funciona por dentro, qué archivos toca.
 28. [Herdr](#herdr)
 29. [Learn](#learn)
 30. [Markdown viewer](#markdown-viewer)
+31. [Lemurs](#lemurs)
 
 ---
 
@@ -523,3 +524,15 @@ Multiplexer de terminales para agentes ([herdr.dev](https://herdr.dev/)). `insta
 | `qs-md-open [dir]` | Yazi chooser → `qs-md` |
 
 MIME: `inlyne.desktop`. Tema: `zoi-theme` → `~/.config/inlyne/inlyne.toml`.
+
+---
+
+## Lemurs
+
+TUI en TTY2 ([coastalwhite/lemurs](https://github.com/coastalwhite/lemurs) v0.4). **No pinta el wallpaper**: el kernel VT no entiende hex. `zoi-theme` escribe `/etc/lemurs/vtrgb`; la unit corre `setvtrgb` antes del greeter. El layout usa nombres ANSI (`black` = fondo, `light yellow` = accent).
+
+PAM Debian: `@include common-auth`, `pam_loginuid` optional. No `include login` (eso muestra *authentication failed* con la clave bien).
+
+Cache: archivo `/var/cache/lemurs/state`. Sin cache el primer entorno es XFCE; en el switcher elegí **sway**.
+
+Guía: [lemurs.md](lemurs.md). `scripts/lemurs-setup.sh apply` solo hace `enable`.

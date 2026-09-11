@@ -149,7 +149,7 @@ Aplicaciones compiladas automáticamente:
 - **GTK 3.0 y GTK 4.0 / LibreWolf**: `~/.config/gtk-3.0/gtk.css` y `~/.config/gtk-4.0/gtk.css` + `gsettings prefer-dark/prefer-light`
 - **Herdr**: `~/.config/herdr/config.toml` (seed del repo; `zoi-theme` pinta `[theme.custom]`). Guía: [herdr.md](herdr.md).
 - **Limine** (si está instalado): `~/.config/zoi/themed/limine.conf` + merge a `/boot/limine/limine.conf`. Ver [limine.md](limine.md).
-- **Lemurs**: paleta → `/etc/lemurs/variables.toml`. Overlay `~/.config/zoi/lemurs/variables.overlay.toml`; layout `~/.config/zoi/lemurs/config.toml`. Ver [lemurs.md](lemurs.md).
+- **Lemurs**: TTY 16 colores → `/etc/lemurs/vtrgb` (`setvtrgb`). Títulos → `/etc/lemurs/variables.toml`. Overlay `~/.config/zoi/lemurs/variables.overlay.toml`; layout `~/.config/zoi/lemurs/config.toml`. Ver [lemurs.md](lemurs.md).
 - **Yazi**: `~/.config/yazi/yazi.toml` (openers; `url = "*.md"`) y `theme.toml` (íconos ASCII).
 - **Inlyne**: `~/.config/inlyne/inlyne.toml` (colores `0xRRGGBB`).
 
@@ -214,7 +214,7 @@ fish_add_path ~/.local/bin
 
 ## Lemurs (display manager)
 
-TUI en TTY2. Colores desde `/etc/lemurs/variables.toml` (lo escribe `zoi-theme`). Guía: [lemurs.md](lemurs.md).
+TUI en TTY2. Colores VGA desde `/etc/lemurs/vtrgb` (`setvtrgb`); títulos desde `variables.toml`. Guía: [lemurs.md](lemurs.md).
 
 LightDM queda como paquete de fallback, no como unidad activa.
 

@@ -2,6 +2,10 @@
 # Optional Lemurs display-manager helper for Debian 13 + Sway.
 # install.sh calls `apply` (enable, not start). Default CLI is a dry-run plan.
 #
+# Debian PAM (not `include login`): pam_loginuid optional.
+# TTY colors: /etc/lemurs/vtrgb + setvtrgb (kbd). Hex is ignored on the kernel VT.
+# Cache is a file at /var/cache/lemurs/state (do not mkdir that path as the cache).
+#
 # Usage:
 #   ./scripts/lemurs-setup.sh              # plan
 #   sudo ./scripts/lemurs-setup.sh apply   # install binary + unit (does not start now)
@@ -46,13 +50,15 @@ print_plan() {
   log "Plan (sin escribir nada)."
   echo "  Version:     v$LEMURS_VERSION (binary tarball)"
   echo "  Binary dest: /usr/local/bin/lemurs"
-  echo "  Config:      /etc/lemurs/config.toml  (chown user; zoi-theme may refresh)"
-  echo "  Variables:   /etc/lemurs/variables.toml  (paleta wallpaper/tema)"
+  echo "  Config:      /etc/lemurs/config.toml  (ANSI names; chown user)"
+  echo "  Variables:   /etc/lemurs/variables.toml  (títulos)"
+  echo "  VT colors:   /etc/lemurs/vtrgb  (setvtrgb, 16 slots del wallpaper)"
+  echo "  Cache:       /var/cache/lemurs/state  (file, not a directory)"
   echo "  User layout: ~/.config/zoi/lemurs/config.toml  (optional override)"
   echo "  Overlay:     ~/.config/zoi/lemurs/variables.overlay.toml"
   echo "  Wayland:     /etc/lemurs/wayland/sway"
   echo "  Unit:        /etc/systemd/system/lemurs.service  (TTY2, alias display-manager)"
-  echo "  PAM:         /etc/pam.d/lemurs"
+  echo "  PAM:         /etc/pam.d/lemurs  (common-auth, loginuid optional)"
   echo "  LightDM:     se deshabilita; el paquete queda como fallback"
   echo "  Start now:   no (enable para el próximo boot)"
 }
@@ -107,29 +113,19 @@ apply_install() {
   fi
   [ -d "$DOT_LEMURS" ] || die "No encuentro $DOT_LEMURS."
   command -v curl >/dev/null || die "Falta curl."
+  command -v setvtrgb >/dev/null || die "Falta setvtrgb (paquete kbd)."
 
   install_binary
 
   log "Instalando y verificando archivos en /etc/lemurs."
   $SUDO mkdir -p /etc/lemurs/wayland /etc/lemurs/wms /var/cache/lemurs
+
+  # 16-color VT map (hex is ignored on TTY2). Prefer the themed file from zoi-theme.
   
-  if [ -f /etc/pam.d/lemurs ] && cmp -s "$DOT_LEMURS/lemurs.pam" /etc/pam.d/lemurs; then
-    : # Sin cambios
-  else
-    $SUDO cp -a "$DOT_LEMURS/lemurs.pam" /etc/pam.d/lemurs
-  fi
-
-  if [ -f /etc/lemurs/wayland/sway ] && cmp -s "$DOT_LEMURS/wayland-sway" /etc/lemurs/wayland/sway; then
-    : # Sin cambios
-  else
-    $SUDO install -m 0755 "$DOT_LEMURS/wayland-sway" /etc/lemurs/wayland/sway
-  fi
-
-  if [ -f /etc/systemd/system/lemurs.service ] && cmp -s "$DOT_LEMURS/lemurs.service" /etc/systemd/system/lemurs.service; then
-    : # Sin cambios
-  else
-    $SUDO cp -a "$DOT_LEMURS/lemurs.service" /etc/systemd/system/lemurs.service
-  fi
+  # PAM/unit must be root:root. `cp -a` from the repo would keep the desktop user.
+  $SUDO install -m 0644 -o root -g root "$DOT_LEMURS/lemurs.pam" /etc/pam.d/lemurs
+  $SUDO install -m 0755 "$DOT_LEMURS/wayland-sway" /etc/lemurs/wayland/sway
+  $SUDO install -m 0644 -o root -g root "$DOT_LEMURS/lemurs.service" /etc/systemd/system/lemurs.service
 
   local owner home share user_cfg stock_cfg themed vars example
   owner="$(owner_name)"
@@ -141,7 +137,9 @@ apply_install() {
   
   mkdir -p "$share" "$home/.config/zoi/lemurs"
   
-  [ -f "$share/config.toml" ] || cp -a "$stock_cfg" "$share/config.toml"
+  if [ ! -f "$user_cfg" ]; then
+    cp -a "$stock_cfg" "$share/config.toml"
+  fi
   
   if [ -f "$example" ] && [ ! -f "$home/.config/zoi/lemurs/variables.overlay.toml.example" ]; then
     cp -a "$example" "$home/.config/zoi/lemurs/variables.overlay.toml.example"
@@ -154,11 +152,7 @@ apply_install() {
     target_cfg="$stock_cfg"
   fi
 
-  if [ -f /etc/lemurs/config.toml ] && cmp -s "$target_cfg" /etc/lemurs/config.toml; then
-    : # Sin cambios
-  else
-    $SUDO cp -a "$target_cfg" /etc/lemurs/config.toml
-  fi
+  $SUDO install -m 0644 -o "$owner" -g "$owner" "$target_cfg" /etc/lemurs/config.toml
 
   themed="$home/.config/zoi/themed/lemurs-variables.toml"
   vars=/etc/lemurs/variables.toml
@@ -178,6 +172,14 @@ apply_install() {
   
   $SUDO chown "$owner:$owner" "$vars" /etc/lemurs/config.toml
   $SUDO chmod 0644 "$vars" /etc/lemurs/config.toml
+
+  vtrgb_src="$home/.config/zoi/themed/lemurs.vtrgb"
+  [ -f "$vtrgb_src" ] || vtrgb_src="$DOT_LEMURS/vtrgb"
+  if [ -f "$vtrgb_src" ]; then
+    $SUDO install -m 0644 -o "$owner" -g "$owner" "$vtrgb_src" /etc/lemurs/vtrgb
+  else
+    warn "No hay vtrgb (themed ni $DOT_LEMURS/vtrgb); TTY2 queda en VGA de fábrica."
+  fi
 
   if getent group seat >/dev/null 2>&1; then
     $SUDO usermod -aG seat "$owner" || true
@@ -201,7 +203,10 @@ print_status() {
   echo "binary: $(command -v lemurs 2>/dev/null || echo missing)"
   echo "config: $([ -f /etc/lemurs/config.toml ] && echo present || echo missing)"
   echo "vars:   $([ -f /etc/lemurs/variables.toml ] && echo present || echo missing)"
+  echo "vtrgb:  $([ -f /etc/lemurs/vtrgb ] && echo present || echo missing)"
+  echo "pam:    $([ -f /etc/pam.d/lemurs ] && echo present || echo missing)"
   echo "sway:   $([ -x /etc/lemurs/wayland/sway ] && echo present || echo missing)"
+  echo "setvtrgb: $(command -v setvtrgb 2>/dev/null || echo missing)"
   systemctl is-enabled lemurs.service 2>/dev/null || echo "lemurs: not enabled"
   systemctl is-enabled lightdm.service 2>/dev/null || echo "lightdm: not enabled"
 }

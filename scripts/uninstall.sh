@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # zoi-debian uninstall
-# Removes dotfiles from ~/.config and restores waybar as default bar.
-# Idempotent. Does NOT remove apt packages.
+# Removes ZOI helpers and configs from the user home.
+# Idempotent. Does NOT remove apt packages. Does not re-enable LightDM.
 
 set -euo pipefail
 
@@ -35,6 +35,16 @@ if [ -f "$HOME/.config/sway/config" ]; then
   sed -i '/exec_always .*\/qs-idle/d' "$HOME/.config/sway/config"
   sed -i '/qs-keys-apply/d' "$HOME/.config/sway/config"
 fi
+
+log "Removing Lemurs unit/PAM/config (does not enable LightDM)."
+$SUDO systemctl disable lemurs.service 2>/dev/null || true
+$SUDO rm -f /etc/systemd/system/lemurs.service /etc/pam.d/lemurs /usr/local/bin/lemurs
+$SUDO rm -rf /etc/lemurs /var/cache/lemurs
+$SUDO systemctl daemon-reload 2>/dev/null || true
+rm -rf "$HOME/.local/share/zoi/lemurs"
+rm -f "$HOME/.config/zoi/themed/lemurs-variables.toml" \
+     "$HOME/.config/zoi/themed/lemurs-config.toml" \
+     "$HOME/.config/zoi/themed/lemurs.vtrgb"
 
 log "Done. Los paquetes apt NO se desinstalaron. Para hacerlo:"
 log "Herdr, Pi e Inlyne (si quedó otro binario) son de usuario. Config: ~/.config/herdr ~/.config/inlyne ~/.config/yazi"

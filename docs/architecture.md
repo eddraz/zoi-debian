@@ -213,8 +213,12 @@ ZOI cuenta con un sistema de temas desacoplado y reactivo de dos niveles:
 2. **Nivel Sistema (`zoi-theme` + Templates `*.tpl`)**:
    - Compilador maestro que procesa plantillas declarativas usando paletas de 22 colores estandarizadas (`colors.toml`).
    - Bloqueo por archivo (`flock`) y staging atómico en `~/.local/state/zoi/theme/current`.
-   - Propaga simultáneamente a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK y Herdr.
+   - Propaga simultáneamente a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK, Herdr, Yazi, Inlyne y Lemurs (`vtrgb`).
    - Ejecuta hooks de usuario en `~/.config/zoi/hooks/theme-set.d/*`.
+
+## Display manager (Lemurs)
+
+Lemurs vive **fuera** de Quickshell: unidad systemd en TTY2. La paleta llega por `zoi-theme` → `vtrgb` + títulos en `variables.toml`. El PAM es stack de DM Debian (`common-auth`), no `/etc/pam.d/login`. Detalle: [lemurs.md](lemurs.md).
 
 ## Tradeoffs y límites
 
@@ -222,3 +226,4 @@ ZOI cuenta con un sistema de temas desacoplado y reactivo de dos niveles:
 - **No hay drag visual** (mouse drag & drop) en el Bar editor — sólo teclado. Drag-and-drop en QML es trabajoso y el teclado es suficiente con el modelo pick+arrows.
 - **Hot reload a veces pierde foco de teclado**. Si dejás de poder tipear, abrí y cerrá el popup (`Super+Q`).
 - **`qs` debe reiniciarse** cuando se agregan nuevos IpcHandler targets (los handlers se registran en `Component.onCompleted`).
+- **Lemurs no muestra el jpg**. TTY = 16 colores (`setvtrgb`). Hex solo funciona en `lemurs --preview` dentro de un terminal truecolor.

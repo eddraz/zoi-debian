@@ -5,6 +5,8 @@ After=getty@tty2.service
 Conflicts=getty@tty2.service
 
 [Service]
+# Kernel VT ignores hex; load the 16-color wallpaper map first.
+ExecStartPre=-/usr/bin/setvtrgb /etc/lemurs/vtrgb
 ExecStart=/usr/local/bin/lemurs
 StandardInput=tty
 TTYPath=/dev/tty2

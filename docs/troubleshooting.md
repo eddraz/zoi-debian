@@ -167,6 +167,26 @@ pip install terminaltexteffects
 sudo apt install python3-terminaltexteffects
 ```
 
+## Lemurs se ve negro/VGA, no el theme del wallpaper
+
+El TTY del kernel no entiende hex. Tiene que existir `/etc/lemurs/vtrgb` y la unit tiene que correr `setvtrgb` *antes* de Lemurs. El `config.toml` usa nombres ANSI (`black`, `light yellow`), no `$accent`.
+
+```sh
+cat /etc/lemurs/vtrgb
+grep ExecStartPre /etc/systemd/system/lemurs.service
+# próximo arranque de Lemurs (reboot). No hace falta restart desde la sesión gráfica.
+```
+
+## Lemurs: authentication failed (usuario/contraseña bien)
+
+No es la contraseña. En `/var/log/lemurs.log` vas a ver `Validated account` y después `Failed to open a PAM session`. Debian `/etc/pam.d/login` tiene `session required pam_loginuid.so`; Lemurs corre como unidad systemd y el kernel responde EPERM ([lemurs#166](https://github.com/coastalwhite/lemurs/issues/166)). El greeter traduce eso a *authentication failed*.
+
+```sh
+sudo install -m 0644 -o root -g root dotfiles/lemurs/lemurs.pam /etc/pam.d/lemurs
+```
+
+El próximo intento en TTY2 alcanza. En el switcher usá **sway** (sin cache el default es XFCE).
+
 ## `install.sh`: `work: variable sin asignar` (Lemurs)
 
 Era un `trap RETURN` sobre una variable `local`. Lemurs igual quedaba installed/enabled. Ya está arreglado en `lemurs-setup.sh`. Si ves el warning viejo: `systemctl is-enabled lemurs` y `lemurs --version`.

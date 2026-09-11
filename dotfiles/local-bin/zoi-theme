@@ -82,6 +82,38 @@ def hex_to_rgb(h):
         return (128, 128, 128)
 
 
+# Lemurs named ANSI → kernel VT slots (setvtrgb). Hex is ignored on TTY2.
+# 0 black=background, 7 gray=muted, 8 dark gray=surface,
+# 11 light yellow=accent (focused chrome), 15 white=foreground.
+VT_SLOTS = (
+    "background",
+    "red",
+    "green",
+    "yellow",
+    "blue",
+    "magenta",
+    "cyan",
+    "muted",
+    "surface",
+    "bright_red",
+    "bright_green",
+    "accent",
+    "bright_blue",
+    "bright_magenta",
+    "bright_cyan",
+    "foreground",
+)
+
+
+def palette_to_vtrgb(pal):
+    rgbs = [hex_to_rgb(pal.get(key, "#808080")) for key in VT_SLOTS]
+    reds = ",".join(str(r) for r, g, b in rgbs)
+    greens = ",".join(str(g) for r, g, b in rgbs)
+    blues = ",".join(str(b) for r, g, b in rgbs)
+    return f"{reds}\n{greens}\n{blues}\n"
+
+
+
 def rgb_to_hex(r, g, b):
     r_c = max(0, min(255, int(round(r))))
     g_c = max(0, min(255, int(round(g))))
@@ -385,7 +417,7 @@ class ZoiThemeManager:
         self._dispatch_gtk(rendered_files.get("gtk-3.0.css"), rendered_files.get("gtk-4.0.css"), pal)
         self._dispatch_herdr(pal)
         self._dispatch_limine(rendered_files.get("limine.conf"))
-        self._dispatch_lemurs(rendered_files.get("lemurs-variables.toml"))
+        self._dispatch_lemurs(rendered_files.get("lemurs-variables.toml"), pal)
         self._dispatch_yazi(rendered_files.get("yazi-theme.toml"))
         self._dispatch_inlyne(pal)
         self._dispatch_state(pal, colors_json_content, sh_lines)
@@ -791,8 +823,8 @@ class ZoiThemeManager:
         return "\n".join(lines)
 
 
-    def _dispatch_lemurs(self, content):
-        """Write Lemurs variables + optional user layout. Live files under /etc/lemurs when writable."""
+    def _dispatch_lemurs(self, content, pal=None):
+        """Write Lemurs variables, 16-color vtrgb, and optional user layout."""
         if content:
             overlay = os.path.join(self.home, ".config/zoi/lemurs/variables.overlay.toml")
             merged = self._merge_flat_toml(content, overlay)
@@ -801,6 +833,13 @@ class ZoiThemeManager:
             with open(themed_path, "w", encoding="utf-8") as f:
                 f.write(merged.rstrip() + "\n")
             self._write_if_writable("/etc/lemurs/variables.toml", merged)
+        if pal:
+            vtrgb = palette_to_vtrgb(pal)
+            themed_v = os.path.join(self.home, ".config/zoi/themed/lemurs.vtrgb")
+            os.makedirs(os.path.dirname(themed_v), exist_ok=True)
+            with open(themed_v, "w", encoding="utf-8") as f:
+                f.write(vtrgb)
+            self._write_if_writable("/etc/lemurs/vtrgb", vtrgb)
         self._dispatch_lemurs_config()
 
     def _dispatch_lemurs_config(self):

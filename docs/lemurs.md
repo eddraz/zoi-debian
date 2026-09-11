@@ -14,22 +14,34 @@ sudo ./scripts/lemurs-setup.sh apply
 
 `apply` solo hace `enable`. No arranca Lemurs en caliente. Si `install.sh` avisó fallo pero `systemctl is-enabled lemurs` es `enabled`, era un trap `RETURN`/`set -u` (ya corregido).
 
+## Authentication failed (contraseña bien)
+
+Si Lemurs dice **authentication failed** y `/var/log/lemurs.log` tiene `Validated account` + `Failed to open a PAM session`, **no es la contraseña**. El PAM viejo hacía `include login`; Debian marca `pam_loginuid` como `required` y eso revienta en un servicio systemd ([lemurs#166](https://github.com/coastalwhite/lemurs/issues/166)).
+
+```sh
+sudo install -m 0644 -o root -g root dotfiles/lemurs/lemurs.pam /etc/pam.d/lemurs
+# No hace falta reiniciar Lemurs: el próximo intento en TTY2 relee PAM.
+```
+
+En el switcher elegí **sway**. Sin cache, el primer entorno suele ser XFCE (`startxfce4`).
+
 ## Tema (automático)
 
-Elegir wallpaper o paleta en Quickshell / `zoi-theme set …` reescribe `/etc/lemurs/variables.toml`. Se ve en el **próximo** login.
+TTY2 es consola del kernel: **no hay truecolor**. Los hex del wallpaper se mapean a 16 colores VGA (`setvtrgb`). El config usa nombres ANSI (`black`, `light yellow` = accent). Se ve en el **próximo** arranque de Lemurs.
 
 | Archivo | Rol |
 |---|---|
-| `/etc/lemurs/config.toml` | Layout (`$variables`). Writable por el usuario de escritorio. |
-| `/etc/lemurs/variables.toml` | Hex + títulos. Lo escribe `zoi-theme`. |
-| `~/.config/zoi/themed/lemurs-variables.toml` | Copia de la paleta activa |
+| `/etc/lemurs/vtrgb` | Mapa 16 colores. Lo escribe `zoi-theme`; `ExecStartPre=setvtrgb`. |
+| `/etc/lemurs/config.toml` | Layout + nombres ANSI. Writable por el usuario de escritorio. |
+| `/etc/lemurs/variables.toml` | Títulos (`$login_title`). Hex solo documenta la paleta. |
+| `~/.config/zoi/themed/lemurs.vtrgb` | Copia de la paleta VGA activa |
 
 ## Personalizar
 
 | Querés | Archivo | Qué pasa |
 |---|---|---|
 | Cambiar colores con el resto del desktop | Panel Theme / wallpaper | Automático |
-| Títulos, un hex puntual | `~/.config/zoi/lemurs/variables.overlay.toml` | Se mergea encima de la paleta |
+| Títulos (`login_title`) | `~/.config/zoi/lemurs/variables.overlay.toml` | Se mergea encima. Un hex de `accent` **no** pinta el TTY; eso es `vtrgb`. |
 | Layout entero (hints, anchos, focus) | `~/.config/zoi/lemurs/config.toml` | Tiene que ser el TOML **completo** (Lemurs v0.4 exige todas las keys). Copiá `/etc/lemurs/config.toml` y editá. |
 
 Ejemplo de overlay:
@@ -37,7 +49,7 @@ Ejemplo de overlay:
 ```sh
 cp ~/.config/zoi/lemurs/variables.overlay.toml.example \
    ~/.config/zoi/lemurs/variables.overlay.toml
-# editá login_title / accent / …
+# editá login_title / password_title
 zoi-theme set wallpaper
 ```
 
@@ -48,13 +60,14 @@ zoi-theme set wallpaper
 1. Copia `assets/default-wallpaper.jpg` → `~/Imágenes/baby-yoda-cartoon.jpg`
 2. Extrae 22 colores (`qs-theme-from-wallpaper --json`)
 3. `zoi-theme apply-json` (Lemurs + el resto)
-4. `lemurs-setup.sh apply` (si no hay themed, fallback = paleta Baby Yoda, no tokyo-night)
+4. `lemurs-setup.sh apply` instala binario, PAM Debian, `vtrgb`, unit con `setvtrgb` (enable, no start). Fallback de paleta = Baby Yoda, no tokyo-night.
 
 ## Qué no hace
 
 - No borra el paquete `lightdm`
 - No hace `systemctl start lemurs` desde una sesión gráfica
-- No muestra el jpg en TTY; sí sus colores de fondo, acento y bordes
+- No muestra el jpg en TTY; sí 16 colores VGA de esa paleta (`vtrgb`)
+- No usa hex en el greeter (el kernel VT los ignora)
 
 ## Fallback a LightDM
 
@@ -66,7 +79,9 @@ sudo systemctl start lightdm
 
 ## Checklist
 
-- [ ] `./scripts/lemurs-setup.sh` muestra TTY2 y `/etc/lemurs/wayland/sway`
-- [ ] `~/.config/zoi/themed/lemurs-variables.toml` tiene hex del wallpaper o tema actual
+- [ ] `./scripts/lemurs-setup.sh` muestra TTY2, `vtrgb` y `/etc/lemurs/wayland/sway`
+- [ ] `cat /etc/lemurs/vtrgb` tiene 3 líneas de 16 enteros
+- [ ] `grep ExecStartPre /etc/systemd/system/lemurs.service` muestra `setvtrgb`
+- [ ] `/etc/pam.d/lemurs` incluye `common-auth` (no `include login`)
 - [ ] Después de `apply`, `systemctl is-enabled lemurs` es `enabled`
-- [ ] Reboot → login TUI → sesión `sway`
+- [ ] Reboot → TTY2 → switcher **sway** (sin cache el primero es XFCE)
