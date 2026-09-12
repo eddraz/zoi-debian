@@ -9,6 +9,9 @@
 - **Lemurs TTY colors:** el kernel ignora hex. `zoi-theme` escribe `/etc/lemurs/vtrgb`; la unit corre `setvtrgb` antes de Lemurs; el config usa nombres ANSI (`black` / `light yellow` = accent).
 - **Lemurs docs/scripts:** README, features, architecture, install, troubleshooting, skill, `install.sh` (`kbd`), `uninstall.sh` (limpia unit/PAM/`vtrgb`) y `lemurs-setup.sh` (setvtrgb, cache file, PAM Debian) alineados con el DM real.
 
+### Removed
+- **Limine:** se eliminaron `scripts/limine-setup.sh`, `scripts/apply-limine.sh`, `docs/limine.md` y el dispatch de paleta (`limine.conf.tpl` / `zoi-theme`). El bootstrap no toca el bootloader.
+
 ### Features
 - **Media defaults:** mpv (video), Amberol (audio), Loupe (imágenes) vía apt + `xdg-mime`.
 - **Idempotent setup:** `install.sh` no re-pregunta git/locale/teclado/tz/usuario si ya están; no pisa la paleta en un re-run; copia `local-bin` sin `__pycache__`.
@@ -22,8 +25,6 @@
 - **Launcher:** precalienta `DesktopEntries` al login y usa `ListView` (reuse) para que Super+Space no arme todas las filas en la primera apertura.
 - **Super+Shift+Return** abre el navegador XDG default (`qs-browser`), no un binario hardcodeado.
 - **Keys (Quickshell):** Super+/ abre el panel de atajos. `/` busca, badges 1–0, hjkl/flechas, Enter o clic en el ítem ya seleccionado reasigna. Un combo duplicado muestra qué ejecuta; Reemplazar deja al anterior sin atajo. `~/.config/zoi/keys.json` + `qs-keys-apply`.
-- **Optional Limine UEFI helper**: `scripts/limine-setup.sh` (dry-run by default) copies upstream `BOOTX64.EFI`, writes `limine.conf` under `/boot/limine` (so it can be recolored), and can add an NVRAM entry without removing GRUB. Documented in `docs/limine.md`. Not invoked by `install.sh`.
-- **Limine follows zoi-theme**: `limine.conf.tpl` maps the 22-color palette onto Limine `term_*` / `interface_*` options. Theme apply writes `~/.config/zoi/themed/limine.conf` and merges it into `/boot/limine/limine.conf` when that directory is writable.
 - **Lemurs display manager**: TUI login (TTY2) with `lemurs-variables.toml.tpl`. First install extracts the palette from `assets/default-wallpaper.jpg` (Baby Yoda) instead of tokyo-night. LightDM stays installed as fallback.
 - **Locale, keyboard, timezone**: `install.sh` only prompts when unset (defaults `es_CO.UTF-8`, `latam,us`, `America/Bogota`). Re-apply is skipped if the system already matches.
 - **Terminal Debian bootstrap**: `install.sh` configures Wi-Fi if offline, creates a sudo login user, sets GitHub git identity, installs Pi (`pi.dev`), then the desktop stack, and offers a reboot.

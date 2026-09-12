@@ -189,10 +189,9 @@ grim -g "$(swaymsg -t get_tree | python3 -c '...')" /tmp/x.png
 - Don't revive `Markdown.qml` or QtWebEngine for docs. Markdown is **Inlyne** (`qs-md` → `inlyne view`). Theme via `zoi-theme._dispatch_inlyne`.
 - Don't use Yazi `[open]` `name = "*.md"` (Yazi 26 wants `url` or `mime`). Don't add Nerd Fonts for Yazi icons; keep ASCII in `yazi-theme.toml.tpl`.
 - Third-party bins (Yazi, Mullvad, Lemurs, Inlyne) are arch-gated in `install.sh`. Pin APT lists with `arch=$ARCH`.
-- Don't `trap RETURN` with a `local` temp dir under `set -u` (Lemurs/Limine). Expand the path or `rm -rf` before return.
+- Don't `trap RETURN` with a `local` temp dir under `set -u` (Lemurs). Expand the path or `rm -rf` before return.
 - Don't re-prompt git/locale/xkb/tz or re-apply baby-yoda palette on an already configured machine.
 - Don't try to reload `foot` terminal config with `pkill -SIGUSR1 foot`. Foot does NOT support signal-based reloading. Use the OSC escape sequence mechanism implemented in `zoi-theme._osc_reload_foot` (writes directly to `/dev/pts/*`).
-- Don't run `scripts/limine-setup.sh apply` unless the user explicitly asked to change the bootloader. Default is dry-run. Never call it from `install.sh`. Don't uninstall GRUB as part of Limine setup.
 - Don't `systemctl start lemurs` from a live graphical session; `lemurs-setup.sh apply` only enables the unit. Don't remove the lightdm package when switching to Lemurs.
 - Don't `include login` in `/etc/pam.d/lemurs` (Debian `pam_loginuid` required → *authentication failed* after a valid password). Use `@include common-auth` and `session optional pam_loginuid.so`.
 - Don't put hex colors in Lemurs `config.toml` for TTY2. Kernel VT ignores truecolor. Write `/etc/lemurs/vtrgb` and `ExecStartPre=setvtrgb`; config uses ANSI names (`black`, `light yellow`).

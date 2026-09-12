@@ -274,8 +274,4 @@ Si no se ve nada, mirá `~/.cache/quickshell/crashes/<shell>/`.
 
 Quita el shell ZOI (`qs-*`, Inlyne, `~/.config/quickshell`). Los paquetes apt quedan.
 
-## Bootloader (opcional)
-
-`install.sh` no cambia GRUB. Si querés Limine en UEFI, ver [limine.md](limine.md).
-
 Display manager: [lemurs.md](lemurs.md).

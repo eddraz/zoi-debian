@@ -8,7 +8,6 @@
 | [shortcuts.md](shortcuts.md) | Mapa completo de atajos de Sway + popups. |
 | [architecture.md](architecture.md) | PluginRegistry, IPC, singletons, hot reload. |
 | [troubleshooting.md](troubleshooting.md) | Problemas frecuentes y fix. |
-| [limine.md](limine.md) | Bootloader Limine opcional (UEFI). No lo instala `install.sh`. |
 | [lemurs.md](lemurs.md) | Lemurs TTY2: vtrgb, PAM, seatd, grupo `render`. |
 | [herdr.md](herdr.md) | Herdr multiplexer, install y tema. |
 

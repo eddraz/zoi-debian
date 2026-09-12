@@ -148,7 +148,6 @@ Aplicaciones compiladas automáticamente:
 - **VSCode / Antigravity IDE / VSCodium**: `settings.json` (`workbench.colorCustomizations`)
 - **GTK 3.0 y GTK 4.0 / LibreWolf**: `~/.config/gtk-3.0/gtk.css` y `~/.config/gtk-4.0/gtk.css` + `gsettings prefer-dark/prefer-light`
 - **Herdr**: `~/.config/herdr/config.toml` (seed del repo; `zoi-theme` pinta `[theme.custom]`). Guía: [herdr.md](herdr.md).
-- **Limine** (si está instalado): `~/.config/zoi/themed/limine.conf` + merge a `/boot/limine/limine.conf`. Ver [limine.md](limine.md).
 - **Lemurs**: TTY 16 colores → `/etc/lemurs/vtrgb` (`setvtrgb`). Títulos → `/etc/lemurs/variables.toml`. Overlay `~/.config/zoi/lemurs/variables.overlay.toml`; layout `~/.config/zoi/lemurs/config.toml`. Ver [lemurs.md](lemurs.md).
 - **Yazi**: `~/.config/yazi/yazi.toml` (openers; `url = "*.md"`) y `theme.toml` (íconos ASCII).
 - **Inlyne**: `~/.config/inlyne/inlyne.toml` (colores `0xRRGGBB`).

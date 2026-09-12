@@ -63,12 +63,10 @@ zoi-debian/
 │   ├── shortcuts.md           tabla completa de atajos
 │   ├── architecture.md        PluginRegistry + singletons + theme engine
 │   ├── troubleshooting.md     problemas frecuentes
-│   ├── limine.md              Limine UEFI opcional (no lo instala install.sh)
 │   ├── lemurs.md              Lemurs TUI DM (vtrgb + PAM Debian)
 │   └── herdr.md               Herdr multiplexer
 ├── scripts/
 │   ├── install.sh             bootstrap completo (curl | sh friendly)
-│   ├── limine-setup.sh        plan/apply Limine (GRUB queda de fallback)
 │   ├── lemurs-setup.sh        plan/apply Lemurs (PAM, vtrgb, LightDM fallback)
 │   └── uninstall.sh
 ├── dotfiles/
