@@ -84,6 +84,7 @@ Importante: el primer arranque de `qs` necesita:
 
 | Paquete | Función |
 |---|---|
+| `qt6-wayland` | Plugin QPA Wayland de Qt 6. `quickshell` no lo declara como Depends; sin él `qs` crashea al arrancar |
 | `sway` | Window manager |
 | `swaybg` | Wallpaper (alternativa a `swaymsg output * bg`) |
 | `swaylock` | Lock screen (PAM: `Quickshell.Services.Pam`) |

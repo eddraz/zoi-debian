@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Fixes
+- **Quickshell / Qt Wayland:** `qs` no arrancaba (`Could not find the Qt platform plugin "wayland"`). El paquete Debian no depende de `qt6-wayland` y el install usa `--no-install-recommends`. `install.sh` ahora lo instala.
 - **PATH de sbin:** `install.sh` / `lemurs-setup.sh` / `apply-lemurs-seatd.sh` / `uninstall.sh` anteponen `/usr/sbin:/sbin` para que `usermod`, `locale-gen` y `update-locale` no fallen con *orden no encontrada* (PATH de usuario, `sudo -E`, agentes).
 - **Lemurs + Sway DRM:** seatd (`/usr/sbin/seatd -g video`, no drop-in a `/usr/bin/seatd`) and grupo `render` for `/dev/dri/renderD128`. Helper `scripts/apply-lemurs-seatd.sh`.
 - **Lemurs Sway session:** the greeter no longer scans `/usr/share/xsessions`. Debian's `sway.desktop` there is X11; Lemurs waited 60s for Xorg. Only `/etc/lemurs/wayland/sway` is offered.

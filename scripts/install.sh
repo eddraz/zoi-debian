@@ -378,6 +378,7 @@ PKGS=(
   sway swaybg swaylock swayidle
   foot foot-themes
   quickshell
+  qt6-wayland
   pipewire wireplumber
   wlsunset wtype wl-clipboard grim slurp wf-recorder
   playerctl mpv mpv-mpris yt-dlp

@@ -51,5 +51,5 @@ rm -f "$HOME/.config/zoi/themed/lemurs-variables.toml" \
 
 log "Done. Los paquetes apt NO se desinstalaron. Para hacerlo:"
 log "sudoers (/etc/sudoers.d/zoi-*) no se toca. Herdr, Pi e Inlyne son de usuario. Config: ~/.config/herdr ~/.config/inlyne ~/.config/yazi"
-log "  sudo apt remove quickshell swaybg swayidle wlsunset figlet python3-terminaltexteffects btop bc libqrencode4"
+log "  sudo apt remove quickshell qt6-wayland swaybg swayidle wlsunset figlet python3-terminaltexteffects btop bc libqrencode4"
 log "Restart Sway with: swaymsg reload"

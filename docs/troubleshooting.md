@@ -14,6 +14,11 @@ ls ~/.cache/quickshell/crashes/
 
 Errores comunes:
 
+- `Could not find the Qt platform plugin "wayland"` — falta `qt6-wayland`. El paquete `quickshell` de Debian solo tira `libqt6waylandclient6`; el plugin QPA vive en `qt6-wayland` y `install.sh` usa `--no-install-recommends`. Instalálo y relanzá:
+  ```sh
+  sudo apt-get install -y --no-install-recommends qt6-wayland
+  /usr/bin/qs -n --daemonize
+  ```
 - `Type X unavailable` — un import falla. Probablemente editaste un archivo y el qmldir no se actualizó. Verificá `~/.config/quickshell/Commons/qmldir`.
 - `Expected token '}'` — sintaxis QML rota. El error apunta a la línea exacta.
 - `Cannot assign to read-only property` — bug en un binding. Probá `Component.onCompleted` o usá `var` en vez de `int` para `cursorArr`.

@@ -189,6 +189,7 @@ grim -g "$(swaymsg -t get_tree | python3 -c '...')" /tmp/x.png
 - Don't revive `Markdown.qml` or QtWebEngine for docs. Markdown is **Inlyne** (`qs-md` → `inlyne view`). Theme via `zoi-theme._dispatch_inlyne`.
 - Don't use Yazi `[open]` `name = "*.md"` (Yazi 26 wants `url` or `mime`). Don't add Nerd Fonts for Yazi icons; keep ASCII in `yazi-theme.toml.tpl`.
 - Third-party bins (Yazi, Mullvad, Lemurs, Inlyne, Node.js) are arch-gated in `install.sh`. Pin APT lists with `arch=$ARCH`. Node is **nodejs.org latest tarball → `/usr/local`**, not Debian `nodejs`.
+- Always install **`qt6-wayland`** next to `quickshell`. Debian's `quickshell` does not Depend on it; `--no-install-recommends` leaves qs without `libqwayland.so` (`Could not find the Qt platform plugin "wayland"`).
 - Scripts must prepend `/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin` to `PATH`. Debian `usermod`/`locale-gen`/`update-locale` live in `/usr/sbin`; a user PATH (`sudo -E`, agents) makes them 127 *orden no encontrada*.
 - Don't `trap RETURN` with a `local` temp dir under `set -u` (Lemurs). Expand the path or `rm -rf` before return.
 - Don't re-prompt git/locale/xkb/tz or re-apply baby-yoda palette on an already configured machine.

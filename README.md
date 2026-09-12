@@ -36,7 +36,7 @@ Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1`
 ## Qué se instala
 
 - **Sway** (WM) + **foot** (terminal) + **fish** (login shell y shell de foot). El bar por defecto es **Quickshell** (no waybar).
-- **Quickshell 0.3.0** desde trixie-backports.
+- **Quickshell 0.3.0** desde trixie-backports, con **`qt6-wayland`** (plugin QPA; sin él `qs` no arranca).
 - **PipeWire** implícito vía los servicios de QS.
 - **ZOI Theme Engine (`zoi-theme`)**: Motor de temas declarativo (arquitectura Omarchy Quatro) con 17 paletas estándar, 22 colores normalizados (`colors.toml`), plantillas (`*.tpl`) y propagación atómica en vivo a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK 3/4, Herdr, Yazi, Inlyne y Lemurs (`vtrgb` en TTY).
 - Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `btop` `bc` `libqrencode4` `mullvad-browser` (se instala). XDG default = **Thorium** si está, si no Mullvad. Super+Shift+Return usa `qs-browser`.
