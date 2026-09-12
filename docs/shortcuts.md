@@ -211,6 +211,7 @@ Esta tabla lista todos los binds de Sway + atajos internos de Quickshell.
 | Acción | Resultado |
 |---|---|
 | Click chip del bar | Abre panel correspondiente |
+| Clic medio en weather | Refresca Open-Meteo (`Weather.refresh`) |
 | Click ícono de Tray | Colapsa / expande ítems del system tray |
 | Click derecho bell | Toggle DND |
 | Reorganizar en Bar editor | Auto-guarda cambios automáticamente |
@@ -235,6 +236,7 @@ qs ipc call emojis toggle
 qs ipc call reminders toggle
 qs ipc call radio toggle|play|stop
 qs ipc call media toggle|next|previous|toggleArm
+qs ipc call weather refresh
 ```
 
 Donde `<name>` es uno de: `media`, `audio`, `power`, `network`, `bluetooth`, `session`, `notifs`, `keys`, `wallpaper`, `theme`, `keyboard`, `weather`, `calendar`, `bar`.

@@ -594,6 +594,14 @@ log "Instalando scripts auxiliares y CLI zoi-theme en ~/.local/bin."
 mkdir -p "$HOME/.local/bin"
 find "$ZOI_DIR/dotfiles/local-bin" -maxdepth 1 -type f ! -name '*.pyc'   -exec install -m 755 {} "$HOME/.local/bin/" \;
 # qs-weather / qs-holidays / qs-keys-apply need python3 on PATH (shebang /usr/bin/python3).
+# Weather cache survives reboot so the bar chip is not stuck on … until Open-Meteo answers.
+mkdir -p "$HOME/.cache/quickshell"
+if [ ! -x "$HOME/.local/bin/qs-weather" ]; then
+  warn "Falta ~/.local/bin/qs-weather (copiá dotfiles/local-bin/qs-weather)."
+fi
+if [ ! -x /usr/bin/python3 ]; then
+  warn "Falta /usr/bin/python3; el chip de weather no puede fetch."
+fi
 
 # ---------------------------------------------------------------- inlyne (GPU markdown viewer; amd64/arm64)
 INLYNE_VER="0.5.3"

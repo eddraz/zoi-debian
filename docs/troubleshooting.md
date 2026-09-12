@@ -25,18 +25,25 @@ Errores comunes:
 
 ## El chip de weather se queda en nube + `…`
 
-Eso es `Weather.label` con `ready: false` (fetch que no arranca o el chip que no ve el singleton).
+Eso es `Weather.label` con `ready: false` (fetch que no arranca, red caída al boot, o el chip que no ve el singleton).
+
+Al login `qs` corre antes de que haya Internet. El helper reintenta y guarda el último JSON en `~/.cache/quickshell/weather.json`; el chip debería pintar cache enseguida y refrescar cuando la red aparezca (backoff 3s–60s, no hace falta esperar 20 min).
 
 1. El helper tiene que devolver JSON con `temp` numérico:
    ```sh
    ~/.local/bin/qs-weather
    # {"city": "Bogotá", "temp": 23.8, ...}
    ```
-   Si falla, instalá `python3` y copiá `dotfiles/local-bin/qs-weather` a `~/.local/bin` (`install -m 755`). ip-api cae a Bogotá; Open-Meteo sí necesita red.
-2. `widgets/Weather.qml` **no** puede usar `Weather.label` a secas: el archivo se llama igual que el singleton. Tiene que ser `import "../Commons" as Commons` y `Commons.Weather.label`.
-3. `shell.qml` debe forzar el singleton: `readonly property bool _bootWeather: Weather.ready`.
-4. Clic medio en el chip o `Super+T`. Si el panel muestra datos y el chip no, es el sombreado del nombre (paso 2).
-5. Recargá o reiniciá: `pkill qs; /usr/bin/qs -n --daemonize`.
+   Si falla, instalá `python3` y copiá `dotfiles/local-bin/qs-weather` a `~/.local/bin` (`install -m 755`). ip-api cae a Bogotá; Open-Meteo sí necesita red. Si Open-Meteo falla pero hay cache, imprime el cache.
+2. Forzá un fetch:
+   ```sh
+   /usr/bin/qs ipc call weather refresh
+   ```
+   Clic medio en el chip o Enter en `Super+T` hacen lo mismo.
+3. `widgets/Weather.qml` **no** puede usar `Weather.label` a secas: el archivo se llama igual que el singleton. Tiene que ser `import "../Commons" as Commons` y `Commons.Weather.label`.
+4. `shell.qml` debe forzar el singleton: `readonly property bool _bootWeather: Weather.ready`.
+5. Si el panel muestra datos y el chip no, es el sombreado del nombre (paso 3).
+6. Recargá o reiniciá: `pkill qs; /usr/bin/qs -n --daemonize`. Logs: `qs-weather:` en el `log.log` de quickshell.
 
 ## "El popup no se ve"
 

@@ -28,6 +28,7 @@
 │   session toggle                                     │
 │   osd volume +5                                      │
 │   launcher toggle                                    │
+│   weather refresh                                    │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -190,7 +191,9 @@ Los singletons **comparten estado entre importers**. Si importás relativo (sin 
 
 `shell.qml` fuerza singletons perezosos al boot (`Themes.currentId`, `Weather.ready`) para que existan aunque ningún chip los referencie bien.
 
-**Process restart:** `running = false` seguido de `running = true` en el mismo tick no relanza el proceso. Usá `Qt.callLater` o un `Timer { interval: 0 }`.
+**Weather al boot:** `qs` arranca con Sway, a menudo sin red. `qs-weather` reintenta Open-Meteo, escribe `~/.cache/quickshell/weather.json` y si falla imprime el cache. `Commons/Weather.qml` hidrata el chip desde ese `FileView`, lanza el helper con `Process.exec()` (no `running = false/true` en el mismo tick) y hace backoff 3s–60s hasta `ready`. IPC: `qs ipc call weather refresh`.
+
+**Process restart:** `running = false` seguido de `running = true` en el mismo tick no relanza el proceso. Preferí `Process.exec(cmd)` o un Timer; Weather usa `exec()`.
 
 ## Panel loading pattern
 

@@ -123,7 +123,7 @@ Importante: el primer arranque de `qs` necesita:
 | `fish` | Login shell + shell de foot |
 | `bc` | Cálculos matemáticos en scripts auxiliares |
 | `btop` | Monitor de recursos del sistema (themeado por zoi-theme) |
-| `python3` | Helpers `qs-weather` / `qs-holidays` / `qs-keys-apply` (`/usr/bin/python3`) |
+| `python3` | Helpers `qs-weather` / `qs-holidays` / `qs-keys-apply` (`/usr/bin/python3`). Weather cache: `~/.cache/quickshell/weather.json` |
 | `python3-gi` + `gir1.2-gdkpixbuf-2.0` | Extracción de paleta de 22 colores desde wallpapers |
 | `libqrencode4` + `qrencode` | Generación de código QR para compartir red Wi-Fi |
 | `network-manager` + `applet` | Wifi panel |
@@ -179,7 +179,7 @@ Importante: el primer arranque de `qs` necesita:
 │   ├── Style.qml            # tokens (barHeight, radius, font)
 │   ├── Themes.qml           # 9 paletas
 │   ├── Wallpaper.qml        # swaybg wrapper
-│   ├── Weather.qml          # Open-Meteo singleton (shell.qml lo instancia al boot)
+│   ├── Weather.qml          # Open-Meteo singleton: cache + Process.exec + retry al boot
 │   └── qmldir               # registro de singletons
 ├── Ui/
 │   ├── ActionListItem.qml
@@ -238,7 +238,7 @@ Importante: el primer arranque de `qs` necesita:
 ├── qs-md / qs-docs / qs-md-open
 ├── qs-browser               # Super+Shift+Return → XDG default browser
 ├── qs-keys-apply            # reaplica atajos custom a Sway
-├── qs-weather               # IP geo + Open-Meteo (python3); fallback Bogotá
+├── qs-weather               # IP geo + Open-Meteo (python3); fallback Bogotá + cache
 └── qs-*                     # resto de helpers Quickshell
 
 ~/.local/state/zoi/theme/    # estado del motor de temas
@@ -254,6 +254,8 @@ Importante: el primer arranque de `qs` necesita:
 ├── stay-awake               # on/off
 ├── theme                    # id de paleta activa (selector Session → Theme)
 └── colors.json              # paleta para Color.qml al boot
+
+~/.cache/quickshell/weather.json  # último fetch Open-Meteo (chip al reboot)
 
 ~/.config/quickshell/screensaver.txt   # texto del banner (default: ZOI)
 ```

@@ -107,7 +107,7 @@ zoi-debian/
 | Stay awake | `Session → Stay awake` toggle |
 | Power actions | `Session → Lock / Suspend / Log out / Reboot / Shut down` |
 | Lofi radio (`mpv` + `mpv-mpris`) | `Audio panel → Lofi radio` |
-| Weather (Open-Meteo, IP geo, fallback Bogotá) | click en el chip / `Super+T` |
+| Weather (Open-Meteo, IP geo, cache al boot, fallback Bogotá) | click / clic medio / `Super+T` / `qs ipc call weather refresh` |
 | Learn (docs ZOI en Inlyne) | Menú principal → Learn |
 | Markdown (Inlyne) | Trigger → Markdown, o `qs-md archivo.md` |
 | Lemurs (login TTY2) | reboot; switcher **sway**; paleta vía `vtrgb` |

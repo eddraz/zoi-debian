@@ -355,24 +355,24 @@ Restart de `qs` necesario si cambiás los IPC targets (los `IpcHandler` se regis
 
 ## Weather
 
-`Commons/Weather.qml` (singleton) corre `~/.local/bin/qs-weather` cada 20 min:
+`Commons/Weather.qml` (singleton) corre `~/.local/bin/qs-weather` al boot y cada 20 min:
 
 1. IP geolocation (`http://ip-api.com/...`).
 2. Forecast Open-Meteo (`current` + 5 días).
 3. Si ip-api falla, coordenadas default Bogotá (`DEFAULT` en el helper).
+4. El helper reintenta Open-Meteo y escribe `~/.cache/quickshell/weather.json`. Si la red no está, imprime el cache.
 
 ```sh
 ~/.local/bin/qs-weather
 # python3 -u, stdout JSON: city, country, temp, code, isDay, days[]
+/usr/bin/qs ipc call weather refresh
 ```
 
 **Chip** (`widgets/Weather.qml`): icono de condición + temperatura (`24°`). Importa Commons **con alias** (`import "../Commons" as Commons`) porque el archivo se llama igual que el singleton; sin eso el chip se queda en nube + `…`.
 
-`shell.qml` fuerza `Weather.ready` al boot (mismo patrón que Themes) para que el Process arranque aunque nadie abra el panel.
+`shell.qml` fuerza `Weather.ready` al boot (mismo patrón que Themes). `FileView` carga el cache al instante; el Process arranca con `exec()` (no `running = true` en el mismo tick). Si el fetch falla, backoff 3s–60s hasta que haya red.
 
 **Panel** (`Super+T` / click): ciudad, temperatura, condición, 5 días. Clic medio en el chip o Enter en el panel refresca.
-
-El Process no hace `running = false` y `true` en el mismo tick (Quickshell coalescea y el fetch no arranca); usa un Timer de 0 ms.
 
 ---
 

@@ -335,7 +335,7 @@ DEFAULT = {
 }
 ```
 
-Clic medio en el chip refresca. No hace falta reiniciar `qs` si el helper ya está en `~/.local/bin`.
+Clic medio en el chip, Enter en el panel, o `qs ipc call weather refresh`. El último JSON queda en `~/.cache/quickshell/weather.json` para el próximo boot (el chip no espera 20 min si al login todavía no hay red: backoff 3s–60s). `install.sh` crea ese directorio. No hace falta reiniciar `qs` si el helper ya está en `~/.local/bin`.
 
 ### Ajustar el timeout del screensaver / lock
 

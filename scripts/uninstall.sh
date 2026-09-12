@@ -29,8 +29,9 @@ rm -f "$HOME/.local/share/applications/inlyne.desktop" \
      "$HOME/.local/share/applications/zoi-markdown.desktop"
 rm -rf "$HOME/.config/inlyne"
 
-log "Cleaning up state directories in ~/.local/state/zoi and ~/.local/state/quickshell."
+log "Cleaning up state directories in ~/.local/state/zoi, ~/.local/state/quickshell and weather cache."
 rm -rf $HOME/.local/state/zoi $HOME/.local/state/quickshell
+rm -f "$HOME/.cache/quickshell/weather.json" "$HOME/.cache/quickshell/weather.json.tmp"
 
 if [ -f "$HOME/.config/sway/config" ]; then
   log "Cleaning up quickshell autostart entries in sway/config."
