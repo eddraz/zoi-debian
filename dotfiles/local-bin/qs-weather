@@ -1,8 +1,16 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 import json
+import urllib.error
 import urllib.request
 
 UA = {"User-Agent": "qs-weather/1.0"}
+DEFAULT = {
+    "city": "Bogotá",
+    "country": "Colombia",
+    "countryCode": "CO",
+    "lat": 4.6097,
+    "lon": -74.0817,
+}
 
 
 def get(url):
@@ -11,18 +19,27 @@ def get(url):
         return json.loads(resp.read().decode())
 
 
+def locate():
+    try:
+        loc = get("http://ip-api.com/json/?fields=status,city,country,countryCode,lat,lon")
+        if loc.get("status") == "success" and loc.get("lat") is not None:
+            return {
+                "city": loc.get("city") or DEFAULT["city"],
+                "country": loc.get("country") or "",
+                "countryCode": loc.get("countryCode") or "",
+                "lat": loc["lat"],
+                "lon": loc["lon"],
+            }
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError):
+        pass
+    return dict(DEFAULT)
+
+
 def main():
-    loc = get("http://ip-api.com/json/?fields=status,city,country,countryCode,lat,lon")
-    if loc.get("status") != "success":
-        raise SystemExit(1)
-    lat = loc["lat"]
-    lon = loc["lon"]
-    city = loc.get("city") or "Here"
-    country = loc.get("country") or ""
-    countryCode = loc.get("countryCode") or ""
+    loc = locate()
     url = (
         "https://api.open-meteo.com/v1/forecast"
-        f"?latitude={lat}&longitude={lon}"
+        f"?latitude={loc['lat']}&longitude={loc['lon']}"
         "&current=temperature_2m,weather_code,is_day"
         "&daily=weather_code,temperature_2m_max,temperature_2m_min"
         "&timezone=auto&forecast_days=5"
@@ -44,17 +61,18 @@ def main():
     print(
         json.dumps(
             {
-                "city": city,
-                "country": country,
-                "countryCode": countryCode,
-                "lat": lat,
-                "lon": lon,
+                "city": loc["city"],
+                "country": loc["country"],
+                "countryCode": loc["countryCode"],
+                "lat": loc["lat"],
+                "lon": loc["lon"],
                 "temp": current.get("temperature_2m"),
                 "code": current.get("weather_code"),
                 "isDay": bool(current.get("is_day")),
                 "days": days,
             }
-        )
+        ),
+        flush=True,
     )
 
 

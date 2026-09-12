@@ -72,7 +72,7 @@ Singleton {
     function refresh() {
         if (fetch.running)
             fetch.running = false;
-        fetch.running = true;
+        startTimer.restart();
     }
 
     function parse(text) {
@@ -98,10 +98,18 @@ Singleton {
 
     Process {
         id: fetch
-        command: [root.helper]
+        command: ["/usr/bin/python3", "-u", root.helper]
         stdout: StdioCollector {
+            waitForEnd: true
             onStreamFinished: root.parse(text)
         }
+    }
+
+    Timer {
+        id: startTimer
+        interval: 0
+        repeat: false
+        onTriggered: fetch.running = true
     }
 
     Timer {

@@ -11,6 +11,9 @@ ShellRoot {
     // the ThemePanel selector reads Themes.currentId; without this the singleton
     // only appeared after opening Session → Theme or Lock pulling Wallpaper.
     readonly property string _bootTheme: Themes.currentId
+    // Same for Weather: widgets/Weather.qml shadows the type name, so the
+    // singleton never mounted (chip stuck on "…") until a panel imported it.
+    readonly property bool _bootWeather: Weather.ready
 
     Bar {}
 
