@@ -23,6 +23,21 @@ Errores comunes:
 - `Expected token '}'` — sintaxis QML rota. El error apunta a la línea exacta.
 - `Cannot assign to read-only property` — bug en un binding. Probá `Component.onCompleted` o usá `var` en vez de `int` para `cursorArr`.
 
+## El chip de weather se queda en nube + `…`
+
+Eso es `Weather.label` con `ready: false` (fetch que no arranca o el chip que no ve el singleton).
+
+1. El helper tiene que devolver JSON con `temp` numérico:
+   ```sh
+   ~/.local/bin/qs-weather
+   # {"city": "Bogotá", "temp": 23.8, ...}
+   ```
+   Si falla, instalá `python3` y copiá `dotfiles/local-bin/qs-weather` a `~/.local/bin` (`install -m 755`). ip-api cae a Bogotá; Open-Meteo sí necesita red.
+2. `widgets/Weather.qml` **no** puede usar `Weather.label` a secas: el archivo se llama igual que el singleton. Tiene que ser `import "../Commons" as Commons` y `Commons.Weather.label`.
+3. `shell.qml` debe forzar el singleton: `readonly property bool _bootWeather: Weather.ready`.
+4. Clic medio en el chip o `Super+T`. Si el panel muestra datos y el chip no, es el sombreado del nombre (paso 2).
+5. Recargá o reiniciá: `pkill qs; /usr/bin/qs -n --daemonize`.
+
 ## "El popup no se ve"
 
 - Verificá que `WlrLayershell.layer: WlrLayer.Overlay` esté en PopupCard.

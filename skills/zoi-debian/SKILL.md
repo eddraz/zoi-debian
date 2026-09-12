@@ -125,6 +125,10 @@ singleton MyService 1.0 MyService.qml
 
 Then `import "../Commons"` gives access as `MyService.foo()`.
 
+**Do not name a widget file the same as a singleton.** `widgets/Weather.qml` shadows `Commons.Weather`; `Weather.label` inside the chip is the component type, not the service, so the bar stays on `…` and the Process never mounts. Use `import "../Commons" as Commons` and `Commons.Weather.*`, or pick another basename (`WeatherChip.qml`). Force lazy singletons from `shell.qml` (`Weather.ready`, `Themes.currentId`).
+
+**Process restart:** do not set `running = false` then `true` in the same JS tick. Use a 0ms Timer / `Qt.callLater`.
+
 ## Colors and tokens
 
 - Edit `Color.qml` for raw palette.
@@ -151,6 +155,8 @@ Theme selector (`ThemePanel` → `Themes.apply`) is the source of truth for Quic
 3. **`PopupCard.visiblePanel()` for Loader**: must unwrap `kid.item` or keyboard won't reach the loaded panel.
 4. **`applyConfig` JSON.stringify guard**: if not, `revision++` triggers needless rebuilds that duplicate IpcHandler.
 5. **`Quickshell.execDetached` is fire-and-forget**: don't depend on completion. For shell-json write, use `tmp+rename` via bash so `FileView` watches inotify correctly.
+6. **Widget basename vs singleton:** `widgets/Foo.qml` + `singleton Foo` = name shadow. Weather hit this. Alias the import or rename the widget.
+7. **`Process.running` toggle in one tick is a no-op restart.** Weather uses `startTimer.restart()` (interval 0).
 
 ## Test workflow
 
@@ -183,6 +189,7 @@ grim -g "$(swaymsg -t get_tree | python3 -c '...')" /tmp/x.png
 ## Things you should NOT do
 
 - Don't touch `~/.local/bin/qs-*` without updating `dotfiles/local-bin/` — they're identical, drift breaks `install.sh`.
+- Weather: chip must `import "../Commons" as Commons`; helper is `qs-weather` (python3, Bogotá fallback). Don't toggle `Process.running` false/true in one tick.
 - Don't add new colors to `Color.qml` without a corresponding `Color.focusFill` decision — focus must always match hover visually.
 - Don't reorder `hostOrder` without checking that nothing depends on the previous order.
 - Don't add `qs.Ui` or `$OMARCHY_PATH` — first-party only.

@@ -355,17 +355,24 @@ Restart de `qs` necesario si cambiás los IPC targets (los `IpcHandler` se regis
 
 ## Weather
 
-`Commons/Weather.qml` consume Open-Meteo:
+`Commons/Weather.qml` (singleton) corre `~/.local/bin/qs-weather` cada 20 min:
+
+1. IP geolocation (`http://ip-api.com/...`).
+2. Forecast Open-Meteo (`current` + 5 días).
+3. Si ip-api falla, coordenadas default Bogotá (`DEFAULT` en el helper).
 
 ```sh
 ~/.local/bin/qs-weather
-# internamente:
-curl "https://api.open-meteo.com/v1/forecast?latitude=4.6&longitude=-74.0&current_weather=true"
+# python3 -u, stdout JSON: city, country, temp, code, isDay, days[]
 ```
 
-Geolocation por IP (default Bogotá: 4.6, -74.0). Para cambiar tu ciudad, editá `qs-weather`.
+**Chip** (`widgets/Weather.qml`): icono de condición + temperatura (`24°`). Importa Commons **con alias** (`import "../Commons" as Commons`) porque el archivo se llama igual que el singleton; sin eso el chip se queda en nube + `…`.
 
-**Widget del bar** muestra label compacto ("Drizzle 21°"). **Panel** muestra 5 días.
+`shell.qml` fuerza `Weather.ready` al boot (mismo patrón que Themes) para que el Process arranque aunque nadie abra el panel.
+
+**Panel** (`Super+T` / click): ciudad, temperatura, condición, 5 días. Clic medio en el chip o Enter en el panel refresca.
+
+El Process no hace `running = false` y `true` en el mismo tick (Quickshell coalescea y el fetch no arranca); usa un Timer de 0 ms.
 
 ---
 
@@ -375,7 +382,7 @@ Geolocation por IP (default Bogotá: 4.6, -74.0). Para cambiar tu ciudad, editá
 
 - **Activación**: click en el chip del reloj o `Super+C`.
 - **Navegación**: botones chevron dibujados en Canvas (`StatusIcon`: `chev-double-left`, `chev-left`, `chev-right`, `chev-double-right`) para año/mes anterior/siguiente. Click en el título vuelve a hoy. Teclado: `←/→` mes, `↑/↓` año, `Enter` hoy.
-- **País**: muestra `Ciudad · País` (ej. "Bogotá · Colombia") usando `Weather.city` + `Weather.country`, que vienen de `qs-weather` vía ip-api. Si no hay red, la línea se oculta.
+- **País**: muestra `Ciudad · País` (ej. "Bogotá · Colombia") usando `Weather.city` + `Weather.country` (`qs-weather`: ip-api, fallback Bogotá). Si el singleton no está ready, la línea se oculta.
 - **Mes correcto**: `Qt.locale().monthName()` en este build de Qt es 0-indexed — se pasa `month - 1`. Si ves el mes corrido, revisá esa línea.
 - **Festivos**: `qs-holidays <año>` devuelve `{ "YYYY-MM-DD": "nombre" }`. Hover sobre un día festivo muestra el nombre en tooltip. Leyenda abajo: Hoy / Fin de semana / Festivo.
 

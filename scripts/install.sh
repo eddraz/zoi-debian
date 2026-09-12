@@ -396,7 +396,7 @@ PKGS=(
   jq
   bc
   btop
-  python3-gi gir1.2-gdkpixbuf-2.0 libglib2.0-bin
+  python3 python3-gi gir1.2-gdkpixbuf-2.0 libglib2.0-bin
   libqrencode4 qrencode
   polkitd pkexec
   fonts-noto fonts-noto-color-emoji fonts-noto-cjk
@@ -593,6 +593,7 @@ fi
 log "Instalando scripts auxiliares y CLI zoi-theme en ~/.local/bin."
 mkdir -p "$HOME/.local/bin"
 find "$ZOI_DIR/dotfiles/local-bin" -maxdepth 1 -type f ! -name '*.pyc'   -exec install -m 755 {} "$HOME/.local/bin/" \;
+# qs-weather / qs-holidays / qs-keys-apply need python3 on PATH (shebang /usr/bin/python3).
 
 # ---------------------------------------------------------------- inlyne (GPU markdown viewer; amd64/arm64)
 INLYNE_VER="0.5.3"
@@ -785,7 +786,7 @@ fi
 # ---------------------------------------------------------------- sanity
 log "Verificando binarios clave."
 MISSING=0
-for b in sway qs swaymsg playerctl wlsunset foot fish yazi qs-files qs-browser qs-keys-apply qs-md inlyne cliphist wl-copy wtype grim slurp wf-recorder wireplumber btop bc zoi-theme git curl node npm mpv amberol loupe; do
+for b in sway qs swaymsg playerctl wlsunset foot fish yazi qs-files qs-browser qs-keys-apply qs-weather qs-md inlyne cliphist wl-copy wtype grim slurp wf-recorder wireplumber btop bc zoi-theme git curl node npm mpv amberol loupe python3; do
   command -v "$b" >/dev/null || { warn "Falta binario: $b"; MISSING=$((MISSING+1)); }
 done
 command -v thorium-browser >/dev/null || command -v mullvad-browser >/dev/null || warn "No hay Thorium ni Mullvad; Super+Shift+Return usa qs-browser (XDG)."

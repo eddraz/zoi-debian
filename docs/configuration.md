@@ -323,12 +323,19 @@ Próximo screensaver muestra "KOI".
 
 ### Cambiar la ciudad del weather
 
-Editá `~/.local/bin/qs-weather`:
+`qs-weather` geolocaliza por IP (`ip-api.com`). Si eso falla, usa Bogotá. Editá el dict `DEFAULT` en `~/.local/bin/qs-weather` (y el mismo archivo en `dotfiles/local-bin/`):
 
-```sh
-LAT="4.6"
-LON="-74.0"   # Bogotá default; cambialo a tu ciudad
+```python
+DEFAULT = {
+    "city": "Bogotá",
+    "country": "Colombia",
+    "countryCode": "CO",
+    "lat": 4.6097,
+    "lon": -74.0817,
+}
 ```
+
+Clic medio en el chip refresca. No hace falta reiniciar `qs` si el helper ya está en `~/.local/bin`.
 
 ### Ajustar el timeout del screensaver / lock
 

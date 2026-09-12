@@ -186,6 +186,12 @@ PluginRegistry.hostIds
 
 Los singletons **comparten estado entre importers**. Si importás relativo (sin `qs.Commons`), el singleton se duplica por importer y cada uno tiene su propio `percent` — esto fue un bug en Omarchy que aprendimos a evitar.
 
+**Nombre del archivo = nombre del tipo.** Un widget `widgets/Weather.qml` sombrea el singleton `Commons.Weather`. Dentro del chip, `Weather.label` no es el servicio: el fetch no se monta y el chip se queda en `…`. Importá con alias (`import "../Commons" as Commons` → `Commons.Weather.label`) o no uses el mismo basename. `Reminder.qml` vs `Reminders` no choca; Weather sí.
+
+`shell.qml` fuerza singletons perezosos al boot (`Themes.currentId`, `Weather.ready`) para que existan aunque ningún chip los referencie bien.
+
+**Process restart:** `running = false` seguido de `running = true` en el mismo tick no relanza el proceso. Usá `Qt.callLater` o un `Timer { interval: 0 }`.
+
 ## Panel loading pattern
 
 Cada panel en `panels/<X>Panel.qml` es un `Column` (o `Item`) que expone opcionalmente:
@@ -208,7 +214,7 @@ ZOI cuenta con un sistema de temas desacoplado y reactivo de dos niveles:
 
 1. **Nivel UI Quickshell (`Color.qml`, `Themes.qml`, `Wallpaper.qml`)**:
    - El selector es `ThemePanel.qml` → `Themes.apply(id)` (usuario) / `Themes.restore(id)` (boot).
-   - `shell.qml` fuerza `Themes.currentId` al arrancar para que el panel no dependa de abrir Session → Theme.
+   - `shell.qml` fuerza `Themes.currentId` y `Weather.ready` al arrancar para que esos singletons no dependan de abrir un panel.
    - `Color.qml` hidrata la barra desde `~/.local/state/quickshell/colors.json` (`FileView`, `watchChanges`).
    - `Themes.persist()` escribe ese JSON; `zoi-theme` lo replica en `_dispatch_state` **antes** de GTK/Sway/etc.
 
