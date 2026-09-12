@@ -224,14 +224,17 @@ if [ "${ZOI_BOOTSTRAPPED:-}" != "1" ]; then
     log "Locale=$ZOI_LANG  teclado=$ZOI_XKB  tz=$ZOI_TZ"
   fi
 
-  if [ "$(id -u)" -eq 0 ]; then
-    usermod -aG video,render,audio,netdev,plugdev,seat "$TARGET_USER" 2>/dev/null \
-      || usermod -aG video,seat "$TARGET_USER" 2>/dev/null \
-      || usermod -aG video "$TARGET_USER" 2>/dev/null || true
-  else
-    $SUDO usermod -aG video,render,audio,netdev,plugdev,seat "$TARGET_USER" 2>/dev/null \
-      || $SUDO usermod -aG video,seat "$TARGET_USER" 2>/dev/null \
-      || $SUDO usermod -aG video "$TARGET_USER" 2>/dev/null || true
+  _glist=""
+  for _g in video render audio netdev plugdev seat; do
+    getent group "$_g" >/dev/null 2>&1 || continue
+    _glist="${_glist:+$_glist,}$_g"
+  done
+  if [ -n "$_glist" ]; then
+    if [ "$(id -u)" -eq 0 ]; then
+      usermod -aG "$_glist" "$TARGET_USER" || true
+    else
+      $SUDO usermod -aG "$_glist" "$TARGET_USER" || true
+    fi
   fi
 
   sudoers_tag="$(printf '%s' "$TARGET_USER" | tr -c 'A-Za-z0-9_-' '_')"
@@ -340,6 +343,7 @@ EOF
     log "Re-lanzando el resto de la instalación como $TARGET_USER."
     exec sudo -u "$TARGET_USER" -H \
       env ZOI_BOOTSTRAPPED=1 ZOI_DIR="$DEST_REPO" ZOI_SKIP_REBOOT="${ZOI_SKIP_REBOOT:-}" \
+          TARGET_USER="$TARGET_USER" \
           ZOI_LANG="$ZOI_LANG" ZOI_XKB="$ZOI_XKB" ZOI_TZ="$ZOI_TZ" \
       bash "$DEST_REPO/scripts/install.sh"
   fi
@@ -350,6 +354,7 @@ EOF
 fi
 
 # ================================================================= desktop stack (as the login user)
+TARGET_USER="${TARGET_USER:-$USER}"
 ZOI_DIR="${ZOI_DIR:-$HOME/projects/zoi-debian}"
 QS_DOT="$HOME/.config/quickshell"
 
@@ -391,7 +396,7 @@ PKGS=(
   jq
   bc
   btop
-  python3-gi gir1.2-gdkpixbuf-2.0
+  python3-gi gir1.2-gdkpixbuf-2.0 libglib2.0-bin
   libqrencode4 qrencode
   polkitd pkexec
   fonts-noto fonts-noto-color-emoji fonts-noto-cjk
@@ -423,8 +428,16 @@ if [ -x /usr/sbin/seatd ] || [ -x /usr/bin/seatd ]; then
   $SUDO systemctl enable --now seatd || warn "No pude habilitar seatd."
 fi
 # renderD128 is 0660 render; Lemurs+seatd does not get logind uaccess ACLs.
-$SUDO usermod -aG render,video,seat "${SUDO_USER:-$USER}" 2>/dev/null || \
-  $SUDO usermod -aG render,video "${SUDO_USER:-$USER}" 2>/dev/null || true
+# Do not use SUDO_USER: after `sudo -u <desktop>` from root it is root.
+_desk="${TARGET_USER:-$USER}"
+_glist=""
+for _g in render video seat; do
+  getent group "$_g" >/dev/null 2>&1 || continue
+  _glist="${_glist:+$_glist,}$_g"
+done
+if [ -n "$_glist" ] && [ -n "$_desk" ] && [ "$_desk" != root ]; then
+  $SUDO usermod -aG "$_glist" "$_desk" || true
+fi
 
 # ---------------------------------------------------------------- nodejs (latest current, nodejs.org; amd64/arm64)
 node_arch=""
@@ -666,6 +679,10 @@ if [ ! -f "$HOME/.config/quickshell/shell.json" ]; then
 fi
 
 # ---------------------------------------------------------------- initialize theme from default wallpaper
+# Selector Quickshell (Session → Theme) lee:
+#   ~/.local/state/quickshell/theme       id activo
+#   ~/.local/state/quickshell/colors.json paleta para Color.qml al boot
+mkdir -p "$HOME/.local/state/quickshell" "$HOME/.local/state/zoi/theme"
 if [ -f "$HOME/.local/state/quickshell/theme" ] || [ -f "$HOME/.local/state/quickshell/colors.json" ]; then
   log "Tema ya existe; no piso la paleta con baby-yoda."
 else
@@ -684,10 +701,20 @@ else
 fi
 
 fi
+# Si un dispatcher opcional (gsettings) abortó un apply viejo, igual sembrar
+# colors.json para que el selector sobreviva al primer login.
+if [ ! -f "$HOME/.local/state/quickshell/colors.json" ] && [ -f "$HOME/.local/state/zoi/theme/current/colors.json" ]; then
+  log "Sembrando ~/.local/state/quickshell/colors.json desde el motor de temas."
+  cp "$HOME/.local/state/zoi/theme/current/colors.json" "$HOME/.local/state/quickshell/colors.json"
+fi
+if [ ! -f "$HOME/.local/state/quickshell/theme" ] && [ -f "$HOME/.local/state/quickshell/colors.json" ]; then
+  python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("id","tokyo-night"))' \
+    "$HOME/.local/state/quickshell/colors.json" > "$HOME/.local/state/quickshell/theme" || true
+fi
 
 # ---------------------------------------------------------------- fish as login shell
 FISH_BIN="$(command -v fish || true)"
-LOGIN_USER="${SUDO_USER:-$USER}"
+LOGIN_USER="${TARGET_USER:-$USER}"
 if [ -n "$FISH_BIN" ]; then
   if ! grep -qxF "$FISH_BIN" /etc/shells 2>/dev/null; then
     log "Agregando $FISH_BIN a /etc/shells."
@@ -707,10 +734,10 @@ if [ -x "$ZOI_DIR/scripts/lemurs-setup.sh" ]; then
   if arch_in "$ARCH" amd64; then
     log "Instalando Lemurs (TUI DM, vtrgb + PAM Debian). LightDM queda instalado pero deshabilitado."
     if ! "$ZOI_DIR/scripts/lemurs-setup.sh" apply; then
-      if systemctl is-enabled lemurs >/dev/null 2>&1 || command -v lemurs >/dev/null; then
-        warn "lemurs-setup apply salió !=0, pero Lemurs está instalado/enabled."
+      if systemctl is-enabled lemurs >/dev/null 2>&1 && [ -f /etc/lemurs/config.toml ]; then
+        warn "lemurs-setup apply salió !=0, pero Lemurs está enabled."
       else
-        warn "Lemurs no se pudo instalar; LightDM sigue como fallback."
+        warn "Lemurs no quedó enabled (falta /etc/lemurs/config.toml o el unit). LightDM sigue. Reintentá: sudo $ZOI_DIR/scripts/lemurs-setup.sh apply"
       fi
     fi
   else

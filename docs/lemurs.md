@@ -12,7 +12,7 @@ sudo ./scripts/lemurs-setup.sh apply
 # reboot — login en TTY2
 ```
 
-`apply` solo hace `enable`. No arranca Lemurs en caliente.
+`apply` solo hace `enable` (y `disable` de LightDM, sin `--now`). No arranca Lemurs en caliente ni corta una sesión gráfica.
 
 Sway lo lanza `/etc/lemurs/wayland/sway` con **seatd** (`LIBSEAT_BACKEND=seatd`). Logind no le da seat al compositor cuando Lemurs es un unit systemd.
 

@@ -36,13 +36,42 @@ else
   SUDO=""
 fi
 
-owner_home() {
-  local u="${SUDO_USER:-${USER:-}}"
-  getent passwd "$u" 2>/dev/null | cut -d: -f6
+# After `exec sudo -u <desktop>` from root, SUDO_USER is root. Never own
+# greeter files as root or mkdir into /root from the desktop user.
+desktop_user() {
+  local u
+  for u in "${TARGET_USER:-}" "${SUDO_USER:-}" "${USER:-}"; do
+    if [ -n "$u" ] && [ "$u" != root ] && getent passwd "$u" >/dev/null 2>&1; then
+      printf '%s\n' "$u"
+      return 0
+    fi
+  done
+  getent passwd | awk -F: '$3 >= 1000 && $3 < 65534 && $1 != "nobody" {print $1; exit}'
 }
 
 owner_name() {
-  printf '%s\n' "${SUDO_USER:-${USER:-root}}"
+  local u
+  u="$(desktop_user)"
+  printf '%s\n' "${u:-root}"
+}
+
+owner_home() {
+  local u h
+  u="$(owner_name)"
+  h="$(getent passwd "$u" 2>/dev/null | cut -d: -f6 || true)"
+  printf '%s\n' "$h"
+}
+
+usermod_existing_groups() {
+  local user="$1" g list=""
+  shift
+  [ -n "$user" ] && [ "$user" != root ] || return 0
+  for g in "$@"; do
+    getent group "$g" >/dev/null 2>&1 || continue
+    list="${list:+$list,}$g"
+  done
+  [ -n "$list" ] || return 0
+  $SUDO usermod -aG "$list" "$user" || true
 }
 
 need_root_write() {
@@ -131,26 +160,27 @@ apply_install() {
   $SUDO install -m 0755 "$DOT_LEMURS/wayland-sway" /etc/lemurs/wayland/sway
   $SUDO install -m 0644 -o root -g root "$DOT_LEMURS/lemurs.service" /etc/systemd/system/lemurs.service
 
-  local owner home share user_cfg stock_cfg themed vars example
+  local owner home share user_cfg stock_cfg themed vars example target_cfg
   owner="$(owner_name)"
   home="$(owner_home)"
-  share="$home/.local/share/zoi/lemurs"
-  user_cfg="$home/.config/zoi/lemurs/config.toml"
+  share="${home:+$home/.local/share/zoi/lemurs}"
+  user_cfg="${home:+$home/.config/zoi/lemurs/config.toml}"
   stock_cfg="$DOT_LEMURS/config.toml"
   example="$REPO_ROOT/dotfiles/config/zoi/lemurs/variables.overlay.toml.example"
-  
-  mkdir -p "$share" "$home/.config/zoi/lemurs"
-  
-  if [ ! -f "$user_cfg" ]; then
-    cp -a "$stock_cfg" "$share/config.toml"
-  fi
-  
-  if [ -f "$example" ] && [ ! -f "$home/.config/zoi/lemurs/variables.overlay.toml.example" ]; then
-    cp -a "$example" "$home/.config/zoi/lemurs/variables.overlay.toml.example"
+
+  if [ -n "$home" ] && [ -d "$home" ]; then
+    mkdir -p "$share" "$home/.config/zoi/lemurs" || warn "No pude crear $share (sigo con /etc/lemurs)."
+    if [ -d "$share" ] && [ ! -f "$user_cfg" ]; then
+      cp -a "$stock_cfg" "$share/config.toml" || true
+    fi
+    if [ -f "$example" ] && [ ! -f "$home/.config/zoi/lemurs/variables.overlay.toml.example" ]; then
+      cp -a "$example" "$home/.config/zoi/lemurs/variables.overlay.toml.example" || true
+    fi
+  else
+    warn "Home de $owner vacío; solo escribo /etc/lemurs."
   fi
 
-  local target_cfg
-  if [ -f "$user_cfg" ]; then
+  if [ -n "$user_cfg" ] && [ -f "$user_cfg" ]; then
     target_cfg="$user_cfg"
   else
     target_cfg="$stock_cfg"
@@ -158,9 +188,9 @@ apply_install() {
 
   $SUDO install -m 0644 -o "$owner" -g "$owner" "$target_cfg" /etc/lemurs/config.toml
 
-  themed="$home/.config/zoi/themed/lemurs-variables.toml"
+  themed="${home:+$home/.config/zoi/themed/lemurs-variables.toml}"
   vars=/etc/lemurs/variables.toml
-  if [ -f "$themed" ]; then
+  if [ -n "$themed" ] && [ -f "$themed" ]; then
     if [ -f "$vars" ] && cmp -s "$themed" "$vars"; then
       : # Sin cambios
     else
@@ -173,34 +203,31 @@ apply_install() {
       write_wallpaper_fallback_vars "$vars"
     fi
   fi
-  
+
   $SUDO chown "$owner:$owner" "$vars" /etc/lemurs/config.toml
   $SUDO chmod 0644 "$vars" /etc/lemurs/config.toml
 
-  vtrgb_src="$home/.config/zoi/themed/lemurs.vtrgb"
-  [ -f "$vtrgb_src" ] || vtrgb_src="$DOT_LEMURS/vtrgb"
+  vtrgb_src="${home:+$home/.config/zoi/themed/lemurs.vtrgb}"
+  [ -n "$vtrgb_src" ] && [ -f "$vtrgb_src" ] || vtrgb_src="$DOT_LEMURS/vtrgb"
   if [ -f "$vtrgb_src" ]; then
     $SUDO install -m 0644 -o "$owner" -g "$owner" "$vtrgb_src" /etc/lemurs/vtrgb
   else
     warn "No hay vtrgb (themed ni $DOT_LEMURS/vtrgb); TTY2 queda en VGA de fábrica."
   fi
 
-  if getent group seat >/dev/null 2>&1; then
-    $SUDO usermod -aG seat "$owner" || true
-  fi
+  usermod_existing_groups "$owner" video render seat
 
   log "Verificando estado de los servicios."
-  $SUDO systemctl disable --now lightdm.service 2>/dev/null || true
-  $SUDO systemctl disable display-manager.service 2>/dev/null || true
+  # disable, not --now: --now kills a live LightDM/Sway session mid-apply.
+  $SUDO systemctl disable lightdm.service 2>/dev/null || true
   $SUDO systemctl disable getty@tty2.service 2>/dev/null || true
-
   $SUDO systemctl daemon-reload
   if ! systemctl is-enabled lemurs.service >/dev/null 2>&1; then
     log "Habilitando Lemurs para el próximo boot."
     $SUDO systemctl enable lemurs.service
   fi
 
-  log "Listo. El script finalizó exitosamente."
+  log "Listo. El script finalizó exitosamente. Reboot para entrar en TTY2."
 }
 
 print_status() {

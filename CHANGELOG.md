@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Fixes
+- **Quickshell theme no sobrevive al reboot:** el selector (`ThemePanel` → `Themes.apply`) persistía el id, pero al boot `Themes.qml` volvía a llamar `apply()` (stock) o pintaba el fallback Mocha de `wallpaperColors` encima de `Color`. `zoi-theme` además abortaba en `gsettings` antes de escribir `colors.json`. Ahora `restore()` (sin re-dispatch), `Color.qml` lee `colors.json`, `Themes` se instancia en `shell.qml`, `zoi-theme` aísla dispatchers. `install.sh` instala `libglib2.0-bin` y siembra `colors.json` si faltaba. Docs: configuration, install, features, architecture, troubleshooting, skill.
+- **Lemurs no enable:** `apply` abortaba porque, tras `exec sudo -u <desktop>` desde root, `SUDO_USER=root` y el script hacía `mkdir` en `/root`. El owner del greeter ya no puede ser root; `TARGET_USER` se reenvía en el re-exec. `usermod` ignora grupos inexistentes (`seat`) para no perder `render`. `disable` de LightDM ya no usa `--now` (no mata la sesión gráfica).
 - **Quickshell / Qt Wayland:** `qs` no arrancaba (`Could not find the Qt platform plugin "wayland"`). El paquete Debian no depende de `qt6-wayland` y el install usa `--no-install-recommends`. `install.sh` ahora lo instala.
 - **PATH de sbin:** `install.sh` / `lemurs-setup.sh` / `apply-lemurs-seatd.sh` / `uninstall.sh` anteponen `/usr/sbin:/sbin` para que `usermod`, `locale-gen` y `update-locale` no fallen con *orden no encontrada* (PATH de usuario, `sudo -E`, agentes).
 - **Lemurs + Sway DRM:** seatd (`/usr/sbin/seatd -g video`, no drop-in a `/usr/bin/seatd`) and grupo `render` for `/dev/dri/renderD128`. Helper `scripts/apply-lemurs-seatd.sh`.

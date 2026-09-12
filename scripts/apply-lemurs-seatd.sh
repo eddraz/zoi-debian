@@ -21,12 +21,25 @@ rmdir /etc/systemd/system/seatd.service.d 2>/dev/null || true
 systemctl daemon-reload
 systemctl enable --now seatd
 install -m 0755 "$WRAPPER" /etc/lemurs/wayland/sway
-owner="${SUDO_USER:-}"
+owner="${TARGET_USER:-}"
+if [ -z "$owner" ] || [ "$owner" = root ]; then
+  owner="${SUDO_USER:-}"
+fi
 if [ -z "$owner" ] || [ "$owner" = root ]; then
   owner="$(logname 2>/dev/null || true)"
 fi
+if [ -z "$owner" ] || [ "$owner" = root ]; then
+  owner="$(getent passwd | awk -F: '$3 >= 1000 && $3 < 65534 && $1 != "nobody" {print $1; exit}')"
+fi
 if [ -n "$owner" ] && [ "$owner" != root ]; then
-  usermod -aG render,video,seat "$owner" || usermod -aG render,video "$owner" || true
+  _glist=""
+  for _g in render video seat; do
+    getent group "$_g" >/dev/null 2>&1 || continue
+    _glist="${_glist:+$_glist,}$_g"
+  done
+  if [ -n "$_glist" ]; then
+    usermod -aG "$_glist" "$owner" || true
+  fi
   echo "groups $owner: $(id -nG "$owner")"
 fi
 echo "seatd: $(systemctl is-active seatd)"
