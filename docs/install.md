@@ -250,7 +250,8 @@ Importante: el primer arranque de `qs` necesita:
 ├── wallpaper                # path absoluto
 ├── dnd                      # on/off
 ├── stay-awake               # on/off
-└── theme                    # id de paleta activa
+├── theme                    # id de paleta activa (selector Session → Theme)
+└── colors.json              # paleta para Color.qml al boot
 
 ~/.config/quickshell/screensaver.txt   # texto del banner (default: ZOI)
 ```

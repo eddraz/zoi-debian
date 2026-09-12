@@ -207,8 +207,10 @@ Cada panel en `panels/<X>Panel.qml` es un `Column` (o `Item`) que expone opciona
 ZOI cuenta con un sistema de temas desacoplado y reactivo de dos niveles:
 
 1. **Nivel UI Quickshell (`Color.qml`, `Themes.qml`, `Wallpaper.qml`)**:
-   - `Commons/Color.qml` expone las propiedades reactivas del Singleton.
-   - `Themes.qml` y `Wallpaper.qml` sincronizan en tiempo real los colores activos en Quickshell y despachan la paleta completa al motor de compilación.
+   - El selector es `ThemePanel.qml` → `Themes.apply(id)` (usuario) / `Themes.restore(id)` (boot).
+   - `shell.qml` fuerza `Themes.currentId` al arrancar para que el panel no dependa de abrir Session → Theme.
+   - `Color.qml` hidrata la barra desde `~/.local/state/quickshell/colors.json` (`FileView`, `watchChanges`).
+   - `Themes.persist()` escribe ese JSON; `zoi-theme` lo replica en `_dispatch_state` **antes** de GTK/Sway/etc.
 
 2. **Nivel Sistema (`zoi-theme` + Templates `*.tpl`)**:
    - Compilador maestro que procesa plantillas declarativas usando paletas de 22 colores estandarizadas (`colors.toml`).

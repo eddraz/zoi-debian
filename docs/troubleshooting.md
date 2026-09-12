@@ -172,6 +172,44 @@ pip install terminaltexteffects
 sudo apt install python3-terminaltexteffects
 ```
 
+## Lemurs no carga (sigue LightDM)
+
+El binario puede estar en `/usr/local/bin/lemurs` y el unit en disco, pero **disabled**. `display-manager.service` apunta a LightDM. Suele pasar si `lemurs-setup.sh apply` abortó a mitad: tras `exec sudo -u <usuario>` desde root, `SUDO_USER` es **root** y el script intentaba `mkdir` en `/root` (`set -e`). Un `usermod -aG …,seat` también falla entero si el grupo `seat` no existe, y no suma `render`.
+
+```sh
+systemctl is-enabled lemurs.service   # debería: enabled
+ls /etc/lemurs/config.toml            # tiene que existir
+id -nG                                # video y render (render aplica en el próximo login)
+
+cd ~/zoi-debian   # o ~/projects/zoi-debian
+sudo ./scripts/lemurs-setup.sh apply
+sudo ./scripts/apply-lemurs-seatd.sh
+sudo reboot
+```
+
+`apply` solo hace `enable` (no `start` ni `disable --now` de LightDM): no mates la sesión gráfica. Después del reboot el login es TTY2.
+
+## Al reiniciar, Quickshell vuelve a Mocha (el selector no recuerda el tema)
+
+El id vive en `~/.local/state/quickshell/theme`. Los colores de la barra viven en `~/.local/state/quickshell/colors.json`. Si solo existe `theme`, `Color.qml` arranca con los defaults Mocha.
+
+```sh
+cat ~/.local/state/quickshell/theme
+python3 -c "import json,os; d=json.load(open(os.path.expanduser('~/.local/state/quickshell/colors.json'))); print(d.get('id'), d.get('accent'))"
+```
+
+Reaplicar desde **Session → Theme** (fuente de verdad). Eso escribe ambos archivos. Si `zoi-theme` se queja de `gsettings`:
+
+```sh
+sudo apt-get install -y --no-install-recommends libglib2.0-bin
+```
+
+Un apply viejo puede haber dejado paleta en `~/.local/state/zoi/theme/current/colors.json` y no en Quickshell:
+
+```sh
+cp ~/.local/state/zoi/theme/current/colors.json ~/.local/state/quickshell/colors.json
+```
+
 ## Lemurs se ve negro/VGA, no el theme del wallpaper
 
 El TTY del kernel no entiende hex. Tiene que existir `/etc/lemurs/vtrgb` y la unit tiene que correr `setvtrgb` *antes* de Lemurs. El `config.toml` usa nombres ANSI (`black`, `light yellow`), no `$accent`.

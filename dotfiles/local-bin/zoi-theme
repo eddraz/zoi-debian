@@ -408,19 +408,32 @@ class ZoiThemeManager:
         shutil.rmtree(current_dir, ignore_errors=True)
         shutil.move(staging_dir, current_dir)
 
-        self._dispatch_foot(rendered_files.get("foot.ini"))
-        self._dispatch_btop(rendered_files.get("btop.theme"))
-        self._dispatch_sway(rendered_files.get("sway.theme.conf"), pal)
-        self._dispatch_helix(rendered_files.get("helix.toml"))
-        self._dispatch_zed(rendered_files.get("zed.json"))
-        self._dispatch_vscode(pal)
-        self._dispatch_gtk(rendered_files.get("gtk-3.0.css"), rendered_files.get("gtk-4.0.css"), pal)
-        self._dispatch_herdr(pal)
-        self._dispatch_lemurs(rendered_files.get("lemurs-variables.toml"), pal)
-        self._dispatch_yazi(rendered_files.get("yazi-theme.toml"))
-        self._dispatch_inlyne(pal)
+        # Persist Quickshell state first so a later optional dispatcher
+        # (gsettings, swaymsg, ...) cannot leave the bar on mocha after reboot.
         self._dispatch_state(pal, colors_json_content, sh_lines)
-        self._run_hooks(theme_id)
+
+        steps = [
+            ("foot", lambda: self._dispatch_foot(rendered_files.get("foot.ini"))),
+            ("btop", lambda: self._dispatch_btop(rendered_files.get("btop.theme"))),
+            ("sway", lambda: self._dispatch_sway(rendered_files.get("sway.theme.conf"), pal)),
+            ("helix", lambda: self._dispatch_helix(rendered_files.get("helix.toml"))),
+            ("zed", lambda: self._dispatch_zed(rendered_files.get("zed.json"))),
+            ("vscode", lambda: self._dispatch_vscode(pal)),
+            ("gtk", lambda: self._dispatch_gtk(rendered_files.get("gtk-3.0.css"), rendered_files.get("gtk-4.0.css"), pal)),
+            ("herdr", lambda: self._dispatch_herdr(pal)),
+            ("lemurs", lambda: self._dispatch_lemurs(rendered_files.get("lemurs-variables.toml"), pal)),
+            ("yazi", lambda: self._dispatch_yazi(rendered_files.get("yazi-theme.toml"))),
+            ("inlyne", lambda: self._dispatch_inlyne(pal)),
+        ]
+        for name, fn in steps:
+            try:
+                fn()
+            except Exception as e:
+                print(f"Theme dispatch error ({name}): {e}", file=sys.stderr)
+        try:
+            self._run_hooks(theme_id)
+        except Exception as e:
+            print(f"Theme hook error: {e}", file=sys.stderr)
 
     def _dispatch_foot(self, content):
         if not content:
@@ -554,7 +567,7 @@ class ZoiThemeManager:
             f"client.unfocused '{bg_dark}' '{bg_dark}' '{muted}' '{bg_dark}' '{bg_dark}'; "
             f"client.urgent '{urgent}' '{urgent}' '{bg_dark}' '{urgent}' '{urgent}'"
         ]
-        subprocess.run(cmd, capture_output=True, timeout=1)
+        self._safe_run(cmd, timeout=1)
 
     def _dispatch_helix(self, content):
         if not content:
@@ -682,7 +695,7 @@ class ZoiThemeManager:
     def _dispatch_gtk(self, css3, css4, pal):
         mode = pal.get("mode", "dark")
         scheme = "prefer-light" if mode == "light" else "prefer-dark"
-        subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme], capture_output=True)
+        self._safe_run(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme])
 
         if css3:
             d3 = os.path.join(self.home, ".config/gtk-3.0")
@@ -745,7 +758,7 @@ class ZoiThemeManager:
             rendered = dump_toml(data)
             with open(herdr_cfg, "w", encoding="utf-8") as f:
                 f.write(rendered)
-            subprocess.run(["herdr", "server", "reload-config"], capture_output=True, timeout=1)
+            self._safe_run(["herdr", "server", "reload-config"], timeout=1)
         except Exception:
             pass
 
@@ -883,13 +896,26 @@ class ZoiThemeManager:
         with open(dest, "w", encoding="utf-8") as f:
             f.write(content.rstrip() + "\n")
 
+    @staticmethod
+    def _safe_run(cmd, **kwargs):
+        kwargs.setdefault("capture_output", True)
+        try:
+            return subprocess.run(cmd, **kwargs)
+        except FileNotFoundError:
+            return None
+        except subprocess.TimeoutExpired:
+            return None
+        except OSError:
+            return None
+
     def _dispatch_state(self, pal, json_str, sh_lines):
+        os.makedirs(self.qs_state_dir, exist_ok=True)
         with open(os.path.join(self.qs_state_dir, "colors.json"), "w", encoding="utf-8") as f:
-            f.write(json_str)
+            f.write(json_str if json_str.endswith("\n") else json_str + "\n")
         with open(os.path.join(self.qs_state_dir, "colors.sh"), "w", encoding="utf-8") as f:
             f.writelines(sh_lines)
         with open(os.path.join(self.qs_state_dir, "theme"), "w", encoding="utf-8") as f:
-            f.write(pal.get("id", "custom"))
+            f.write(pal.get("id", "custom") + "\n")
 
     def _run_hooks(self, theme_id):
         hooks_dir = os.path.join(self.home, ".config/zoi/hooks/theme-set.d")
@@ -913,12 +939,16 @@ def main():
         if first_arg.startswith("{"):
             try:
                 raw_dict = json.loads(first_arg)
+            except json.JSONDecodeError as e:
+                print(f"Error parsing JSON palette: {e}", file=sys.stderr)
+                return 1
+            try:
                 pal = normalize_palette(raw_dict, theme_id=raw_dict.get("id", "custom"))
                 mgr.apply_palette(pal)
                 print(f"Applied palette JSON: {pal.get('name', 'Custom')} ({pal.get('id', 'custom')})")
                 return 0
             except Exception as e:
-                print(f"Error parsing JSON palette: {e}", file=sys.stderr)
+                print(f"Error applying JSON palette: {e}", file=sys.stderr)
                 return 1
 
         # 2. Fast handling of direct theme name: `zoi-theme tokyo-night` or `qs-theme-apply retro-82`

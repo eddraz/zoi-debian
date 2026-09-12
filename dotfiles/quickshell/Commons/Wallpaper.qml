@@ -52,10 +52,13 @@ Singleton {
         printErrors: false
         onLoaded: {
             const value = String(text()).trim();
-            if (value !== "") {
-                root.current = value;
+            if (value === "")
+                return;
+            root.current = value;
+            Themes.wallpaperPath = value;
+            // Only re-extract when the selector's active palette is Wallpaper.
+            if (Themes.currentId === "wallpaper" && !Themes.wallpaperFromDisk)
                 Themes.refreshFromWallpaper(value);
-            }
         }
     }
 

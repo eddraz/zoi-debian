@@ -19,6 +19,7 @@ Singleton {
     readonly property string applyHelper: Quickshell.env("HOME") + "/.local/bin/qs-theme-apply"
     property string pendingWallpaper: ""
     property string wallpaperPath: ""
+    property bool wallpaperFromDisk: false
     property var wallpaperColors: ({
         "id": "wallpaper",
         "name": "Wallpaper",
@@ -775,6 +776,7 @@ Singleton {
         Color.yellow = pal.yellow || "#f9e2af";
     }
 
+    // User action from ThemePanel: paint Quickshell, persist, then fan-out.
     function apply(id) {
         const pal = paletteById(id);
         currentId = pal.id;
@@ -786,9 +788,27 @@ Singleton {
         Quickshell.execDetached([applyHelper, JSON.stringify(pal)]);
     }
 
+    // Boot / FileView restore. Never call apply() here: that re-runs zoi-theme
+    // and, for wallpaper, would paint the hardcoded Mocha fallback over Color.
+    function restore(id) {
+        const pal = paletteById(id);
+        currentId = pal.id;
+        if (id === "wallpaper") {
+            if (wallpaperFromDisk)
+                applyColorProperties(wallpaperColors);
+            else if (wallpaperPath)
+                refreshFromWallpaper(wallpaperPath);
+            return;
+        }
+        applyColorProperties(pal);
+    }
+
     function persist() {
         Quickshell.execDetached(["mkdir", "-p", stateDir]);
         themeFile.setText(currentId + "\n");
+        const pal = paletteById(currentId);
+        if (pal && pal.background)
+            colorsJsonFile.setText(JSON.stringify(pal, null, 2) + "\n");
     }
 
     function writeScreensaverColors(pal) {
@@ -815,46 +835,49 @@ Singleton {
         onLoaded: {
             try {
                 const data = JSON.parse(String(text()).trim());
-                if (data && data.background && data.accent) {
-                    root.wallpaperColors = {
-                        "id": "wallpaper",
-                        "name": "Wallpaper",
-                        "mode": data.mode || "dark",
-                        "background": data.background,
-                        "dark_background": data.dark_background || data.mantle || data.background,
-                        "darker_background": data.darker_background || data.crust || data.background,
-                        "lighter_background": data.lighter_background || data.surface || data.background,
-                        "foreground": data.foreground || "#cdd6f4",
-                        "dark_foreground": data.dark_foreground || data.muted || "#6c7086",
-                        "light_foreground": data.light_foreground || data.foreground || "#e0e2f0",
-                        "bright_foreground": data.bright_foreground || data.foreground || "#ffffff",
-                        "selection": data.selection || data.surface || "#2a3c46",
-                        "muted": data.muted || "#9fa8ad",
-                        "accent": data.accent || "#89b4fa",
-                        "red": data.red || data.urgent || "#f38ba8",
-                        "yellow": data.yellow || "#f9e2af",
-                        "orange": data.orange || data.peach || "#fab387",
-                        "green": data.green || "#a6e3a1",
-                        "cyan": data.cyan || "#94e2d5",
-                        "blue": data.blue || data.accent || "#89b4fa",
-                        "magenta": data.magenta || "#cba6f7",
-                        "brown": data.brown || "#75493d",
-                        "bright_red": data.bright_red || data.red || "#ff7a93",
-                        "bright_yellow": data.bright_yellow || data.yellow || "#ff9e64",
-                        "bright_green": data.bright_green || data.green || "#b9f27c",
-                        "bright_cyan": data.bright_cyan || data.cyan || "#0db9d7",
-                        "bright_blue": data.bright_blue || data.blue || "#7da6ff",
-                        "bright_magenta": data.bright_magenta || data.magenta || "#bb9af7",
-                        "mantle": data.mantle || data.dark_background || data.background,
-                        "crust": data.crust || data.darker_background || data.background,
-                        "surface": data.surface || data.lighter_background || data.background,
-                        "overlay": data.overlay || data.muted || "#6c7086",
-                        "urgent": data.urgent || data.red || "#f38ba8",
-                        "peach": data.peach || data.orange || "#fab387"
-                    };
-                    if (root.currentId === "wallpaper")
-                        root.applyColorProperties(root.wallpaperColors);
-                }
+                if (!data || !data.background || !data.accent)
+                    return;
+                if ((data.id || "") !== "wallpaper")
+                    return;
+                root.wallpaperColors = {
+                    "id": "wallpaper",
+                    "name": "Wallpaper",
+                    "mode": data.mode || "dark",
+                    "background": data.background,
+                    "dark_background": data.dark_background || data.mantle || data.background,
+                    "darker_background": data.darker_background || data.crust || data.background,
+                    "lighter_background": data.lighter_background || data.surface || data.background,
+                    "foreground": data.foreground || "#cdd6f4",
+                    "dark_foreground": data.dark_foreground || data.muted || "#6c7086",
+                    "light_foreground": data.light_foreground || data.foreground || "#e0e2f0",
+                    "bright_foreground": data.bright_foreground || data.foreground || "#ffffff",
+                    "selection": data.selection || data.surface || "#2a3c46",
+                    "muted": data.muted || "#9fa8ad",
+                    "accent": data.accent || "#89b4fa",
+                    "red": data.red || data.urgent || "#f38ba8",
+                    "yellow": data.yellow || "#f9e2af",
+                    "orange": data.orange || data.peach || "#fab387",
+                    "green": data.green || "#a6e3a1",
+                    "cyan": data.cyan || "#94e2d5",
+                    "blue": data.blue || data.accent || "#89b4fa",
+                    "magenta": data.magenta || "#cba6f7",
+                    "brown": data.brown || "#75493d",
+                    "bright_red": data.bright_red || data.red || "#ff7a93",
+                    "bright_yellow": data.bright_yellow || data.yellow || "#ff9e64",
+                    "bright_green": data.bright_green || data.green || "#b9f27c",
+                    "bright_cyan": data.bright_cyan || data.cyan || "#0db9d7",
+                    "bright_blue": data.bright_blue || data.blue || "#7da6ff",
+                    "bright_magenta": data.bright_magenta || data.magenta || "#bb9af7",
+                    "mantle": data.mantle || data.dark_background || data.background,
+                    "crust": data.crust || data.darker_background || data.background,
+                    "surface": data.surface || data.lighter_background || data.background,
+                    "overlay": data.overlay || data.muted || "#6c7086",
+                    "urgent": data.urgent || data.red || "#f38ba8",
+                    "peach": data.peach || data.orange || "#fab387"
+                };
+                root.wallpaperFromDisk = true;
+                if (root.currentId === "wallpaper")
+                    root.applyColorProperties(root.wallpaperColors);
             } catch (e) {
             }
         }
@@ -867,15 +890,8 @@ Singleton {
         printErrors: false
         onLoaded: {
             const value = String(text()).trim();
-            if (value !== "") {
-                if (value === "wallpaper") {
-                    root.currentId = "wallpaper";
-                    if (root.wallpaperColors && root.wallpaperColors.background)
-                        root.applyColorProperties(root.wallpaperColors);
-                } else {
-                    root.apply(value);
-                }
-            }
+            if (value !== "")
+                root.restore(value);
         }
     }
 

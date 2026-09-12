@@ -320,7 +320,7 @@ swaymsg 'output * bg "'$path'" fill'
   - Aplicaciones GTK 3 / 4 y navegadores como LibreWolf (`gtk.css` + `prefer-dark/prefer-light`)
   - Herdr (`config.toml`)
 - **Extracción de paleta desde Wallpaper**: `qs-theme-from-wallpaper` extrae los 22 colores con contraste WCAG AAA (> 7:1), tintando fondos suavemente y destacando acentos cromáticos. Al elegir un fondo de pantalla, todo el sistema adopta automáticamente su paleta derivada.
-- **Persistencia reactiva en Quickshell**: `Commons/Color.qml` cuenta con un `FileView` dedicado que observa directamente `~/.local/state/quickshell/colors.json`, garantizando que la barra, widgets y popups mantengan y carguen la paleta elegida al reiniciar el equipo o cambiar de tema de forma instantánea.
+- **Persistencia del selector**: Session → Theme llama `Themes.apply(id)`. Eso escribe `~/.local/state/quickshell/theme` (id) y `colors.json` (paleta). Al boot `shell.qml` instancia `Themes` y `restore(id)` marca el **ACTIVO** sin re-dispatch; `Color.qml` observa `colors.json`. `zoi-theme` es solo el fan-out a las demás apps (un dispatcher que falle, p.ej. `gsettings` ausente, no borra el estado de Quickshell).
 - **Hooks de usuario**: Soporte para scripts personalizados en `~/.config/zoi/hooks/theme-set.d/*`.
 
 ---

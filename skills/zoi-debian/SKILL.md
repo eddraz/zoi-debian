@@ -136,7 +136,7 @@ Then `import "../Commons"` gives access as `MyService.foo()`.
 ## Themed on wallpapers
 
 `Wallpaper.apply(path)` calls `Themes.refreshFromWallpaper(path)` → spawns `~/.local/bin/qs-theme-from-wallpaper` which extracts 22 dominant colors via Python + GdkPixbuf (gi) with 5-bit color quantization and 7-sector chroma sorting, enforcing WCAG AAA contrast (> 7:1). Palettes are dispatched across the OS via `zoi-theme`.
-`Commons/Color.qml` contains a direct `FileView` observer watching `~/.local/state/quickshell/colors.json`, keeping Quickshell instantly synced on boot and theme switches without restarting the daemon.
+Theme selector (`ThemePanel` → `Themes.apply`) is the source of truth for Quickshell. It writes `~/.local/state/quickshell/theme` (id) and `colors.json` (palette). Boot uses `Themes.restore(id)` from `shell.qml` (no re-dispatch) and `Color.qml`'s `FileView` on `colors.json`. `zoi-theme` is fan-out only; `_dispatch_state` runs first so a missing `gsettings` (`libglib2.0-bin`) cannot drop bar persistence. Do not call `apply()` from FileView `onLoaded`.
 
 ## Sway integration
 
@@ -195,7 +195,8 @@ grim -g "$(swaymsg -t get_tree | python3 -c '...')" /tmp/x.png
 - Don't re-prompt git/locale/xkb/tz or re-apply baby-yoda palette on an already configured machine.
 - Don't silently grant sudo. Ask before writing `/etc/sudoers.d/zoi-<user>` (`visudo -c`, mode 0440, no dots in the filename). Skip the prompt if the drop-in exists. `ZOI_SUDOERS=0` skips. `uninstall.sh` must not delete sudoers.
 - Don't try to reload `foot` terminal config with `pkill -SIGUSR1 foot`. Foot does NOT support signal-based reloading. Use the OSC escape sequence mechanism implemented in `zoi-theme._osc_reload_foot` (writes directly to `/dev/pts/*`).
-- Don't `systemctl start lemurs` from a live graphical session; `lemurs-setup.sh apply` only enables the unit. Don't remove the lightdm package when switching to Lemurs.
+- Don't `systemctl start lemurs` from a live graphical session; `lemurs-setup.sh apply` only enables the unit (`systemctl disable` LightDM, never `disable --now`). Don't remove the lightdm package when switching to Lemurs.
+- Don't treat `SUDO_USER` as the desktop user after `exec sudo -u <desktop>` from root (it is `root`). Pass `TARGET_USER`. Never `mkdir` greeter files under `/root`. `usermod -aG a,b,missing` fails the whole list — skip groups that `getent group` doesn't find (`seat`).
 - Don't `include login` in `/etc/pam.d/lemurs` (Debian `pam_loginuid` required → *authentication failed* after a valid password). Use `@include common-auth` and `session optional pam_loginuid.so`.
 - Don't put hex colors in Lemurs `config.toml` for TTY2. Kernel VT ignores truecolor. Write `/etc/lemurs/vtrgb` and `ExecStartPre=setvtrgb`; config uses ANSI names (`black`, `light yellow`).
 - Lemurs `cache_path` is a **file** (`/var/cache/lemurs/state`). mkdir of that path as a directory breaks remember-username/session.

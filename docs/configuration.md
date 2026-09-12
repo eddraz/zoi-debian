@@ -78,10 +78,11 @@ Una línea con la palabra que el screensaver TTE muestra como banner. Default `Z
 |---|---|
 | `night-light` | `on` o `off` |
 | `wallpaper` | path absoluto al wallpaper activo |
-| `theme` | id de paleta activa (`mocha`, `macchiato`, ...) |
+| `theme` | id de paleta activa (`wallpaper`, `tokyo-night`, `gruvbox`, ...) |
+| `colors.json` | paleta completa (22 colores). `Color.qml` la carga al boot; `Themes.persist()` la escribe al elegir en Session → Theme |
 | `dnd` | `on` o `off` |
 | `stay-awake` | `on` o `off` |
-| `screensaver-colors` | cache de los colores derivados del wallpaper (escrito por `qs-theme-from-wallpaper`) |
+| `screensaver-colors` | cache crust+accent para el screensaver TTE |
 
 ## Motor de Temas ZOI (`zoi-theme`)
 
@@ -146,7 +147,7 @@ Aplicaciones compiladas automáticamente:
 - **Helix Editor**: `~/.config/helix/themes/zoi.toml` + `config.toml`
 - **Zed Editor**: `~/.config/zed/themes/zoi.json` + `settings.json`
 - **VSCode / Antigravity IDE / VSCodium**: `settings.json` (`workbench.colorCustomizations`)
-- **GTK 3.0 y GTK 4.0 / LibreWolf**: `~/.config/gtk-3.0/gtk.css` y `~/.config/gtk-4.0/gtk.css` + `gsettings prefer-dark/prefer-light`
+- **GTK 3.0 y GTK 4.0 / LibreWolf**: `~/.config/gtk-3.0/gtk.css` y `~/.config/gtk-4.0/gtk.css` + `gsettings prefer-dark/prefer-light` (`libglib2.0-bin`; si falta, el resto del tema igual se aplica)
 - **Herdr**: `~/.config/herdr/config.toml` (seed del repo; `zoi-theme` pinta `[theme.custom]`). Guía: [herdr.md](herdr.md).
 - **Lemurs**: TTY 16 colores → `/etc/lemurs/vtrgb` (`setvtrgb`). Títulos → `/etc/lemurs/variables.toml`. Overlay `~/.config/zoi/lemurs/variables.overlay.toml`; layout `~/.config/zoi/lemurs/config.toml`. Ver [lemurs.md](lemurs.md).
 - **Yazi**: `~/.config/yazi/yazi.toml` (openers; `url = "*.md"`) y `theme.toml` (íconos ASCII).
@@ -304,7 +305,13 @@ Reemplazá el archivo en `~/Imágenes/baby-yoda-cartoon.jpg` y aplicá desde Ses
 
 ### Cambiar la paleta
 
-Session → Theme → clic en la paleta. Se aplica en vivo.
+Session → Theme → clic en la paleta. Es la fuente de verdad de Quickshell:
+
+1. `Themes.apply(id)` pinta `Color.*` en vivo y escribe `theme` + `colors.json`.
+2. `qs-theme-apply` → `zoi-theme` propaga Foot/Sway/GTK/etc. (fan-out, no el selector).
+3. Al boot, `shell.qml` instancia `Themes`; `restore(id)` hidrata el **ACTIVO** del panel **sin** volver a despachar. `Color.qml` lee `colors.json` directo.
+
+No hace falta `zoi-theme set` para que la barra recuerde el tema.
 
 ### Cambiar screensaver text
 
