@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 import json
+import os
+import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -11,17 +14,25 @@ DEFAULT = {
     "lat": 4.6097,
     "lon": -74.0817,
 }
+CACHE = os.path.join(os.environ.get("HOME", ""), ".cache", "quickshell", "weather.json")
 
 
-def get(url):
-    req = urllib.request.Request(url, headers=UA)
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        return json.loads(resp.read().decode())
+def get(url, attempts=4):
+    last = None
+    for i in range(attempts):
+        try:
+            req = urllib.request.Request(url, headers=UA)
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return json.loads(resp.read().decode())
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, ValueError) as e:
+            last = e
+            time.sleep(1.2 * (i + 1))
+    raise last
 
 
 def locate():
     try:
-        loc = get("http://ip-api.com/json/?fields=status,city,country,countryCode,lat,lon")
+        loc = get("http://ip-api.com/json/?fields=status,city,country,countryCode,lat,lon", attempts=2)
         if loc.get("status") == "success" and loc.get("lat") is not None:
             return {
                 "city": loc.get("city") or DEFAULT["city"],
@@ -30,9 +41,35 @@ def locate():
                 "lat": loc["lat"],
                 "lon": loc["lon"],
             }
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError):
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError, TypeError, ValueError):
         pass
     return dict(DEFAULT)
+
+
+def read_cache():
+    try:
+        with open(CACHE, encoding="utf-8") as fh:
+            data = json.load(fh)
+        if isinstance(data, dict) and data.get("temp") is not None:
+            return data
+    except (OSError, json.JSONDecodeError, TypeError):
+        pass
+    return None
+
+
+def write_cache(payload):
+    directory = os.path.dirname(CACHE)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    tmp = CACHE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, ensure_ascii=False)
+        fh.write("\n")
+    os.replace(tmp, CACHE)
+
+
+def emit(payload):
+    print(json.dumps(payload, ensure_ascii=False), flush=True)
 
 
 def main():
@@ -44,36 +81,47 @@ def main():
         "&daily=weather_code,temperature_2m_max,temperature_2m_min"
         "&timezone=auto&forecast_days=5"
     )
-    data = get(url)
-    current = data.get("current") or {}
-    daily = data.get("daily") or {}
-    days = []
-    times = daily.get("time") or []
-    for i, day in enumerate(times):
-        days.append(
-            {
-                "date": day,
-                "code": (daily.get("weather_code") or [None])[i],
-                "max": (daily.get("temperature_2m_max") or [None])[i],
-                "min": (daily.get("temperature_2m_min") or [None])[i],
-            }
-        )
-    print(
-        json.dumps(
-            {
-                "city": loc["city"],
-                "country": loc["country"],
-                "countryCode": loc["countryCode"],
-                "lat": loc["lat"],
-                "lon": loc["lon"],
-                "temp": current.get("temperature_2m"),
-                "code": current.get("weather_code"),
-                "isDay": bool(current.get("is_day")),
-                "days": days,
-            }
-        ),
-        flush=True,
-    )
+    try:
+        data = get(url)
+        current = data.get("current") or {}
+        daily = data.get("daily") or {}
+        days = []
+        times = daily.get("time") or []
+        codes = daily.get("weather_code") or []
+        highs = daily.get("temperature_2m_max") or []
+        lows = daily.get("temperature_2m_min") or []
+        for i, day in enumerate(times):
+            days.append(
+                {
+                    "date": day,
+                    "code": codes[i] if i < len(codes) else None,
+                    "max": highs[i] if i < len(highs) else None,
+                    "min": lows[i] if i < len(lows) else None,
+                }
+            )
+        payload = {
+            "city": loc["city"],
+            "country": loc["country"],
+            "countryCode": loc["countryCode"],
+            "lat": loc["lat"],
+            "lon": loc["lon"],
+            "temp": current.get("temperature_2m"),
+            "code": current.get("weather_code"),
+            "isDay": bool(current.get("is_day")),
+            "days": days,
+        }
+        if payload["temp"] is None:
+            raise ValueError("Open-Meteo returned no temperature")
+        write_cache(payload)
+        emit(payload)
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
+        cached = read_cache()
+        if cached:
+            print(f"using cache: {e}", file=sys.stderr, flush=True)
+            emit(cached)
+            return
+        print(str(e), file=sys.stderr, flush=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

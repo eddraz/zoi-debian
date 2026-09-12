@@ -16,11 +16,14 @@ Singleton {
     property bool isDay: true
     property var days: []
     property bool ready: false
+    property int failCount: 0
     readonly property int degrees: Math.round(temp)
     readonly property string label: ready ? (degrees + "°") : "…"
     readonly property string condition: conditionFor(code)
     readonly property string icon: iconFor(code, isDay)
     readonly property string helper: Quickshell.env("HOME") + "/.local/bin/qs-weather"
+    readonly property string cachePath: Quickshell.env("HOME") + "/.cache/quickshell/weather.json"
+    readonly property var fetchCmd: ["/usr/bin/python3", "-u", helper]
 
     function conditionFor(value) {
         const n = Number(value);
@@ -72,18 +75,26 @@ Singleton {
     function refresh() {
         if (fetch.running)
             fetch.running = false;
+        startTimer.interval = ready ? 250 : 2500;
         startTimer.restart();
+    }
+
+    function scheduleRetry() {
+        failCount += 1;
+        const caps = [3000, 5000, 10000, 20000, 30000, 60000];
+        retryTimer.interval = caps[Math.min(failCount - 1, caps.length - 1)];
+        retryTimer.restart();
     }
 
     function parse(text) {
         try {
             const raw = String(text || "").trim();
             if (!raw)
-                return;
+                return false;
             const data = JSON.parse(raw);
             const tempVal = Number(data.temp);
             if (!data || !Number.isFinite(tempVal))
-                return;
+                return false;
             city = data.city || "";
             country = data.country || "";
             countryCode = data.countryCode || "";
@@ -92,24 +103,63 @@ Singleton {
             isDay = !!data.isDay;
             days = Array.isArray(data.days) ? data.days : [];
             ready = true;
+            failCount = 0;
+            return true;
         } catch (e) {
+            return false;
+        }
+    }
+
+    FileView {
+        id: cacheFile
+        path: root.cachePath
+        watchChanges: true
+        printErrors: false
+        onLoaded: {
+            if (!root.ready)
+                root.parse(text());
         }
     }
 
     Process {
         id: fetch
-        command: ["/usr/bin/python3", "-u", root.helper]
+        command: root.fetchCmd
         stdout: StdioCollector {
             waitForEnd: true
-            onStreamFinished: root.parse(text)
+            onStreamFinished: {
+                if (!root.parse(text))
+                    root.scheduleRetry();
+            }
+        }
+        stderr: StdioCollector {
+            waitForEnd: true
+            onStreamFinished: {
+                const msg = String(text || "").trim();
+                if (msg)
+                    console.warn("qs-weather:", msg);
+            }
+        }
+        onExited: code => {
+            if (code !== 0 && !root.ready)
+                root.scheduleRetry();
         }
     }
 
     Timer {
         id: startTimer
-        interval: 0
+        interval: 2500
         repeat: false
-        onTriggered: fetch.running = true
+        onTriggered: fetch.exec(root.fetchCmd)
+    }
+
+    Timer {
+        id: retryTimer
+        interval: 5000
+        repeat: false
+        onTriggered: {
+            if (!fetch.running)
+                root.refresh();
+        }
     }
 
     Timer {
@@ -117,6 +167,14 @@ Singleton {
         running: true
         repeat: true
         onTriggered: root.refresh()
+    }
+
+    IpcHandler {
+        target: "weather"
+        function refresh(): string {
+            root.refresh();
+            return "ok";
+        }
     }
 
     Component.onCompleted: root.refresh()
