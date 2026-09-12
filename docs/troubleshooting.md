@@ -225,6 +225,38 @@ id -nG $USER   # tiene que listar render (en un login nuevo)
 sudo reboot
 ```
 
+## `install.sh`: sudoers / «¿Agregar a … en sudoers?»
+
+El instalador no escribe sudoers a ciegas. Si dijiste **n**, no hay `/etc/sudoers.d/zoi-<usuario>` y la fase 2 puede pedir contraseña o fallar sin `sudo`.
+
+```sh
+# ver
+ls -l /etc/sudoers.d/zoi-*
+sudo -l -U "$USER"
+
+# agregar ahora (mismo contenido que el instalador)
+echo "$USER ALL=(ALL:ALL) ALL" | sudo tee /etc/sudoers.d/zoi-$USER
+sudo chmod 440 /etc/sudoers.d/zoi-$USER
+sudo visudo -cf /etc/sudoers.d/zoi-$USER
+
+# quitar
+sudo rm -f /etc/sudoers.d/zoi-$USER
+```
+
+En no interactivo: `ZOI_SUDOERS=0` omite; `ZOI_SUDOERS=1` (default con `ZOI_NONINTERACTIVE=1`) escribe el drop-in.
+
+## `install.sh`: `usermod: orden no encontrada` (o `locale-gen` / `update-locale`)
+
+En Debian esos binarios están en `/usr/sbin`. Un PATH de usuario (`sudo -E`, `su` sin `-`, agentes) no lo incluye y bash sale 127.
+
+Los scripts (`install.sh`, `lemurs-setup.sh`, `apply-lemurs-seatd.sh`, `uninstall.sh`) anteponen `/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin` al PATH. Si corrés `usermod` a mano:
+
+```sh
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin:$PATH"
+command -v usermod   # /usr/sbin/usermod
+sudo usermod -aG render,video $USER
+```
+
 ## `install.sh`: `work: variable sin asignar` (Lemurs)
 
 Era un `trap RETURN` sobre una variable `local`. Lemurs igual quedaba installed/enabled. Ya está arreglado en `lemurs-setup.sh`. Si ves el warning viejo: `systemctl is-enabled lemurs` y `lemurs --version`.

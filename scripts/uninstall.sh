@@ -5,6 +5,9 @@
 
 set -euo pipefail
 
+# systemctl y helpers de sbin; un PATH de usuario a veces omite /usr/sbin.
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin:${PATH:-/usr/bin:/bin}"
+
 log()  { printf '\033[1;35m[zoi]\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[warn]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31m[fail]\033[0m %s\n' "$*" >&2; exit 1; }
@@ -47,6 +50,6 @@ rm -f "$HOME/.config/zoi/themed/lemurs-variables.toml" \
      "$HOME/.config/zoi/themed/lemurs.vtrgb"
 
 log "Done. Los paquetes apt NO se desinstalaron. Para hacerlo:"
-log "Herdr, Pi e Inlyne (si quedó otro binario) son de usuario. Config: ~/.config/herdr ~/.config/inlyne ~/.config/yazi"
+log "sudoers (/etc/sudoers.d/zoi-*) no se toca. Herdr, Pi e Inlyne son de usuario. Config: ~/.config/herdr ~/.config/inlyne ~/.config/yazi"
 log "  sudo apt remove quickshell swaybg swayidle wlsunset figlet python3-terminaltexteffects btop bc libqrencode4"
 log "Restart Sway with: swaymsg reload"

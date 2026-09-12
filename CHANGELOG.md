@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Fixes
+- **PATH de sbin:** `install.sh` / `lemurs-setup.sh` / `apply-lemurs-seatd.sh` / `uninstall.sh` anteponen `/usr/sbin:/sbin` para que `usermod`, `locale-gen` y `update-locale` no fallen con *orden no encontrada* (PATH de usuario, `sudo -E`, agentes).
 - **Lemurs + Sway DRM:** seatd (`/usr/sbin/seatd -g video`, no drop-in a `/usr/bin/seatd`) and grupo `render` for `/dev/dri/renderD128`. Helper `scripts/apply-lemurs-seatd.sh`.
 - **Lemurs Sway session:** the greeter no longer scans `/usr/share/xsessions`. Debian's `sway.desktop` there is X11; Lemurs waited 60s for Xorg. Only `/etc/lemurs/wayland/sway` is offered.
 - **Lemurs login:** Debian PAM no usa más `include login`. `pam_loginuid` queda `optional` para que una contraseña válida no termine en *authentication failed* (sesión systemd / EPERM). Cache en `/var/cache/lemurs/state` (archivo, no directorio). PAM y unit se instalan `root:root`.
@@ -10,11 +11,14 @@
 - **Lemurs docs/scripts:** README, features, architecture, install, troubleshooting, skill, `install.sh` (`kbd`), `uninstall.sh` (limpia unit/PAM/`vtrgb`) y `lemurs-setup.sh` (setvtrgb, cache file, PAM Debian) alineados con el DM real.
 
 ### Removed
+- **Install identity prompts:** `install.sh` ya no pide nombre, correo, usuario ni contraseña, no crea cuentas y no escribe `git config user.*`. Usa el usuario del SO (`SUDO_USER` / UID ≥ 1000).
 - **Limine:** se eliminaron `scripts/limine-setup.sh`, `scripts/apply-limine.sh`, `docs/limine.md` y el dispatch de paleta (`limine.conf.tpl` / `zoi-theme`). El bootstrap no toca el bootloader.
 
 ### Features
+- **sudoers del usuario actual:** `install.sh` pregunta `[Y/n]` antes de escribir `/etc/sudoers.d/zoi-<usuario>` (`visudo -c`, grupo `sudo`). Re-run no re-pregunta si el drop-in existe. `ZOI_SUDOERS=0` omite; no interactivo default = agregar.
+- **curl + git + Node.js latest:** el bootstrap instala `curl` y `git` (apt) y el current latest de [nodejs.org](https://nodejs.org/dist/latest/) en `/usr/local` (amd64/arm64, idempotente).
 - **Media defaults:** mpv (video), Amberol (audio), Loupe (imágenes) vía apt + `xdg-mime`.
-- **Idempotent setup:** `install.sh` no re-pregunta git/locale/teclado/tz/usuario si ya están; no pisa la paleta en un re-run; copia `local-bin` sin `__pycache__`.
+- **Idempotent setup:** `install.sh` no re-pregunta locale/teclado/tz si ya están; no pisa la paleta en un re-run; copia `local-bin` sin `__pycache__`.
 - **Markdown viewer:** Inlyne (`qs-md` / `inlyne view`) en lugar del overlay Quickshell. Learn y Yazi lo usan; `zoi-theme` pinta `~/.config/inlyne/inlyne.toml`.
 - **Arch gating:** `install.sh` lee `dpkg --print-architecture` y pinnea/salta Yazi, Mullvad, Lemurs e Inlyne.
 - **Yazi 26:** reglas `url`/`mime`; íconos ASCII (sin Nerd Font).
@@ -27,7 +31,7 @@
 - **Keys (Quickshell):** Super+/ abre el panel de atajos. `/` busca, badges 1–0, hjkl/flechas, Enter o clic en el ítem ya seleccionado reasigna. Un combo duplicado muestra qué ejecuta; Reemplazar deja al anterior sin atajo. `~/.config/zoi/keys.json` + `qs-keys-apply`.
 - **Lemurs display manager**: TUI login (TTY2) with `lemurs-variables.toml.tpl`. First install extracts the palette from `assets/default-wallpaper.jpg` (Baby Yoda) instead of tokyo-night. LightDM stays installed as fallback.
 - **Locale, keyboard, timezone**: `install.sh` only prompts when unset (defaults `es_CO.UTF-8`, `latam,us`, `America/Bogota`). Re-apply is skipped if the system already matches.
-- **Terminal Debian bootstrap**: `install.sh` configures Wi-Fi if offline, creates a sudo login user, sets GitHub git identity, installs Pi (`pi.dev`), then the desktop stack, and offers a reboot.
+- **Terminal Debian bootstrap**: `install.sh` configures Wi-Fi if offline, uses the existing OS user, installs Pi (`pi.dev`), then the desktop stack, and offers a reboot.
 - **Window close bindings**: Super+W kills the focused window; Super+Shift+W kills every window on the focused workspace. Tabbed layout is no longer on Super+W (stacking Super+S, split Super+E remain).
 - **Mullvad Browser is the default browser**: official Mullvad APT repo in `install.sh`, Sway `$browser`, and XDG http/https. LibreWolf is no longer pulled by default.
 - **Foot + fish are the setup terminal/shell**: `foot.ini` runs fish, Sway `$term` is foot+fish, login shell is fish, and `conf.d/zoi.fish` puts `~/.local/bin` on PATH without clobbering an existing `config.fish`.

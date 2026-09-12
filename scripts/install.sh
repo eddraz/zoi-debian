@@ -2,6 +2,7 @@
 # zoi-debian installer for a Debian 13 terminal/minimal install.
 #
 # From a clone:
+#   apt-get update && apt-get install -y curl git
 #   git clone https://github.com/<you>/zoi-debian.git
 #   cd zoi-debian && sudo ./scripts/install.sh
 #
@@ -10,13 +11,18 @@
 #     | sudo ZOI_REPO=https://github.com/<you>/zoi-debian.git bash
 #
 # Prompts only what is missing: Wi-Fi if offline; locale/keyboard/timezone if unset;
-# git identity if user.name/email missing; sudo user only as root without SUDO_USER.
+# sudoers for the login user (confirm). Uses the existing OS login user. Does not ask
+# for name, email, username, or password, and does not create users or set git identity.
 # Then Pi + desktop. Idempotent. Re-run does not re-ask or re-theme an existing desktop.
 #
 # Env: ZOI_REPO ZOI_BRANCH ZOI_DIR ZOI_NONINTERACTIVE=1 ZOI_SKIP_REBOOT=1
-#      ZOI_LANG ZOI_XKB ZOI_TZ GIT_NAME GIT_EMAIL TARGET_USER
+#      ZOI_LANG ZOI_XKB ZOI_TZ TARGET_USER ZOI_SUDOERS=0|1
 
 set -euo pipefail
+
+# usermod, locale-gen, update-locale viven en /usr/sbin. Un PATH de usuario
+# (sudo -E, su sin '-', agentes) no lo incluye y el script muere con 127.
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin:${PATH:-/usr/bin:/bin}"
 
 ZOI_REPO="${ZOI_REPO:-https://github.com/<owner>/zoi-debian.git}"
 ZOI_BRANCH="${ZOI_BRANCH:-main}"
@@ -116,7 +122,7 @@ esac
 
 # ================================================================= bootstrap
 if [ "${ZOI_BOOTSTRAPPED:-}" != "1" ]; then
-  log "Fase 1: red, usuario sudo, git, y re-lanzar como ese usuario."
+  log "Fase 1: red, locale si falta, y re-lanzar como el usuario del sistema."
 
   if ! have_net; then
     log "No hay internet. Configurá Wi‑Fi."
@@ -148,43 +154,29 @@ if [ "${ZOI_BOOTSTRAPPED:-}" != "1" ]; then
 
   $SUDO apt-get update -y
   $SUDO apt-get install -y --no-install-recommends \
-    ca-certificates curl git sudo \
+    ca-certificates curl git sudo xz-utils \
     network-manager iw wpasupplicant rfkill \
-    passwd adduser \
     locales tzdata keyboard-configuration console-setup
 
+  if [ -z "${TARGET_USER:-}" ] && [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    TARGET_USER="$SUDO_USER"
+  fi
+  if [ -z "${TARGET_USER:-}" ] && [ "$(id -u)" -ne 0 ]; then
+    TARGET_USER="${USER}"
+  fi
+  if [ -z "${TARGET_USER:-}" ] || [ "$TARGET_USER" = "root" ]; then
+    TARGET_USER="$(getent passwd | awk -F: '$3 >= 1000 && $3 < 65534 && $1 != "nobody" {print $1; exit}')"
+  fi
+  [ -n "${TARGET_USER:-}" ] && [ "$TARGET_USER" != "root" ] || \
+    die "No hay usuario de escritorio. El instalador no crea cuentas ni pide contraseña: corré el script con sudo desde tu usuario."
+  id "$TARGET_USER" >/dev/null 2>&1 || die "El usuario $TARGET_USER no existe."
+  log "Usuario del sistema: $TARGET_USER (no pido nombre, correo ni contraseña)."
+
   if [ "${ZOI_NONINTERACTIVE:-}" = "1" ]; then
-    GIT_NAME="${GIT_NAME:-zoi}"
-    GIT_EMAIL="${GIT_EMAIL:-zoi@localhost}"
-    TARGET_USER="${TARGET_USER:-${SUDO_USER:-$USER}}"
         ZOI_LANG="${ZOI_LANG:-es_CO.UTF-8}"
         ZOI_XKB="${ZOI_XKB:-latam,us}"
         ZOI_TZ="${ZOI_TZ:-America/Bogota}"
   else
-    git_cfg() {
-      local key="$1"
-      if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$SUDO_USER" -H git config --global --get "$key" 2>/dev/null || true
-      else
-        git config --global --get "$key" 2>/dev/null || true
-      fi
-    }
-    _def_name="$(git_cfg user.name)"
-    _def_email="$(git_cfg user.email)"
-    if [ -n "$_def_name" ] && [ -n "$_def_email" ]; then
-      GIT_NAME="$_def_name"
-      GIT_EMAIL="$_def_email"
-      log "Git ya configurado: $GIT_NAME <$GIT_EMAIL>"
-    else
-      log "Identidad de GitHub / git."
-      GIT_NAME="$(ask "Nombre para git (GitHub)${_def_name:+ [$_def_name]}: ")"
-      GIT_EMAIL="$(ask "Email para git (GitHub)${_def_email:+ [$_def_email]}: ")"
-      GIT_NAME="${GIT_NAME:-$_def_name}"
-      GIT_EMAIL="${GIT_EMAIL:-$_def_email}"
-      [ -n "$GIT_NAME" ] || die "Nombre git vacío."
-      [ -n "$GIT_EMAIL" ] || die "Email git vacío."
-    fi
-
     read_kv() {
       local file="$1" key="$2"
       [ -r "$file" ] || return 0
@@ -230,39 +222,56 @@ if [ "${ZOI_BOOTSTRAPPED:-}" != "1" ]; then
       fi
     fi
     log "Locale=$ZOI_LANG  teclado=$ZOI_XKB  tz=$ZOI_TZ"
-
-    if [ "$(id -u)" -eq 0 ]; then
-      if [ -z "${TARGET_USER:-}" ] && [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        TARGET_USER="$SUDO_USER"
-        log "Usuario: $TARGET_USER (sudo). No creo otro."
-      fi
-      if [ -z "${TARGET_USER:-}" ]; then
-        log "Usuario de ingreso (sudo)."
-        TARGET_USER="$(ask "Nombre de usuario: ")"
-        echo "$TARGET_USER" | grep -Eq '^[a-z_][a-z0-9_-]*$' || die "Usuario inválido (minúsculas, números, _-)."
-        PASS1="$(ask_secret "Contraseña: ")"
-        PASS2="$(ask_secret "Repetí la contraseña: ")"
-        [ "$PASS1" = "$PASS2" ] || die "Las contraseñas no coinciden."
-        [ -n "$PASS1" ] || die "Contraseña vacía."
-      fi
-    else
-      TARGET_USER="${SUDO_USER:-$USER}"
-      log "Corriendo como $TARGET_USER (no root): no creo otro usuario."
-    fi
   fi
 
   if [ "$(id -u)" -eq 0 ]; then
-    if ! id "$TARGET_USER" >/dev/null 2>&1; then
-      log "Creando usuario $TARGET_USER con sudo."
-      adduser --disabled-password --gecos "" "$TARGET_USER"
-      echo "$TARGET_USER:$PASS1" | chpasswd
+    usermod -aG video,render,audio,netdev,plugdev,seat "$TARGET_USER" 2>/dev/null \
+      || usermod -aG video,seat "$TARGET_USER" 2>/dev/null \
+      || usermod -aG video "$TARGET_USER" 2>/dev/null || true
+  else
+    $SUDO usermod -aG video,render,audio,netdev,plugdev,seat "$TARGET_USER" 2>/dev/null \
+      || $SUDO usermod -aG video,seat "$TARGET_USER" 2>/dev/null \
+      || $SUDO usermod -aG video "$TARGET_USER" 2>/dev/null || true
+  fi
+
+  sudoers_tag="$(printf '%s' "$TARGET_USER" | tr -c 'A-Za-z0-9_-' '_')"
+  sudoers_file="/etc/sudoers.d/zoi-${sudoers_tag}"
+  want_sudoers=0
+  if [ -f "$sudoers_file" ]; then
+    log "sudoers ya tiene a $TARGET_USER ($sudoers_file); no pregunto."
+  else
+    if [ "${ZOI_NONINTERACTIVE:-}" = "1" ]; then
+      case "${ZOI_SUDOERS:-1}" in
+        0|n|N|no|false) want_sudoers=0 ;;
+        *) want_sudoers=1 ;;
+      esac
     else
-      log "El usuario $TARGET_USER ya existe."
+      log "Puedo escribir $sudoers_file con: $TARGET_USER ALL=(ALL:ALL) ALL"
+      _ans="$(ask "¿Agregar a $TARGET_USER en sudoers? [Y/n] ")"
+      case "$_ans" in
+        ""|Y|y|S|s) want_sudoers=1 ;;
+        *) want_sudoers=0 ;;
+      esac
     fi
-    usermod -aG sudo,video,render,audio,netdev,plugdev,seat "$TARGET_USER" 2>/dev/null || usermod -aG sudo,video,seat "$TARGET_USER" 2>/dev/null || usermod -aG sudo "$TARGET_USER"
-    if [ ! -f /etc/sudoers.d/zoi-sudo ]; then
-      echo "%sudo ALL=(ALL:ALL) ALL" >/etc/sudoers.d/zoi-sudo
-      chmod 440 /etc/sudoers.d/zoi-sudo
+    if [ "$want_sudoers" = 1 ]; then
+      _sudoers_tmp="$(mktemp)"
+      printf '%s ALL=(ALL:ALL) ALL\n' "$TARGET_USER" >"$_sudoers_tmp"
+      chmod 440 "$_sudoers_tmp"
+      if visudo -cf "$_sudoers_tmp" >/dev/null 2>&1 \
+        && $SUDO install -m 440 -o root -g root "$_sudoers_tmp" "$sudoers_file"; then
+        rm -f "$_sudoers_tmp"
+        if [ "$(id -u)" -eq 0 ]; then
+          usermod -aG sudo "$TARGET_USER" 2>/dev/null || true
+        else
+          $SUDO usermod -aG sudo "$TARGET_USER" 2>/dev/null || true
+        fi
+        log "Agregué a $TARGET_USER en $sudoers_file y al grupo sudo."
+      else
+        rm -f "$_sudoers_tmp"
+        warn "No pude escribir $sudoers_file (hace falta root/sudo, o visudo rechazó el fragmento)."
+      fi
+    else
+      log "No agrego a $TARGET_USER en sudoers."
     fi
   fi
 
@@ -326,15 +335,6 @@ EOF
     fi
   fi
   chown -R "$TARGET_USER:$TARGET_USER" "$DEST_REPO" "$(dirname "$DEST_REPO")" 2>/dev/null || true
-
-  if [ "$(id -u)" -eq 0 ]; then
-    sudo -u "$TARGET_USER" -H git config --global user.name "$GIT_NAME"
-    sudo -u "$TARGET_USER" -H git config --global user.email "$GIT_EMAIL"
-  else
-    git config --global user.name "$GIT_NAME"
-    git config --global user.email "$GIT_EMAIL"
-  fi
-  log "git user.name=$GIT_NAME  user.email=$GIT_EMAIL"
 
   if [ "$(id -u)" -eq 0 ]; then
     log "Re-lanzando el resto de la instalación como $TARGET_USER."
@@ -402,7 +402,7 @@ PKGS=(
   amberol loupe
   seatd
   ffmpeg poppler-utils fd-find ripgrep fzf imagemagick p7zip-full
-  git curl ca-certificates
+  git curl ca-certificates xz-utils
 )
 
 BP_PKGS=(quickshell)
@@ -424,6 +424,49 @@ fi
 # renderD128 is 0660 render; Lemurs+seatd does not get logind uaccess ACLs.
 $SUDO usermod -aG render,video,seat "${SUDO_USER:-$USER}" 2>/dev/null || \
   $SUDO usermod -aG render,video "${SUDO_USER:-$USER}" 2>/dev/null || true
+
+# ---------------------------------------------------------------- nodejs (latest current, nodejs.org; amd64/arm64)
+node_arch=""
+case "$ARCH" in
+  amd64) node_arch="x64" ;;
+  arm64) node_arch="arm64" ;;
+esac
+if [ -n "$node_arch" ]; then
+  node_latest=""
+  node_shasums="$(curl -fsSL https://nodejs.org/dist/latest/SHASUMS256.txt)" || node_shasums=""
+  if [ -n "$node_shasums" ]; then
+    node_latest="$(printf '%s\n' "$node_shasums" | awk -v suf="-linux-${node_arch}.tar.xz" '
+      index($2, suf) && $2 ~ suf "$" {
+        v=$2
+        sub(/^node-v/, "", v)
+        sub(/-linux-.*$/, "", v)
+        print v
+        exit
+      }')"
+  fi
+  node_have=""
+  if command -v node >/dev/null 2>&1; then
+    node_have="$(node -v 2>/dev/null | sed 's/^v//')"
+  fi
+  if [ -z "$node_latest" ]; then
+    warn "No pude resolver Node.js latest desde nodejs.org."
+  elif [ "$node_have" = "$node_latest" ]; then
+    log "Node.js ya está en v$node_latest."
+  else
+    log "Instalando Node.js v${node_latest} ($ARCH) en /usr/local."
+    node_tmp="$(mktemp -d)"
+    node_url="https://nodejs.org/dist/latest/node-v${node_latest}-linux-${node_arch}.tar.xz"
+    if curl -fsSL "$node_url" -o "$node_tmp/node.tar.xz" \
+      && $SUDO tar -xJf "$node_tmp/node.tar.xz" -C /usr/local --strip-components=1; then
+      log "Node.js $(/usr/local/bin/node -v)  npm $(/usr/local/bin/npm -v 2>/dev/null || echo '?')"
+    else
+      warn "No pude instalar Node.js v${node_latest}."
+    fi
+    rm -rf "$node_tmp"
+  fi
+else
+  warn "Node.js no publica tarball linux para $ARCH; salteo."
+fi
 
 # ---------------------------------------------------------------- yazi (official APT repo; amd64/arm64)
 if arch_in "$ARCH" amd64 arm64; then
@@ -714,7 +757,7 @@ fi
 # ---------------------------------------------------------------- sanity
 log "Verificando binarios clave."
 MISSING=0
-for b in sway qs swaymsg playerctl wlsunset foot fish yazi qs-files qs-browser qs-keys-apply qs-md inlyne cliphist wl-copy wtype grim slurp wf-recorder wireplumber btop bc zoi-theme git mpv amberol loupe; do
+for b in sway qs swaymsg playerctl wlsunset foot fish yazi qs-files qs-browser qs-keys-apply qs-md inlyne cliphist wl-copy wtype grim slurp wf-recorder wireplumber btop bc zoi-theme git curl node npm mpv amberol loupe; do
   command -v "$b" >/dev/null || { warn "Falta binario: $b"; MISSING=$((MISSING+1)); }
 done
 command -v thorium-browser >/dev/null || command -v mullvad-browser >/dev/null || warn "No hay Thorium ni Mullvad; Super+Shift+Return usa qs-browser (XDG)."

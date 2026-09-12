@@ -2,7 +2,7 @@
 
 | Doc | Qué cubre |
 |---|---|
-| [install.md](install.md) | Bootstrap: ISA, paquetes, Inlyne/Yazi, post-install. |
+| [install.md](install.md) | Bootstrap: ISA, PATH sbin, curl/git/Node.js, paquetes, Inlyne/Yazi, post-install. |
 | [features.md](features.md) | Cada feature en detalle (qué hace, qué archivos toca). |
 | [configuration.md](configuration.md) | Dónde está cada config, cómo la cambiás. |
 | [shortcuts.md](shortcuts.md) | Mapa completo de atajos de Sway + popups. |

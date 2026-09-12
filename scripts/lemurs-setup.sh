@@ -15,6 +15,9 @@
 
 set -euo pipefail
 
+# usermod y demás viven en /usr/sbin; un PATH de usuario no lo incluye.
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin:${PATH:-/usr/bin:/bin}"
+
 LEMURS_VERSION="${LEMURS_VERSION:-0.4.0}"
 LEMURS_URL="${LEMURS_URL:-https://github.com/coastalwhite/lemurs/releases/download/v${LEMURS_VERSION}/lemurs-x86_64-unknown-linux-gnu.tar.xz}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

@@ -12,7 +12,7 @@ Instalá **Debian 13 (trixie) en modo terminal** (netinst, sin desktop). En la T
 
 ```sh
 # A) clone y correr
-apt update && apt install -y git
+apt update && apt install -y curl git
 git clone https://github.com/<owner>/zoi-debian ~/zoi-debian
 cd ~/zoi-debian
 ./scripts/install.sh
@@ -26,12 +26,12 @@ El instalador, en orden:
 
 1. Si no hay red, pide SSID y clave Wi‑Fi.
 2. Locale / teclado / timezone **solo si el sistema no los tiene**.
-3. Git name/email **solo si faltan** en `git config --global`.
-4. Usuario sudo **solo si corrés como root** sin `SUDO_USER`.
-5. Instala Pi, Herdr, Sway, Quickshell, foot+fish, Yazi, Inlyne, Mullvad, Lemurs, Amberol, Loupe, temas. Terceros según arquitectura.
+3. Usa el **usuario del sistema operativo** (no pide nombre, correo, usuario ni contraseña; no crea cuentas ni configura git).
+4. Pregunta si agregar ese usuario a **sudoers** (`/etc/sudoers.d/zoi-<usuario>`, default **Y**). `ZOI_SUDOERS=0` lo omite.
+5. Instala curl, git, Node.js latest (`/usr/local`), Pi, Herdr, Sway, Quickshell, foot+fish, Yazi, Inlyne, Mullvad, Lemurs, Amberol, Loupe, temas. Terceros según arquitectura.
 6. Pregunta si reiniciás. Un re-run no vuelve a preguntar lo ya configurado ni pisa la paleta activa.
 
-Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1` usa env `TARGET_USER` / `GIT_NAME` / `GIT_EMAIL` / `ZOI_LANG` / `ZOI_XKB` / `ZOI_TZ`.
+Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1` usa env `TARGET_USER` / `ZOI_LANG` / `ZOI_XKB` / `ZOI_TZ` / `ZOI_SUDOERS`.
 
 ## Qué se instala
 
@@ -45,6 +45,7 @@ Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1`
 - **mpv** video, **Amberol** audio, **Loupe** imágenes (defaults XDG).
 - **Herdr** multiplexer de terminales para agentes (`herdr.dev`). Config en `~/.config/herdr/config.toml`; `zoi-theme` pinta la paleta.
 - **Lemurs** TUI en TTY2 (amd64). Paleta VGA (`/etc/lemurs/vtrgb` + `setvtrgb`); LightDM queda de fallback. Sway entra con **seatd** y el usuario en grupos `video`+`render` (`scripts/apply-lemurs-seatd.sh`).
+- **curl** + **git** (bootstrap y re-runs) y **Node.js latest** desde nodejs.org en `/usr/local` (`node` + `npm`, amd64/arm64).
 - **Fish** shell (default interactive shell).
 - Fuente: **Noto Color Emoji** para el picker de emojis. No instalamos Nerd Font (los íconos del bar son Canvas / QPainter).
 

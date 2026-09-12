@@ -10,19 +10,19 @@ Esta guía describe cómo levantar `zoi-debian` desde cero en Debian 13 (trixie)
 - Aprox. **1 GB** libre (Sway, Quickshell, Mullvad Browser, Pi).
 - Arquitectura nativa (`dpkg --print-architecture`). Los repos de terceros se pinnean a esa ISA (no a i386 foreign).
 
-| Arch | Debian (Sway, qs, …) | Yazi | Mullvad | Lemurs | Inlyne |
-|---|---|---|---|---|---|
-| **amd64** | sí | sí | sí | sí | sí |
-| **arm64** | sí | sí | no | no | sí |
-| **otra** | intenta | no | no | no | no |
+| Arch | Debian (Sway, qs, …) | Yazi | Mullvad | Lemurs | Inlyne | Node |
+|---|---|---|---|---|---|---|
+| **amd64** | sí | sí | sí | sí | sí | sí |
+| **arm64** | sí | sí | no | no | sí | sí |
+| **otra** | intenta | no | no | no | no | no |
 
 ## Pasos
 
 ### 1. Clonar y correr el instalador
 
 ```sh
-# Clone
-apt update && apt install -y git
+# Clone (hace falta curl + git)
+apt update && apt install -y curl git
 git clone https://github.com/<owner>/zoi-debian ~/zoi-debian
 cd ~/zoi-debian
 ./scripts/install.sh
@@ -32,7 +32,7 @@ curl -fsSL https://raw.githubusercontent.com/<owner>/zoi-debian/main/scripts/ins
   | sudo ZOI_REPO=https://github.com/<owner>/zoi-debian.git bash
 ```
 
-El script pide **solo lo que falta**: Wi‑Fi si no hay red; locale / teclado / timezone si el sistema no los tiene; git si no hay `user.name`/`user.email`; usuario sudo solo si corrés como root sin `SUDO_USER`. Re-correr en un PC ya configurado no vuelve a preguntar eso.
+El script pide **solo lo que falta**: Wi‑Fi si no hay red; locale / teclado / timezone si el sistema no los tiene; **sudoers para el usuario actual** (confirmación `[Y/n]`). **No** pide nombre, correo, usuario ni contraseña: usa la cuenta del SO y no crea usuarios. Re-correr en un PC ya configurado no vuelve a preguntar eso (si `/etc/sudoers.d/zoi-<usuario>` ya existe, no re-pregunta).
 
 Variables de entorno:
 
@@ -41,25 +41,28 @@ Variables de entorno:
 | `ZOI_REPO` | `<owner>/zoi-debian` | Repo a clonar |
 | `ZOI_BRANCH` | `main` | Rama |
 | `ZOI_DIR` | `~/projects/zoi-debian` | Carpeta destino |
+| `ZOI_SUDOERS` | `1` si `ZOI_NONINTERACTIVE=1` | `1` escribe `/etc/sudoers.d/zoi-<usuario>`; `0` no toca sudoers. En modo interactivo se pregunta |
 
 ### 2. Lo que hace el instalador
 
-1. **Lee la arquitectura** y saltea Yazi / Mullvad / Lemurs / Inlyne si no hay binario para esa ISA.
-2. **Activa backports** (`/etc/apt/sources.list.d/backports.list`) si no existe.
-3. **Instala paquetes** (ver tabla abajo).
-4. **Clona** el repo de zoi-debian en `$ZOI_DIR`.
-5. **Copia dotfiles y temas**:
+1. **Lee la arquitectura** y saltea Yazi / Mullvad / Lemurs / Inlyne / Node.js si no hay binario para esa ISA.
+2. **Asegura PATH de sbin** (`/usr/sbin:/sbin`) para `usermod`, `locale-gen`, `update-locale`.
+3. **Pregunta** si agregar al usuario del SO en sudoers (`/etc/sudoers.d/zoi-<usuario>` + grupo `sudo`). Default **Y**. Si el drop-in ya existe, no pregunta.
+4. **Activa backports** (`/etc/apt/sources.list.d/backports.list`) si no existe.
+5. **Instala paquetes** (ver tabla abajo), incluyendo **curl**, **git** y **Node.js latest** (nodejs.org → `/usr/local`).
+6. **Clona** el repo de zoi-debian en `$ZOI_DIR`.
+7. **Copia dotfiles y temas**:
    - `~/.config/quickshell/` (todos los QML + `shell.json`)
    - `~/.config/zoi/themes/` y `~/.config/zoi/themed/` (17 temas + plantillas `.tpl`)
    - `~/.config/sway/config`
    - `~/.config/foot/foot.ini`
    - `~/.local/bin/` (`zoi-theme`, `inlyne`, helpers `qs-*` incl. `qs-md` / `qs-docs` / `qs-md-open`)
-6. **Pone wallpaper por defecto** (`assets/default-wallpaper.jpg` → `~/Imágenes/baby-yoda-cartoon.jpg`).
-7. Extrae la paleta de ese fondo **solo en el primer install** (`zoi-theme apply-json`). Un re-run no pisa el tema activo.
-8. **Instala Lemurs** como DM (TTY2) en amd64; LightDM queda de fallback.
-9. **Cambia la shell** a `fish`.
-10. **Agrega** `exec_always` de qs + qs-idle al `sway/config`.
-11. Verifica binarios.
+8. **Pone wallpaper por defecto** (`assets/default-wallpaper.jpg` → `~/Imágenes/baby-yoda-cartoon.jpg`).
+9. Extrae la paleta de ese fondo **solo en el primer install** (`zoi-theme apply-json`). Un re-run no pisa el tema activo.
+10. **Instala Lemurs** como DM (TTY2) en amd64; LightDM queda de fallback.
+11. **Cambia la shell** a `fish`.
+12. **Agrega** `exec_always` de qs + qs-idle al `sway/config`.
+13. Verifica binarios.
 
 ### 3. Cerrá sesión y volvé a entrar
 
@@ -110,6 +113,10 @@ Importante: el primer arranque de `qs` necesita:
 | `mullvad-browser` | Se instala (amd64). XDG default = Thorium si existe, si no Mullvad. `qs-browser` sigue XDG |
 | `yazi` | File manager (foot + Sixel). Repo APT oficial, `deb [arch=$ARCH …]` (amd64/arm64) |
 | `inlyne` | **No es paquete apt.** Release GitHub v0.5.3 → `~/.local/bin/inlyne` (amd64/arm64) |
+| `curl` | HTTP (keys APT, Herdr, Pi, Node.js, Inlyne). Fase 1 y fase 2 |
+| `git` | Clone/update del repo. Fase 1 y fase 2 |
+| `xz-utils` | Extrae el tarball de Node.js |
+| `nodejs` / `npm` | **No es paquete apt.** Current latest de [nodejs.org](https://nodejs.org/dist/latest/) → `/usr/local` (amd64/arm64). Un re-run actualiza si hay versión nueva |
 | `herdr` | Multiplexer de terminales para agentes. Instalador oficial `herdr.dev/install.sh` |
 | `ffmpeg` `poppler-utils` `fd-find` `ripgrep` `fzf` `imagemagick` `p7zip-full` | Previews de Yazi |
 | `fish` | Login shell + shell de foot |
@@ -246,6 +253,33 @@ Importante: el primer arranque de `qs` necesita:
 
 ~/.config/quickshell/screensaver.txt   # texto del banner (default: ZOI)
 ```
+
+## Sudoers
+
+El instalador **pregunta** antes de dar privilegios:
+
+```text
+Puedo escribir /etc/sudoers.d/zoi-<usuario> con: <usuario> ALL=(ALL:ALL) ALL
+¿Agregar a <usuario> en sudoers? [Y/n]
+```
+
+- **Y** (default): drop-in validado con `visudo -c`, modo `0440`, y el usuario entra al grupo `sudo`.
+- **n**: no toca sudoers. La fase 2 igual necesita `sudo` para apt/seatd/Lemurs.
+- Re-run: si el archivo ya está, no vuelve a preguntar.
+- No interactivo: `ZOI_NONINTERACTIVE=1` (agrega) o `ZOI_SUDOERS=0` (omite).
+
+`#includedir /etc/sudoers.d` ignora nombres con punto. El drop-in se llama `zoi-<usuario>` con caracteres raros pasados a `_`.
+
+A mano:
+
+```sh
+echo "$USER ALL=(ALL:ALL) ALL" | sudo tee /etc/sudoers.d/zoi-$USER
+sudo chmod 440 /etc/sudoers.d/zoi-$USER
+sudo visudo -cf /etc/sudoers.d/zoi-$USER
+sudo usermod -aG sudo "$USER"
+```
+
+`uninstall.sh` **no** borra ese drop-in.
 
 ## Post-instalación
 

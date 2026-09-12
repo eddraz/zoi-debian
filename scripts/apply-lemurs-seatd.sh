@@ -2,6 +2,9 @@
 # Apply seatd + Lemurs Sway wrapper. Run: sudo bash scripts/apply-lemurs-seatd.sh
 set -euo pipefail
 
+# usermod vive en /usr/sbin; un PATH de usuario no lo incluye.
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin:${PATH:-/usr/bin:/bin}"
+
 if [ "$(id -u)" -ne 0 ]; then
   exec sudo -E bash "$0" "$@"
 fi
