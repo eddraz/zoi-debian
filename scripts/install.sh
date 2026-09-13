@@ -621,6 +621,16 @@ if arch_in "$ARCH" amd64; then
 else
   warn "Mullvad Browser no tiene paquete para $ARCH; salteo."
 fi
+
+# ---------------------------------------------------------------- Brave Origin (official installer; not XDG default)
+log "Instalando Brave Origin (https://brave.com)."
+if command -v brave-browser >/dev/null 2>&1 || command -v brave >/dev/null 2>&1 \
+  || [ -x /usr/bin/brave-browser ] || [ -x /usr/bin/brave ]; then
+  log "brave ya está en PATH."
+else
+  curl -fsS https://dl.brave.com/install.sh | FLAVOR=origin sh || warn "No se pudo instalar Brave Origin. Después: curl -fsS https://dl.brave.com/install.sh | FLAVOR=origin sh"
+fi
+
 # XDG default: Thorium if present, else Mullvad.
 browser_set=""
 for desk in thorium-browser.desktop mullvad-browser.desktop net.mullvad.MullvadBrowser.desktop mullvadbrowser.desktop; do
@@ -1210,6 +1220,7 @@ for b in sway qs swaymsg playerctl wlsunset foot fish yazi qs-files qs-browser q
   command -v "$b" >/dev/null || { warn "Falta binario: $b"; MISSING=$((MISSING+1)); }
 done
 command -v thorium-browser >/dev/null || command -v mullvad-browser >/dev/null || warn "No hay Thorium ni Mullvad; Super+Shift+Return usa qs-browser (XDG)."
+command -v brave-browser >/dev/null || command -v brave >/dev/null || warn "Falta binario: brave (curl -fsS https://dl.brave.com/install.sh | FLAVOR=origin sh)."
 command -v herdr >/dev/null || warn "Falta binario: herdr (curl -fsSL https://herdr.dev/install.sh | sh)."
 command -v pi >/dev/null || warn "Falta binario: pi (reiniciá la shell o agregá el PATH de pi.dev)."
 command -v zed >/dev/null || warn "Falta binario: zed (curl -fsS https://zed.dev/install.sh | sh)."

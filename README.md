@@ -28,7 +28,7 @@ El instalador, en orden:
 2. Locale / teclado / timezone **solo si el sistema no los tiene**.
 3. Usa el **usuario del sistema operativo** (no pide nombre, correo, usuario ni contraseña; no crea cuentas ni configura git).
 4. Pregunta si agregar ese usuario a **sudoers** (`/etc/sudoers.d/zoi-<usuario>`, default **Y**). `ZOI_SUDOERS=0` lo omite.
-5. Instala curl, git, Node.js latest (`/usr/local`), Rust (rustup), Helix, Pi, Herdr, Zed, Deno/Bun/pnpm, Voxtype, Thunar, Podman, Bruno, Etcher, Drift, cloudflared, Snap, Flatpak, Homebrew, gh, drivers/firmware, zram, UPower, Sway, Quickshell, foot+fish, Yazi, Inlyne, Mullvad, LightDM, Amberol, Loupe, temas. Terceros según arquitectura.
+5. Instala curl, git, Node.js latest (`/usr/local`), Rust (rustup), Helix, Pi, Herdr, Zed, Deno/Bun/pnpm, Voxtype, Thunar, Podman, Bruno, Etcher, Drift, cloudflared, Snap, Flatpak, Homebrew, gh, drivers/firmware, zram, UPower, Sway, Quickshell, foot+fish, Yazi, Inlyne, Mullvad, Brave Origin, LightDM, Amberol, Loupe, temas. Terceros según arquitectura.
 6. Pregunta si reiniciás. Un re-run no vuelve a preguntar lo ya configurado ni pisa la paleta activa.
 
 Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1` usa env `TARGET_USER` / `ZOI_LANG` / `ZOI_XKB` / `ZOI_TZ` / `ZOI_SUDOERS`.
@@ -39,7 +39,7 @@ Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1`
 - **Quickshell 0.3.0** desde trixie-backports, con **`qt6-wayland`** (plugin QPA; sin él `qs` no arranca).
 - **PipeWire** implícito vía los servicios de QS.
 - **ZOI Theme Engine (`zoi-theme`)**: Motor de temas declarativo (arquitectura Omarchy Quatro) con 17 paletas estándar, 22 colores normalizados (`colors.toml`), plantillas (`*.tpl`) y propagación atómica en vivo a Foot, Sway, btop, Helix, Zed, VSCode/VSCodium, GTK 3/4, Herdr, Yazi e Inlyne.
-- Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `btop` `bc` `libqrencode4` `mullvad-browser` (se instala). XDG default = **Thorium** si está, si no Mullvad. Super+Shift+Return usa `qs-browser`.
+- Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `btop` `bc` `libqrencode4` `mullvad-browser` (se instala). **Brave Origin** se instala (`curl -fsS https://dl.brave.com/install.sh | FLAVOR=origin sh`). XDG default = **Thorium** si está, si no Mullvad (Brave no entra al loop XDG). Super+Shift+Return usa `qs-browser`.
 - **Yazi** en **foot** (Sixel) como file manager (`Super+Shift+F`). Íconos ASCII (no Nerd Font).
 - **Inlyne** visor markdown GPU (`qs-md`). Learn, Trigger y Yazi lo usan.
 - **mpv** video, **Amberol** audio, **Loupe** imágenes (defaults XDG).

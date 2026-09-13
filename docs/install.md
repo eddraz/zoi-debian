@@ -49,7 +49,7 @@ Variables de entorno:
 2. **Asegura PATH de sbin** (`/usr/sbin:/sbin`) para `usermod`, `locale-gen`, `update-locale`.
 3. **Pregunta** si agregar al usuario del SO en sudoers (`/etc/sudoers.d/zoi-<usuario>` + grupo `sudo`). Default **Y**. Si el drop-in ya existe, no pregunta.
 4. **Activa backports** (`/etc/apt/sources.list.d/backports.list`) si no existe.
-5. **Instala paquetes** (ver tabla abajo), incluyendo **curl**, **git**, **Node.js latest**, **gh**, **Zed**, **UPower**, **zram** y firmware según GPU/NIC.
+5. **Instala paquetes** (ver tabla abajo), incluyendo **curl**, **git**, **Node.js latest**, **gh**, **Zed**, **UPower**, **zram**, firmware según GPU/NIC y **Brave Origin** (instalador oficial `FLAVOR=origin`; no cambia el default XDG).
 6. **Clona** el repo de zoi-debian en `$ZOI_DIR`.
 7. **Copia dotfiles y temas**:
    - `~/.config/quickshell/` (todos los QML + `shell.json`)
@@ -142,6 +142,7 @@ Importante: el primer arranque de `qs` necesita:
 | `hx` | **Helix**. [Paquete Debian de GitHub](https://docs.helix-editor.com/package-managers.html#ubuntudebian) (amd64 `.deb`; arm64 tarball + `runtime` en `~/.config/helix/runtime`) |
 | Drift | Video editor [CutWire-Studios/Drift](https://github.com/CutWire-Studios/Drift). `flatpak install flathub org.cutwire.Drift`; fallback AppImage amd64 |
 | `mullvad-browser` | Se instala (amd64). XDG default = Thorium si existe, si no Mullvad. `qs-browser` sigue XDG |
+| Brave Origin | **No es paquete apt.** `curl -fsS https://dl.brave.com/install.sh \| FLAVOR=origin sh`. No entra al default XDG (sigue Thorium, si no Mullvad). |
 | `yazi` | File manager (foot + Sixel). Repo APT oficial, `deb [arch=$ARCH …]` (amd64/arm64) |
 | `inlyne` | **No es paquete apt.** Release GitHub v0.5.3 → `~/.local/bin/inlyne` (amd64/arm64) |
 | `curl` | HTTP (keys APT, Herdr, Pi, Node.js, Inlyne). Fase 1 y fase 2 |
