@@ -54,6 +54,25 @@ printf 'waybar\n' > "$HOME/.local/state/quickshell/bar-backend"
 
 SWAY="$HOME/.config/sway/config"
 if [ -f "$SWAY" ]; then
+  # Drop native swaybar flavor so Waybar + swaybar do not stack.
+  python3 - "$SWAY" <<'PY' || true
+import re
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as fh:
+    text = fh.read()
+new, n = re.subn(
+    r"^# zoi-debian swaybar begin\n.*?^# zoi-debian swaybar end\n?",
+    "",
+    text,
+    count=1,
+    flags=re.M | re.S,
+)
+if n:
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(new)
+PY
   if grep -q 'qs-waybar\|exec_always waybar' "$SWAY"; then
     log "Sway ya arranca Waybar."
   else

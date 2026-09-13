@@ -81,6 +81,7 @@ zoi-debian/
 ├── scripts/
 │   ├── install.sh             bootstrap completo (barra Quickshell)
 │   ├── install-waybar.sh      mismo desktop, barra Waybar (overlays QML siguen)
+│   ├── install-swaybar.sh     mismo desktop, barra swaybar nativa (overlays QML siguen)
 │   └── uninstall.sh
 ├── dotfiles/
 │   ├── quickshell/            todo el árbol de QML

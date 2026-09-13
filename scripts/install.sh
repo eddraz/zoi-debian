@@ -704,9 +704,9 @@ fi
 # ---------------------------------------------------------------- local-bin
 log "Instalando scripts auxiliares y CLI zoi-theme en ~/.local/bin."
 mkdir -p "$HOME/.local/bin"
-# Waybar wrappers belong to install-waybar.sh, not the default QS bar.
+# Waybar/swaybar helpers belong to their flavor installers, not the default QS bar.
 find "$ZOI_DIR/dotfiles/local-bin" -maxdepth 1 -type f ! -name '*.pyc' \
-  ! -name 'qs-waybar' ! -name 'qs-waybar-weather' \
+  ! -name 'qs-waybar' ! -name 'qs-waybar-weather' ! -name 'qs-swaybar-status' \
   -exec install -m 755 {} "$HOME/.local/bin/" \;
 # qs-weather / qs-holidays / qs-keys-apply need python3 on PATH (shebang /usr/bin/python3).
 # Weather cache survives reboot so the bar chip is not stuck on … until Open-Meteo answers.
@@ -877,18 +877,37 @@ exec_always $HOME/.local/bin/qs-idle
 EOF
 fi
 
-# Default bar is Quickshell Bar.qml. install-waybar.sh is the optional flavor.
-log "Barra Quickshell (Bar.qml); no Waybar."
+# Default bar is Quickshell Bar.qml. install-waybar.sh / install-swaybar.sh are optional flavors.
+log "Barra Quickshell (Bar.qml); no Waybar ni swaybar."
 mkdir -p "$HOME/.config/quickshell" "$HOME/.local/state/quickshell"
 cp "$ZOI_DIR/dotfiles/quickshell/shell.qml" "$HOME/.config/quickshell/shell.qml"
 printf 'quickshell\n' > "$HOME/.local/state/quickshell/bar-backend"
-rm -f "$HOME/.local/bin/qs-waybar" "$HOME/.local/bin/qs-waybar-weather"
+rm -f "$HOME/.local/bin/qs-waybar" "$HOME/.local/bin/qs-waybar-weather" \
+  "$HOME/.local/bin/qs-swaybar-status"
 if [ -f "$HOME/.config/sway/config" ]; then
   sed -i \
     -e '/# zoi-debian waybar:/d' \
     -e '/qs-waybar/d' \
     -e '/exec_always[[:space:]]\+waybar/d' \
     "$HOME/.config/sway/config" || true
+  python3 - "$HOME/.config/sway/config" <<'PY' || true
+import re
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as fh:
+    text = fh.read()
+new, n = re.subn(
+    r"^# zoi-debian swaybar begin\n.*?^# zoi-debian swaybar end\n?",
+    "",
+    text,
+    count=1,
+    flags=re.M | re.S,
+)
+if n:
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(new)
+PY
 fi
 pkill -x waybar >/dev/null 2>&1 || true
 if [ -n "${WAYLAND_DISPLAY:-}" ]; then

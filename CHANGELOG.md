@@ -27,6 +27,7 @@
 - **Agentes (como Herdr):** Gentle stack, CodeGraph, Chrome DevTools MCP y Cloudflare MCP se cablean **solo** a Pi (`~/.pi/agent/skills/`, `pi install`) y Antigravity CLI (`~/.gemini/config/mcp_config.json`). No `codegraph install --yes` ni `npx skills add` global.
 - **Go + Gentleman stack:** Go oficial (`go.dev`, ≥1.25.10) en `/usr/local/go`; `gentle-ai` y `engram` vía `go install`; `gentle-pi` vía `pi install npm:gentle-pi@latest`; **gga** ([gentleman-guardian-angel](https://github.com/Gentleman-Programming/gentleman-guardian-angel)) vía brew tap o `./install.sh`. En `install.sh` e `install-waybar.sh` (`scripts/lib-go-gentleman.sh`).
 - **Waybar flavor:** `scripts/install-waybar.sh` — barra Waybar themeada (`waybar.css.tpl`), Quickshell sin `Bar.qml` (launcher/notifs/lock/OSD QML se reutilizan). Clicks de la barra llaman `qs ipc`.
+- **Swaybar flavor:** `scripts/install-swaybar.sh` — barra nativa `swaybar` (`bar zoi` + `qs-swaybar-status`), mismos overlays QML; mutuamente exclusiva con Waybar y con `Bar.qml`.
 - **llama.cpp:** ya no se instala con Homebrew. Clone + build en `~/apps/llama.cpp` (fork K2-Horizon) → `~/.local/bin/llama-cli`.
 - **K2-Horizon:** GGUF en `~/models`; wrappers `k2-chat` / `k2-server`.
 - **Mejora S.O.:** `apt full-upgrade`; firmware AMD/Realtek + microcode CPU; `libgl1-mesa-dri` `vulkan-tools`; i386 Mesa para Steam; `fwupd` (sin flashear BIOS); zram vía **zram-tools** (`ALGO=zstd`, `PERCENT=60`, `PRIORITY=100`). No se instalan extensiones GNOME/Cinnamon (este desktop es Sway).

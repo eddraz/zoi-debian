@@ -1,0 +1,120 @@
+#!/usr/bin/python3
+"""Compact status_command for native swaybar. Plain text, no extra deps."""
+import glob
+import json
+import os
+import re
+import shutil
+import subprocess
+import time
+
+HOME = os.environ.get("HOME", "")
+WEATHER_CACHE = os.path.join(HOME, ".cache", "quickshell", "weather.json")
+
+
+def _run(cmd):
+    try:
+        return subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+    except Exception:
+        return None
+
+
+def clock_label():
+    return time.strftime("%a %d  %H:%M")
+
+
+def weather_label():
+    try:
+        with open(WEATHER_CACHE, encoding="utf-8") as fh:
+            data = json.load(fh)
+        temp = data.get("temp")
+        if temp is None:
+            raise ValueError("no temp")
+        city = data.get("city") or ""
+        label = f"{int(round(float(temp)))}°"
+        if city:
+            label = f"{label} {city}"
+        return label
+    except Exception:
+        return "…"
+
+
+def volume_label():
+    if shutil.which("pactl"):
+        mute = _run(["pactl", "get-sink-mute", "@DEFAULT_SINK@"])
+        if mute and mute.returncode == 0 and "yes" in (mute.stdout or "").lower():
+            return "mute"
+        vol = _run(["pactl", "get-sink-volume", "@DEFAULT_SINK@"])
+        if vol and vol.returncode == 0:
+            match = re.search(r"(\d+)%", vol.stdout or "")
+            if match:
+                return f"{match.group(1)}%"
+        return None
+    if shutil.which("wpctl"):
+        out = _run(["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"])
+        if not out or out.returncode != 0:
+            return None
+        text = out.stdout or ""
+        if "MUTED" in text.upper():
+            return "mute"
+        match = re.search(r"([0-9]+(?:\.[0-9]+)?)", text)
+        if not match:
+            return None
+        ratio = float(match.group(1))
+        return f"{int(round(ratio * 100))}%"
+    return None
+
+
+def battery_label():
+    caps = sorted(glob.glob("/sys/class/power_supply/BAT*/capacity"))
+    if not caps:
+        return None
+    try:
+        with open(caps[0], encoding="utf-8") as fh:
+            capacity = int(fh.read().strip())
+    except Exception:
+        return None
+    suffix = ""
+    status_path = os.path.join(os.path.dirname(caps[0]), "status")
+    try:
+        with open(status_path, encoding="utf-8") as fh:
+            status = fh.read().strip().lower()
+        if status == "charging":
+            suffix = "+"
+    except Exception:
+        pass
+    return f"{capacity}%{suffix}"
+
+
+def status_line():
+    parts = [clock_label()]
+    parts.append(weather_label())
+    volume = volume_label()
+    if volume:
+        parts.append(volume)
+    battery = battery_label()
+    if battery:
+        parts.append(battery)
+    return "  |  ".join(parts)
+
+
+def main():
+    while True:
+        try:
+            print(status_line(), flush=True)
+        except Exception:
+            try:
+                print(clock_label(), flush=True)
+            except Exception:
+                pass
+        time.sleep(5)
+
+
+if __name__ == "__main__":
+    main()

@@ -347,6 +347,16 @@ El default es la barra Quickshell. Para barra nativa **Waybar** (mismos overlays
 
 Si el desktop no está, corre `install.sh` primero. Clicks de Waybar llaman `qs ipc`. Tema: `waybar.css.tpl` vía `zoi-theme`.
 
+## Variante Swaybar
+
+Misma idea, barra nativa de Sway (`swaybar`) en vez de Waybar. Quickshell sigue en overlays (launcher, notifs, lock, OSD). No instala paquetes extra.
+
+```sh
+./scripts/install-swaybar.sh
+```
+
+Status: `qs-swaybar-status`. Tema: `zoi-theme` pinta `bar zoi` si `bar-backend` es `swaybar`. Volver al default: `./scripts/install.sh`.
+
 ## Desinstalar
 
 ```sh

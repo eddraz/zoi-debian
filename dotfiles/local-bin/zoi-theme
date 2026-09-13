@@ -521,6 +521,7 @@ class ZoiThemeManager:
                     f.write(content)
 
         accent = pal.get("accent", "#89b4fa")
+        bg = pal.get("background", "#1e1e2e")
         bg_dark = pal.get("dark_background", "#181825")
         bg_light = pal.get("lighter_background", "#313244")
         fg = pal.get("foreground", "#cdd6f4")
@@ -536,6 +537,28 @@ class ZoiThemeManager:
             f"client.urgent '{urgent}' '{urgent}' '{bg_dark}' '{urgent}' '{urgent}'"
         ]
         self._safe_run(cmd, timeout=1)
+
+        backend = ""
+        backend_path = os.path.join(self.qs_state_dir, "bar-backend")
+        try:
+            with open(backend_path, encoding="utf-8") as fh:
+                backend = fh.read().strip()
+        except OSError:
+            backend = ""
+        if backend == "swaybar":
+            bar_cmd = [
+                "swaymsg",
+                (
+                    f"bar zoi colors statusline '{fg}'; "
+                    f"bar zoi colors background '{bg}'; "
+                    f"bar zoi colors separator '{muted}'; "
+                    f"bar zoi colors focused_workspace '{accent}' '{accent}' '{bg_dark}'; "
+                    f"bar zoi colors active_workspace '{bg_light}' '{bg_light}' '{fg}'; "
+                    f"bar zoi colors inactive_workspace '{bg}' '{bg}' '{muted}'; "
+                    f"bar zoi colors urgent_workspace '{urgent}' '{urgent}' '{bg_dark}'"
+                ),
+            ]
+            self._safe_run(bar_cmd, timeout=1)
 
     def _dispatch_helix(self, content):
         if not content:
