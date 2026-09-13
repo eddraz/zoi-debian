@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # zoi-debian uninstall
 # Removes ZOI helpers and configs from the user home.
-# Idempotent. Does NOT remove apt packages. Does not re-enable LightDM.
+# Idempotent. Does NOT remove apt packages. Re-enables LightDM if Lemurs leftovers exist.
 
 set -euo pipefail
 
@@ -40,15 +40,16 @@ if [ -f "$HOME/.config/sway/config" ]; then
   sed -i '/qs-keys-apply/d' "$HOME/.config/sway/config"
 fi
 
-log "Removing Lemurs unit/PAM/config (does not enable LightDM)."
+log "Removing leftover Lemurs unit/PAM/config and enabling LightDM."
 $SUDO systemctl disable lemurs.service 2>/dev/null || true
 $SUDO rm -f /etc/systemd/system/lemurs.service /etc/pam.d/lemurs /usr/local/bin/lemurs
 $SUDO rm -rf /etc/lemurs /var/cache/lemurs
-$SUDO systemctl daemon-reload 2>/dev/null || true
-rm -rf "$HOME/.local/share/zoi/lemurs"
+rm -rf "$HOME/.local/share/zoi/lemurs" "$HOME/.config/zoi/lemurs"
 rm -f "$HOME/.config/zoi/themed/lemurs-variables.toml" \
      "$HOME/.config/zoi/themed/lemurs-config.toml" \
      "$HOME/.config/zoi/themed/lemurs.vtrgb"
+$SUDO systemctl enable lightdm.service 2>/dev/null || true
+$SUDO systemctl daemon-reload 2>/dev/null || true
 
 log "Done. Los paquetes apt NO se desinstalaron. Para hacerlo:"
 log "sudoers (/etc/sudoers.d/zoi-*) no se toca. Herdr, Pi e Inlyne son de usuario. Config: ~/.config/herdr ~/.config/inlyne ~/.config/yazi"

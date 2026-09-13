@@ -23,7 +23,6 @@ Column {
         { "id": "shortcuts", "name": "Shortcuts", "desc": "Mapa de atajos", "file": "shortcuts.md", "url": "" },
         { "id": "architecture", "name": "Architecture", "desc": "PluginRegistry, IPC, shell", "file": "architecture.md", "url": "" },
         { "id": "troubleshooting", "name": "Troubleshooting", "desc": "Fallos frecuentes", "file": "troubleshooting.md", "url": "" },
-        { "id": "lemurs", "name": "Lemurs", "desc": "Display manager TUI", "file": "lemurs.md", "url": "" },
         { "id": "herdr", "name": "Herdr", "desc": "Multiplexer de agentes", "file": "herdr.md", "url": "" },
         { "id": "sway", "name": "Sway", "desc": "Wiki del compositor", "file": "", "url": "https://github.com/swaywm/sway/wiki" },
         { "id": "quickshell", "name": "Quickshell", "desc": "Guía y API QML", "file": "", "url": "https://quickshell.outfoxxed.me/docs/guide/" },

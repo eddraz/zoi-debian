@@ -149,7 +149,6 @@ Aplicaciones compiladas automáticamente:
 - **VSCode / Antigravity IDE / VSCodium**: `settings.json` (`workbench.colorCustomizations`)
 - **GTK 3.0 y GTK 4.0 / LibreWolf**: `~/.config/gtk-3.0/gtk.css` y `~/.config/gtk-4.0/gtk.css` + `gsettings prefer-dark/prefer-light` (`libglib2.0-bin`; si falta, el resto del tema igual se aplica)
 - **Herdr**: `~/.config/herdr/config.toml` (seed del repo; `zoi-theme` pinta `[theme.custom]`). Guía: [herdr.md](herdr.md).
-- **Lemurs**: TTY 16 colores → `/etc/lemurs/vtrgb` (`setvtrgb`). Títulos → `/etc/lemurs/variables.toml`. Overlay `~/.config/zoi/lemurs/variables.overlay.toml`; layout `~/.config/zoi/lemurs/config.toml`. Ver [lemurs.md](lemurs.md).
 - **Yazi**: `~/.config/yazi/yazi.toml` (openers; `url = "*.md"`) y `theme.toml` (íconos ASCII).
 - **Inlyne**: `~/.config/inlyne/inlyne.toml` (colores `0xRRGGBB`).
 
@@ -212,11 +211,9 @@ El setup instala **foot + fish** juntos:
 fish_add_path ~/.local/bin
 ```
 
-## Lemurs (display manager)
+## LightDM
 
-TUI en TTY2. Colores VGA desde `/etc/lemurs/vtrgb` (`setvtrgb`); títulos desde `variables.toml`. Guía: [lemurs.md](lemurs.md).
-
-LightDM queda como paquete de fallback, no como unidad activa.
+Display manager del setup. Sesión Sway. Un re-run de `install.sh` deshabilita leftovers de Lemurs y hace `enable` de LightDM (sin arrancarlo en caliente).
 
 ## Variables de entorno relevantes
 
