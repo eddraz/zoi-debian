@@ -105,4 +105,4 @@ if [ -f "$REPO_ROOT/scripts/lib-llama-k2.sh" ]; then
 fi
 
 log "Listo. Barra = Waybar. Overlays QML = Super+Space launcher, Super+V clipboard, Super+N notifs, OSD."
-log "Volver al bar Quickshell: ./scripts/install.sh (pisa shell.qml) y comentá exec qs-waybar en sway/config."
+log "Volver al bar Quickshell: ./scripts/install.sh (restaura Bar.qml y corta Waybar)."
