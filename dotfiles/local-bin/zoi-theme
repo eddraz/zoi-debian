@@ -82,38 +82,6 @@ def hex_to_rgb(h):
         return (128, 128, 128)
 
 
-# Lemurs named ANSI → kernel VT slots (setvtrgb). Hex is ignored on TTY2.
-# 0 black=background, 7 gray=muted, 8 dark gray=surface,
-# 11 light yellow=accent (focused chrome), 15 white=foreground.
-VT_SLOTS = (
-    "background",
-    "red",
-    "green",
-    "yellow",
-    "blue",
-    "magenta",
-    "cyan",
-    "muted",
-    "surface",
-    "bright_red",
-    "bright_green",
-    "accent",
-    "bright_blue",
-    "bright_magenta",
-    "bright_cyan",
-    "foreground",
-)
-
-
-def palette_to_vtrgb(pal):
-    rgbs = [hex_to_rgb(pal.get(key, "#808080")) for key in VT_SLOTS]
-    reds = ",".join(str(r) for r, g, b in rgbs)
-    greens = ",".join(str(g) for r, g, b in rgbs)
-    blues = ",".join(str(b) for r, g, b in rgbs)
-    return f"{reds}\n{greens}\n{blues}\n"
-
-
-
 def rgb_to_hex(r, g, b):
     r_c = max(0, min(255, int(round(r))))
     g_c = max(0, min(255, int(round(g))))
@@ -421,8 +389,8 @@ class ZoiThemeManager:
             ("vscode", lambda: self._dispatch_vscode(pal)),
             ("gtk", lambda: self._dispatch_gtk(rendered_files.get("gtk-3.0.css"), rendered_files.get("gtk-4.0.css"), pal)),
             ("herdr", lambda: self._dispatch_herdr(pal)),
-            ("lemurs", lambda: self._dispatch_lemurs(rendered_files.get("lemurs-variables.toml"), pal)),
             ("yazi", lambda: self._dispatch_yazi(rendered_files.get("yazi-theme.toml"))),
+            ("waybar", lambda: self._dispatch_waybar(rendered_files.get("waybar.css"))),
             ("inlyne", lambda: self._dispatch_inlyne(pal)),
         ]
         for name, fn in steps:
@@ -762,97 +730,14 @@ class ZoiThemeManager:
         except Exception:
             pass
 
-
-    def _dispatch_lemurs(self, content, pal=None):
-        """Write Lemurs variables, 16-color vtrgb, and optional user layout."""
-        if content:
-            overlay = os.path.join(self.home, ".config/zoi/lemurs/variables.overlay.toml")
-            merged = self._merge_flat_toml(content, overlay)
-            themed_path = os.path.join(self.home, ".config/zoi/themed/lemurs-variables.toml")
-            os.makedirs(os.path.dirname(themed_path), exist_ok=True)
-            with open(themed_path, "w", encoding="utf-8") as f:
-                f.write(merged.rstrip() + "\n")
-            self._write_if_writable("/etc/lemurs/variables.toml", merged)
-        if pal:
-            vtrgb = palette_to_vtrgb(pal)
-            themed_v = os.path.join(self.home, ".config/zoi/themed/lemurs.vtrgb")
-            os.makedirs(os.path.dirname(themed_v), exist_ok=True)
-            with open(themed_v, "w", encoding="utf-8") as f:
-                f.write(vtrgb)
-            self._write_if_writable("/etc/lemurs/vtrgb", vtrgb)
-        self._dispatch_lemurs_config()
-
-    def _dispatch_lemurs_config(self):
-        user_cfg = os.path.join(self.home, ".config/zoi/lemurs/config.toml")
-        stock = os.path.join(self.home, ".local/share/zoi/lemurs/config.toml")
-        src = None
-        if os.path.isfile(user_cfg):
-            src = user_cfg
-        elif os.path.isfile(stock):
-            src = stock
-        else:
-            alt = os.path.join(self.repo_root, "dotfiles/lemurs/config.toml")
-            if os.path.isfile(alt):
-                src = alt
-        if not src:
+    def _dispatch_waybar(self, content):
+        if not content:
             return
-        try:
-            with open(src, encoding="utf-8") as f:
-                body = f.read()
-        except OSError:
-            return
-        themed = os.path.join(self.home, ".config/zoi/themed/lemurs-config.toml")
-        os.makedirs(os.path.dirname(themed), exist_ok=True)
-        with open(themed, "w", encoding="utf-8") as f:
-            f.write(body if body.endswith("\n") else body + "\n")
-        self._write_if_writable("/etc/lemurs/config.toml", body)
-
-    @staticmethod
-    def _merge_flat_toml(base_text, overlay_path):
-        if not overlay_path or not os.path.isfile(overlay_path):
-            return base_text
-        overlay = {}
-        try:
-            with open(overlay_path, encoding="utf-8") as f:
-                for line in f:
-                    raw = line.strip()
-                    if not raw or raw.startswith("#") or "=" not in raw:
-                        continue
-                    key, val = raw.split("=", 1)
-                    overlay[key.strip()] = val.strip()
-        except OSError:
-            return base_text
-        if not overlay:
-            return base_text
-        lines = []
-        seen = set()
-        for line in base_text.splitlines():
-            stripped = line.strip()
-            if stripped and not stripped.startswith("#") and "=" in stripped:
-                key = stripped.split("=", 1)[0].strip()
-                if key in overlay:
-                    lines.append(f"{key} = {overlay[key]}")
-                    seen.add(key)
-                    continue
-            lines.append(line)
-        for key, val in overlay.items():
-            if key not in seen:
-                lines.append(f"{key} = {val}")
-        return "\n".join(lines) + "\n"
-
-    @staticmethod
-    def _write_if_writable(path, content):
-        if not os.path.isfile(path) or not os.access(path, os.W_OK):
-            return
-        try:
-            tmp = path + ".tmp"
-            with open(tmp, "w", encoding="utf-8") as f:
-                f.write(content if content.endswith("\n") else content + "\n")
-            os.replace(tmp, path)
-        except OSError:
-            pass
-
-
+        path = os.path.join(self.home, ".config/waybar/style.css")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content if content.endswith("\n") else content + "\n")
+        self._safe_run(["killall", "-SIGUSR2", "waybar"], timeout=1)
 
     def _dispatch_inlyne(self, pal):
         """Write ~/.config/inlyne/inlyne.toml from the active palette."""

@@ -1,0 +1,42 @@
+/* Fallback until zoi-theme renders waybar.css.tpl */
+* {
+    font-family: DejaVu Sans, sans-serif;
+    font-size: 12px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border-bottom: 2px solid #89b4fa;
+}
+
+#workspaces button {
+    padding: 0 8px;
+    color: #a6adc8;
+    background: transparent;
+    border: none;
+}
+
+#workspaces button.focused,
+#workspaces button.active {
+    color: #181825;
+    background: #89b4fa;
+}
+
+#custom-launcher {
+    font-weight: 700;
+    color: #181825;
+    background: #89b4fa;
+    padding: 0 12px;
+}
+
+#clock,
+#custom-weather,
+#pulseaudio,
+#network,
+#battery,
+#window,
+#tray {
+    padding: 0 10px;
+}

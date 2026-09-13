@@ -1,0 +1,19 @@
+#!/usr/bin/python3
+"""Compact weather label for Waybar; reuses qs-weather cache."""
+import json
+import os
+
+cache = os.path.join(os.environ.get("HOME", ""), ".cache", "quickshell", "weather.json")
+try:
+    with open(cache, encoding="utf-8") as fh:
+        data = json.load(fh)
+    temp = data.get("temp")
+    if temp is None:
+        raise ValueError("no temp")
+    city = data.get("city") or ""
+    label = f"{int(round(float(temp)))}°"
+    if city:
+        label = f"{label} {city}"
+    print(label, flush=True)
+except Exception:
+    print("…", flush=True)

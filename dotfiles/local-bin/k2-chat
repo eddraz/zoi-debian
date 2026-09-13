@@ -1,0 +1,15 @@
+#!/bin/sh
+# K2-Horizon-0.9B (GGUF BF16) with the MBZUAI-IFM llama.cpp fork.
+MODEL="${K2_MODEL:-$HOME/models/K2-Horizon-1B-BF16.gguf}"
+BIN="${K2_LLAMA_CLI:-$HOME/.local/bin/llama-k2-cli}"
+if [ ! -x "$BIN" ]; then
+  echo "Falta $BIN. El GGUF K2-Horizon no corre en llama.cpp de Homebrew; hace falta el fork model/K2Horizon." >&2
+  exit 1
+fi
+if [ ! -f "$MODEL" ]; then
+  echo "Falta $MODEL — curl el GGUF a ~/models." >&2
+  exit 1
+fi
+# Chat template is inside the GGUF (--jinja). Default 8k ctx; 128k = YaRN:
+#   k2-chat -c 131072 --rope-scaling yarn --rope-scale 16 --yarn-orig-ctx 8192
+exec "$BIN" -m "$MODEL" --jinja -cnv -c "${K2_CTX:-8192}" -n "${K2_N:-512}" "$@"

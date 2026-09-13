@@ -8,7 +8,7 @@
 - **Quickshell theme no sobrevive al reboot:** el selector (`ThemePanel` → `Themes.apply`) persistía el id, pero al boot `Themes.qml` volvía a llamar `apply()` (stock) o pintaba el fallback Mocha de `wallpaperColors` encima de `Color`. `zoi-theme` además abortaba en `gsettings` antes de escribir `colors.json`. Ahora `restore()` (sin re-dispatch), `Color.qml` lee `colors.json`, `Themes` se instancia en `shell.qml`, `zoi-theme` aísla dispatchers. `install.sh` instala `libglib2.0-bin` y siembra `colors.json` si faltaba. Docs: configuration, install, features, architecture, troubleshooting, skill.
 - **Lemurs no enable:** `apply` abortaba porque, tras `exec sudo -u <desktop>` desde root, `SUDO_USER=root` y el script hacía `mkdir` en `/root`. El owner del greeter ya no puede ser root; `TARGET_USER` se reenvía en el re-exec. `usermod` ignora grupos inexistentes (`seat`) para no perder `render`. `disable` de LightDM ya no usa `--now` (no mata la sesión gráfica).
 - **Quickshell / Qt Wayland:** `qs` no arrancaba (`Could not find the Qt platform plugin "wayland"`). El paquete Debian no depende de `qt6-wayland` y el install usa `--no-install-recommends`. `install.sh` ahora lo instala.
-- **PATH de sbin:** `install.sh` / `lemurs-setup.sh` / `apply-lemurs-seatd.sh` / `uninstall.sh` anteponen `/usr/sbin:/sbin` para que `usermod`, `locale-gen` y `update-locale` no fallen con *orden no encontrada* (PATH de usuario, `sudo -E`, agentes).
+- **PATH de sbin:** `install.sh` / `uninstall.sh` anteponen `/usr/sbin:/sbin` para que `usermod`, `locale-gen` y `update-locale` no fallen con *orden no encontrada* (PATH de usuario, `sudo -E`, agentes).
 - **Lemurs + Sway DRM:** seatd (`/usr/sbin/seatd -g video`, no drop-in a `/usr/bin/seatd`) and grupo `render` for `/dev/dri/renderD128`. Helper `scripts/apply-lemurs-seatd.sh`.
 - **Lemurs Sway session:** the greeter no longer scans `/usr/share/xsessions`. Debian's `sway.desktop` there is X11; Lemurs waited 60s for Xorg. Only `/etc/lemurs/wayland/sway` is offered.
 - **Lemurs login:** Debian PAM no usa más `include login`. `pam_loginuid` queda `optional` para que una contraseña válida no termine en *authentication failed* (sesión systemd / EPERM). Cache en `/var/cache/lemurs/state` (archivo, no directorio). PAM y unit se instalan `root:root`.
@@ -16,16 +16,26 @@
 - **Lemurs docs/scripts:** README, features, architecture, install, troubleshooting, skill, `install.sh` (`kbd`), `uninstall.sh` (limpia unit/PAM/`vtrgb`) y `lemurs-setup.sh` (setvtrgb, cache file, PAM Debian) alineados con el DM real.
 
 ### Removed
+- **Lemurs:** se eliminaron `scripts/lemurs-setup.sh`, `scripts/apply-lemurs-seatd.sh`, `docs/lemurs.md`, `dotfiles/lemurs/`, overlay `dotfiles/config/zoi/lemurs/`, `lemurs-variables.toml.tpl` y el dispatch en `zoi-theme`. LightDM es el display manager. `install.sh` / `uninstall.sh` deshabilitan leftovers y hacen `enable` de LightDM (sin `start` en caliente). Ya no se instala `seatd` ni `kbd` para el greeter.
 - **Install identity prompts:** `install.sh` ya no pide nombre, correo, usuario ni contraseña, no crea cuentas y no escribe `git config user.*`. Usa el usuario del SO (`SUDO_USER` / UID ≥ 1000).
 - **Limine:** se eliminaron `scripts/limine-setup.sh`, `scripts/apply-limine.sh`, `docs/limine.md` y el dispatch de paleta (`limine.conf.tpl` / `zoi-theme`). El bootstrap no toca el bootloader.
 
 ### Features
+- **Toolchain extra:** Thunar, Voxtype (`.deb` amd64), Deno, Bun, pnpm (corepack), Cloudflare Tunnel (`cloudflared`), Bruno, Podman, balena Etcher (`.deb` amd64), Snap (`snapd`, quita `nosnap.pref`), Flatpak+Flathub, Homebrew (linuxbrew + `brew shellenv` en fish), **Rust (rustup)**, **Helix** (`.deb` GitHub amd64 / tarball arm64), **Drift** ([CutWire-Studios/Drift](https://github.com/CutWire-Studios/Drift) vía Flathub `org.cutwire.Drift`, AppImage fallback amd64).
+- **Antigravity CLI + IDE:** `install.sh` instala `agy` (`https://antigravity.google/cli/install.sh`) y el IDE standalone Linux (tarball amd64/arm64 desde la página de download) en `~/.local/share/antigravity-ide` + launcher `.desktop`.
+- **Base de `projects/scripts/install.sh`:** drivers/firmware por hardware (`non-free-firmware`, Mesa, iwlwifi/realtek/…, NVIDIA `nvidia-drm.modeset=1`), UPower, GitHub CLI (`gh` con SHA256 del keyring), Zed, previews extra de Yazi (`ffmpegthumbnailer`, `chafa`). No se instala Nerd Font ni Brave (Canvas + Mullvad).
+- **Agentes (como Herdr):** Gentle stack, CodeGraph, Chrome DevTools MCP y Cloudflare MCP se cablean **solo** a Pi (`~/.pi/agent/skills/`, `pi install`) y Antigravity CLI (`~/.gemini/config/mcp_config.json`). No `codegraph install --yes` ni `npx skills add` global.
+- **Go + Gentleman stack:** Go oficial (`go.dev`, ≥1.25.10) en `/usr/local/go`; `gentle-ai` y `engram` vía `go install`; `gentle-pi` vía `pi install npm:gentle-pi@latest`; **gga** ([gentleman-guardian-angel](https://github.com/Gentleman-Programming/gentleman-guardian-angel)) vía brew tap o `./install.sh`. En `install.sh` e `install-waybar.sh` (`scripts/lib-go-gentleman.sh`).
+- **Waybar flavor:** `scripts/install-waybar.sh` — barra Waybar themeada (`waybar.css.tpl`), Quickshell sin `Bar.qml` (launcher/notifs/lock/OSD QML se reutilizan). Clicks de la barra llaman `qs ipc`.
+- **llama.cpp:** ya no se instala con Homebrew. Clone + build en `~/apps/llama.cpp` (fork K2-Horizon) → `~/.local/bin/llama-cli`.
+- **K2-Horizon:** GGUF en `~/models`; wrappers `k2-chat` / `k2-server`.
+- **Mejora S.O.:** `apt full-upgrade`; firmware AMD/Realtek + microcode CPU; `libgl1-mesa-dri` `vulkan-tools`; i386 Mesa para Steam; `fwupd` (sin flashear BIOS); zram vía **zram-tools** (`ALGO=zstd`, `PERCENT=60`, `PRIORITY=100`). No se instalan extensiones GNOME/Cinnamon (este desktop es Sway).
 - **sudoers del usuario actual:** `install.sh` pregunta `[Y/n]` antes de escribir `/etc/sudoers.d/zoi-<usuario>` (`visudo -c`, grupo `sudo`). Re-run no re-pregunta si el drop-in existe. `ZOI_SUDOERS=0` omite; no interactivo default = agregar.
 - **curl + git + Node.js latest:** el bootstrap instala `curl` y `git` (apt) y el current latest de [nodejs.org](https://nodejs.org/dist/latest/) en `/usr/local` (amd64/arm64, idempotente).
 - **Media defaults:** mpv (video), Amberol (audio), Loupe (imágenes) vía apt + `xdg-mime`.
 - **Idempotent setup:** `install.sh` no re-pregunta locale/teclado/tz si ya están; no pisa la paleta en un re-run; copia `local-bin` sin `__pycache__`.
 - **Markdown viewer:** Inlyne (`qs-md` / `inlyne view`) en lugar del overlay Quickshell. Learn y Yazi lo usan; `zoi-theme` pinta `~/.config/inlyne/inlyne.toml`.
-- **Arch gating:** `install.sh` lee `dpkg --print-architecture` y pinnea/salta Yazi, Mullvad, Lemurs e Inlyne.
+- **Arch gating:** `install.sh` lee `dpkg --print-architecture` y pinnea/salta Yazi, Mullvad e Inlyne.
 - **Yazi 26:** reglas `url`/`mime`; íconos ASCII (sin Nerd Font).
 - **Learn:** menú de docs (ZOI, Sway, Quickshell, Helix, Fish, Bash) desde el Menú principal.
 - **Herdr:** `install.sh` instala el multiplexer (`herdr.dev`) y siembra `~/.config/herdr/config.toml`. `zoi-theme` pinta `[theme.custom]`.

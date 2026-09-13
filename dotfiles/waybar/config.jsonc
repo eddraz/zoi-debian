@@ -1,0 +1,75 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 30,
+    "spacing": 6,
+    "modules-left": [
+        "custom/launcher",
+        "sway/workspaces",
+        "sway/window"
+    ],
+    "modules-center": [
+        "clock",
+        "custom/weather"
+    ],
+    "modules-right": [
+        "pulseaudio",
+        "network",
+        "battery",
+        "tray"
+    ],
+    "custom/launcher": {
+        "format": "ZOI",
+        "tooltip": "Launcher · Super+Space",
+        "on-click": "/usr/bin/qs ipc call launcher toggle",
+        "on-click-right": "/usr/bin/qs ipc call popups toggle apps"
+    },
+    "sway/workspaces": {
+        "disable-scroll": false,
+        "all-outputs": false,
+        "format": "{name}"
+    },
+    "sway/window": {
+        "format": "{title}",
+        "max-length": 48,
+        "tooltip": true
+    },
+    "clock": {
+        "format": "{:%a %d  %H:%M}",
+        "tooltip-format": "{:%Y-%m-%d}",
+        "on-click": "/usr/bin/qs ipc call popups toggle calendar"
+    },
+    "custom/weather": {
+        "exec": "qs-waybar-weather",
+        "interval": 300,
+        "return-type": "text",
+        "on-click": "/usr/bin/qs ipc call popups toggle weather",
+        "on-click-middle": "/usr/bin/qs ipc call weather refresh"
+    },
+    "pulseaudio": {
+        "format": "{volume}%",
+        "format-muted": "mute",
+        "on-click": "/usr/bin/qs ipc call popups toggle audio",
+        "on-click-right": "pactl set-sink-mute @DEFAULT_SINK@ toggle"
+    },
+    "network": {
+        "format-wifi": "{essid}",
+        "format-ethernet": "eth",
+        "format-disconnected": "offline",
+        "tooltip-format": "{ifname} {ipaddr}",
+        "on-click": "/usr/bin/qs ipc call popups toggle network"
+    },
+    "battery": {
+        "format": "{capacity}%",
+        "format-charging": "{capacity}%+",
+        "format-plugged": "{capacity}%=",
+        "states": {
+            "warning": 20,
+            "critical": 10
+        }
+    },
+    "tray": {
+        "spacing": 8,
+        "icon-size": 14
+    }
+}

@@ -194,23 +194,6 @@ pip install terminaltexteffects
 sudo apt install python3-terminaltexteffects
 ```
 
-## Lemurs no carga (sigue LightDM)
-
-El binario puede estar en `/usr/local/bin/lemurs` y el unit en disco, pero **disabled**. `display-manager.service` apunta a LightDM. Suele pasar si `lemurs-setup.sh apply` abortó a mitad: tras `exec sudo -u <usuario>` desde root, `SUDO_USER` es **root** y el script intentaba `mkdir` en `/root` (`set -e`). Un `usermod -aG …,seat` también falla entero si el grupo `seat` no existe, y no suma `render`.
-
-```sh
-systemctl is-enabled lemurs.service   # debería: enabled
-ls /etc/lemurs/config.toml            # tiene que existir
-id -nG                                # video y render (render aplica en el próximo login)
-
-cd ~/zoi-debian   # o ~/projects/zoi-debian
-sudo ./scripts/lemurs-setup.sh apply
-sudo ./scripts/apply-lemurs-seatd.sh
-sudo reboot
-```
-
-`apply` solo hace `enable` (no `start` ni `disable --now` de LightDM): no mates la sesión gráfica. Después del reboot el login es TTY2.
-
 ## Al reiniciar, Quickshell vuelve a Mocha (el selector no recuerda el tema)
 
 El id vive en `~/.local/state/quickshell/theme`. Los colores de la barra viven en `~/.local/state/quickshell/colors.json`. Si solo existe `theme`, `Color.qml` arranca con los defaults Mocha.
@@ -230,64 +213,6 @@ Un apply viejo puede haber dejado paleta en `~/.local/state/zoi/theme/current/co
 
 ```sh
 cp ~/.local/state/zoi/theme/current/colors.json ~/.local/state/quickshell/colors.json
-```
-
-## Lemurs se ve negro/VGA, no el theme del wallpaper
-
-El TTY del kernel no entiende hex. Tiene que existir `/etc/lemurs/vtrgb` y la unit tiene que correr `setvtrgb` *antes* de Lemurs. El `config.toml` usa nombres ANSI (`black`, `light yellow`), no `$accent`.
-
-```sh
-cat /etc/lemurs/vtrgb
-grep ExecStartPre /etc/systemd/system/lemurs.service
-# próximo arranque de Lemurs (reboot). No hace falta restart desde la sesión gráfica.
-```
-
-## Lemurs: authentication failed (usuario/contraseña bien)
-
-No es la contraseña. En `/var/log/lemurs.log` vas a ver `Validated account` y después `Failed to open a PAM session`. Debian `/etc/pam.d/login` tiene `session required pam_loginuid.so`; Lemurs corre como unidad systemd y el kernel responde EPERM ([lemurs#166](https://github.com/coastalwhite/lemurs/issues/166)). El greeter traduce eso a *authentication failed*.
-
-```sh
-sudo install -m 0644 -o root -g root dotfiles/lemurs/lemurs.pam /etc/pam.d/lemurs
-```
-
-El próximo intento en TTY2 alcanza. La sesión tiene que ser **sway** (Wayland), no **Sway** de xsessions.
-
-## Lemurs entra pero Sway no carga (vuelve al login)
-
-La contraseña está bien. Lemurs arrancó el `Sway` de `/usr/share/xsessions` como **X11**. En `/var/log/lemurs.log` aparece `X { xinitrc_path: "sway" }` y después `Timeout while waiting for X server to start`.
-
-En TTY2 el switcher tiene que quedar en **sway** (minúscula, script Wayland), no **Sway**.
-
-Para que no vuelva a pasar, el greeter no escanea `/usr/share/xsessions` ni `/usr/share/wayland-sessions`:
-
-```sh
-grep sessions_path /etc/lemurs/config.toml
-# xsessions_path = "/etc/lemurs/xsessions"
-# wayland_sessions_path = "/etc/lemurs/wayland-sessions"
-```
-
-Si todavía apunta a `/usr/share/...`, copiá `dotfiles/lemurs/config.toml` a `/etc/lemurs/config.toml` (writable por el usuario de escritorio). Lemurs relee el config en el próximo arranque del servicio, no en caliente.
-
-## Lemurs: login OK y pantalla negra (Sway no arranca)
-
-`/var/log/lemurs.client.log` muestra `Timeout waiting session to become active` / `Unable to create backend` / `VT 0`. Lemurs es un servicio systemd: logind le da a Sway la sesión del greeter (sin seat).
-
-El wrapper `/etc/lemurs/wayland/sway` pone `LIBSEAT_BACKEND=seatd`. El unit de Debian es `/usr/sbin/seatd -g video` — **no** uses un drop-in a `/usr/bin/seatd` (falla `203/EXEC` y no hay socket).
-
-```sh
-sudo bash ~/projects/zoi-debian/scripts/apply-lemurs-seatd.sh
-# seatd: active  y  /run/seatd.sock
-sudo reboot
-```
-
-## Lemurs: Sway arranca y volvés al greeter (`renderD128`)
-
-`/var/log/lemurs.client.log`: `failed to open /dev/dri/renderD128: Permission denied` y `Failed to create renderer`. El nodo es `0660` grupo `render`. Con TTY+logind hay ACL `uaccess`; con Lemurs+seatd no. El usuario tiene que estar en **`render`** (y `video`).
-
-```sh
-sudo usermod -aG render,video $USER
-id -nG $USER   # tiene que listar render (en un login nuevo)
-sudo reboot
 ```
 
 ## `install.sh`: sudoers / «¿Agregar a … en sudoers?»
@@ -314,17 +239,13 @@ En no interactivo: `ZOI_SUDOERS=0` omite; `ZOI_SUDOERS=1` (default con `ZOI_NONI
 
 En Debian esos binarios están en `/usr/sbin`. Un PATH de usuario (`sudo -E`, `su` sin `-`, agentes) no lo incluye y bash sale 127.
 
-Los scripts (`install.sh`, `lemurs-setup.sh`, `apply-lemurs-seatd.sh`, `uninstall.sh`) anteponen `/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin` al PATH. Si corrés `usermod` a mano:
+Los scripts (`install.sh`, `uninstall.sh`) anteponen `/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin` al PATH. Si corrés `usermod` a mano:
 
 ```sh
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin:$PATH"
 command -v usermod   # /usr/sbin/usermod
 sudo usermod -aG render,video $USER
 ```
-
-## `install.sh`: `work: variable sin asignar` (Lemurs)
-
-Era un `trap RETURN` sobre una variable `local`. Lemurs igual quedaba installed/enabled. Ya está arreglado en `lemurs-setup.sh`. Si ves el warning viejo: `systemctl is-enabled lemurs` y `lemurs --version`.
 
 ## Falta `amberol` / `loupe`
 
@@ -373,3 +294,30 @@ El script `scripts/uninstall.sh` realiza una desinstalación limpia:
 - Limpia los directorios de estado en `~/.local/state/quickshell` y `~/.local/state/zoi`.
 - Remueve los comandos `exec_always` de `~/.config/sway/config`.
 - Mantiene los paquetes apt instalados intactos (para removerlos por completo, seguir las instrucciones que imprime al finalizar).
+
+## Gráficos / firmware / zram
+
+Diagnóstico (Mesa y Vulkan vienen con `install.sh`):
+
+```sh
+lspci -nnk | grep -A3 -Ei 'VGA|3D|Network|Audio'
+glxinfo -B
+vulkaninfo --summary
+journalctl -b -p warning | grep -Ei 'firmware|amdgpu|rtw|wifi'
+sudo zramctl
+```
+
+zram: `/etc/default/zramswap` (`ALGO=zstd`, `PERCENT=60`). Si no hay dispositivo: `sudo systemctl restart zramswap`.
+
+Firmware del equipo (opcional, con el cargador conectado):
+
+```sh
+sudo fwupdmgr refresh --force
+fwupdmgr get-updates
+# solo si revisaste la lista:
+sudo fwupdmgr update
+```
+
+`install.sh` **no** corre `fwupdmgr update` solo (puede flashear BIOS).
+
+Extensiones tipo *Paneles transparentes* / *Burn My Windows* / Alt-Tab carrusel 3D son de GNOME/Cinnamon. ZOI es **Sway + Quickshell**; no aplican.

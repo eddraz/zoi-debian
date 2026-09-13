@@ -1,0 +1,13 @@
+#!/bin/sh
+# OpenAI-compatible HTTP server for K2-Horizon-0.9B.
+MODEL="${K2_MODEL:-$HOME/models/K2-Horizon-1B-BF16.gguf}"
+BIN="${K2_LLAMA_SERVER:-$HOME/.local/bin/llama-k2-server}"
+if [ ! -x "$BIN" ]; then
+  echo "Falta $BIN (fork K2-Horizon)." >&2
+  exit 1
+fi
+if [ ! -f "$MODEL" ]; then
+  echo "Falta $MODEL" >&2
+  exit 1
+fi
+exec "$BIN" -m "$MODEL" --jinja --host "${K2_HOST:-127.0.0.1}" --port "${K2_PORT:-8080}" -c "${K2_CTX:-8192}" "$@"

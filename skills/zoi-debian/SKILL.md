@@ -194,22 +194,18 @@ grim -g "$(swaymsg -t get_tree | python3 -c '...')" /tmp/x.png
 - Don't reorder `hostOrder` without checking that nothing depends on the previous order.
 - Don't add `qs.Ui` or `$OMARCHY_PATH` — first-party only.
 - Don't revive `Markdown.qml` or QtWebEngine for docs. Markdown is **Inlyne** (`qs-md` → `inlyne view`). Theme via `zoi-theme._dispatch_inlyne`.
-- Don't use Yazi `[open]` `name = "*.md"` (Yazi 26 wants `url` or `mime`). Don't add Nerd Fonts for Yazi icons; keep ASCII in `yazi-theme.toml.tpl`.
-- Third-party bins (Yazi, Mullvad, Lemurs, Inlyne, Node.js) are arch-gated in `install.sh`. Pin APT lists with `arch=$ARCH`. Node is **nodejs.org latest tarball → `/usr/local`**, not Debian `nodejs`.
+- Don't use Yazi `[open]` `name = "*.md"` (Yazi 26 wants `url` or `mime`). Don't add Nerd Fonts for Yazi icons; keep ASCII in `yazi-theme.toml.tpl`. Don't install JetBrainsMono Nerd Font or Brave from `projects/scripts/install.sh` — bar icons are Canvas; default browser is Mullvad/Thorium.
+- Third-party bins (Yazi, Mullvad, Inlyne, Node.js, Zed, Antigravity, `gh`, Deno, Bun, pnpm, Voxtype, Bruno, Etcher, cloudflared) are arch-gated or official installers in `install.sh`. Pin APT lists with `arch=$ARCH`. Node is **nodejs.org latest tarball → `/usr/local`**, not Debian `nodejs`. GitHub CLI keyring must match the pinned SHA256. Antigravity CLI is `https://antigravity.google/cli/install.sh` → `agy`; IDE tarball URL is scraped from the download page (linux-x64 / linux-arm).
+- Homebrew goes in fish (`zoi.fish` `brew shellenv`), never a hardcoded `/home/<user>/.bashrc`. Snap: delete `nosnap.pref` if present, install `snapd`, link `/snap`. Flatpak: add Flathub. Don't make Thunar the XDG file manager (Yazi stays default). Don't bind Voxtype to Super+V (clipboard).
+- Rust is **rustup** (`sh.rustup.rs -y`), not Debian `rustc`. Helix is the GitHub `.deb` / tarball (docs Ubuntu/Debian), not a PPA. Drift is **CutWire-Studios/Drift** via Flathub `org.cutwire.Drift` (AppImage fallback), not `snap install drift`.
 - Always install **`qt6-wayland`** next to `quickshell`. Debian's `quickshell` does not Depend on it; `--no-install-recommends` leaves qs without `libqwayland.so` (`Could not find the Qt platform plugin "wayland"`).
 - Scripts must prepend `/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin` to `PATH`. Debian `usermod`/`locale-gen`/`update-locale` live in `/usr/sbin`; a user PATH (`sudo -E`, agents) makes them 127 *orden no encontrada*.
-- Don't `trap RETURN` with a `local` temp dir under `set -u` (Lemurs). Expand the path or `rm -rf` before return.
+- Don't `trap RETURN` with a `local` temp dir under `set -u`. Expand the path or `rm -rf` before return.
 - Don't re-prompt git/locale/xkb/tz or re-apply baby-yoda palette on an already configured machine.
 - Don't silently grant sudo. Ask before writing `/etc/sudoers.d/zoi-<user>` (`visudo -c`, mode 0440, no dots in the filename). Skip the prompt if the drop-in exists. `ZOI_SUDOERS=0` skips. `uninstall.sh` must not delete sudoers.
 - Don't try to reload `foot` terminal config with `pkill -SIGUSR1 foot`. Foot does NOT support signal-based reloading. Use the OSC escape sequence mechanism implemented in `zoi-theme._osc_reload_foot` (writes directly to `/dev/pts/*`).
-- Don't `systemctl start lemurs` from a live graphical session; `lemurs-setup.sh apply` only enables the unit (`systemctl disable` LightDM, never `disable --now`). Don't remove the lightdm package when switching to Lemurs.
-- Don't treat `SUDO_USER` as the desktop user after `exec sudo -u <desktop>` from root (it is `root`). Pass `TARGET_USER`. Never `mkdir` greeter files under `/root`. `usermod -aG a,b,missing` fails the whole list — skip groups that `getent group` doesn't find (`seat`).
-- Don't `include login` in `/etc/pam.d/lemurs` (Debian `pam_loginuid` required → *authentication failed* after a valid password). Use `@include common-auth` and `session optional pam_loginuid.so`.
-- Don't put hex colors in Lemurs `config.toml` for TTY2. Kernel VT ignores truecolor. Write `/etc/lemurs/vtrgb` and `ExecStartPre=setvtrgb`; config uses ANSI names (`black`, `light yellow`).
-- Lemurs `cache_path` is a **file** (`/var/cache/lemurs/state`). mkdir of that path as a directory breaks remember-username/session.
-- Don't point Lemurs `xsessions_path` at `/usr/share/xsessions`. Debian's `sway.desktop` there is X11 (`Exec=sway`); Lemurs waits 60s for Xorg. Use empty `/etc/lemurs/xsessions` + `/etc/lemurs/wayland/sway`.
-- Don't drop-in `ExecStart=/usr/bin/seatd` (Debian binary is `/usr/sbin/seatd`, unit already `-g video`). 203/EXEC → no socket → black screen.
-- Lemurs+seatd does not get logind `uaccess` on `/dev/dri/renderD128`. User must be in group **`render`** (and `video`) or Sway exits and the greeter returns. `scripts/apply-lemurs-seatd.sh`; reboot after `usermod`.
+- Don't treat `SUDO_USER` as the desktop user after `exec sudo -u <desktop>` from root (it is `root`). Pass `TARGET_USER`. `usermod -aG a,b,missing` fails the whole list — skip groups that `getent group` doesn't find.
+- Don't reintroduce Lemurs. LightDM is the display manager. `install.sh` / `uninstall.sh` must disable leftover Lemurs units and `enable` LightDM (never `start` it from a live graphical session).
 
 ## When to update the docs
 

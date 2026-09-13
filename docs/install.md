@@ -10,11 +10,11 @@ Esta guía describe cómo levantar `zoi-debian` desde cero en Debian 13 (trixie)
 - Aprox. **1 GB** libre (Sway, Quickshell, Mullvad Browser, Pi).
 - Arquitectura nativa (`dpkg --print-architecture`). Los repos de terceros se pinnean a esa ISA (no a i386 foreign).
 
-| Arch | Debian (Sway, qs, …) | Yazi | Mullvad | Lemurs | Inlyne | Node |
-|---|---|---|---|---|---|---|
-| **amd64** | sí | sí | sí | sí | sí | sí |
-| **arm64** | sí | sí | no | no | sí | sí |
-| **otra** | intenta | no | no | no | no | no |
+| Arch | Debian (Sway, qs, …) | Yazi | Mullvad | Inlyne | Node |
+|---|---|---|---|---|---|
+| **amd64** | sí | sí | sí | sí | sí |
+| **arm64** | sí | sí | no | sí | sí |
+| **otra** | intenta | no | no | no | no |
 
 ## Pasos
 
@@ -45,11 +45,11 @@ Variables de entorno:
 
 ### 2. Lo que hace el instalador
 
-1. **Lee la arquitectura** y saltea Yazi / Mullvad / Lemurs / Inlyne / Node.js si no hay binario para esa ISA.
+1. **Lee la arquitectura** y saltea Yazi / Mullvad / Inlyne / Node.js si no hay binario para esa ISA.
 2. **Asegura PATH de sbin** (`/usr/sbin:/sbin`) para `usermod`, `locale-gen`, `update-locale`.
 3. **Pregunta** si agregar al usuario del SO en sudoers (`/etc/sudoers.d/zoi-<usuario>` + grupo `sudo`). Default **Y**. Si el drop-in ya existe, no pregunta.
 4. **Activa backports** (`/etc/apt/sources.list.d/backports.list`) si no existe.
-5. **Instala paquetes** (ver tabla abajo), incluyendo **curl**, **git** y **Node.js latest** (nodejs.org → `/usr/local`).
+5. **Instala paquetes** (ver tabla abajo), incluyendo **curl**, **git**, **Node.js latest**, **gh**, **Zed**, **Antigravity CLI+IDE**, **UPower**, **zram** y firmware según GPU/NIC.
 6. **Clona** el repo de zoi-debian en `$ZOI_DIR`.
 7. **Copia dotfiles y temas**:
    - `~/.config/quickshell/` (todos los QML + `shell.json`)
@@ -59,7 +59,7 @@ Variables de entorno:
    - `~/.local/bin/` (`zoi-theme`, `inlyne`, helpers `qs-*` incl. `qs-md` / `qs-docs` / `qs-md-open`)
 8. **Pone wallpaper por defecto** (`assets/default-wallpaper.jpg` → `~/Imágenes/baby-yoda-cartoon.jpg`).
 9. Extrae la paleta de ese fondo **solo en el primer install** (`zoi-theme apply-json`). Un re-run no pisa el tema activo.
-10. **Instala Lemurs** como DM (TTY2) en amd64; LightDM queda de fallback.
+10. **Habilita LightDM** (y quita leftovers de Lemurs si hay).
 11. **Cambia la shell** a `fish`.
 12. **Agrega** `exec_always` de qs + qs-idle al `sway/config`.
 13. Verifica binarios.
@@ -67,7 +67,7 @@ Variables de entorno:
 ### 3. Cerrá sesión y volvé a entrar
 
 Importante: el primer arranque de `qs` necesita:
-- `lemurs` en TTY2 con sesión Sway (o `sway` directo desde TTY). LightDM es fallback.
+- LightDM con sesión Sway (o `sway` directo desde TTY).
 - `wireplumber` corriendo (audio).
 - `NetworkManager` para wifi (NetworkPanel + BT).
 - `bluez` para Bluetooth.
@@ -107,10 +107,42 @@ Importante: el primer arranque de `qs` necesita:
 | `python3-terminaltexteffects` | TTE effects para el screensaver |
 | `brightnessctl` | Brillo (Power panel) |
 | `light` | Brillo de teclado |
-| `lightdm` | Fallback display manager (deshabilitado si Lemurs se instaló) |
-| `kbd` | `setvtrgb` para la paleta VGA de Lemurs en TTY2 |
-| `lemurs` | **No es paquete apt.** Tarball GitHub v0.4 → `/usr/local/bin/lemurs` (amd64). PAM + `/etc/lemurs/vtrgb` |
-| `seatd` | DRM para Sway detrás de Lemurs (`/usr/sbin/seatd -g video`). El usuario va en grupos `video` y `render` |
+| `lightdm` | Display manager (sesión Sway) |
+| `upower` | Batería D-Bus (`Quickshell.Services.UPower`, widget Battery) |
+| `zram-tools` | Swap comprimido (`/etc/default/zramswap`: `ALGO=zstd`, `PERCENT=60`, `PRIORITY=100`) |
+| `fwupd` | Actualizaciones de firmware del equipo (no se corre `fwupdmgr update` solo) |
+| `libgl1-mesa-dri` `mesa-vulkan-drivers` `vulkan-tools` | OpenGL/Vulkan. En amd64 también `:i386` para Steam |
+| `amd64-microcode` / `intel-microcode` | Microcódigo de CPU si el procesador es AMD o Intel |
+| `firmware-amd-graphics` `firmware-realtek` | Firmware GPU AMD y NIC Realtek (apt, no drivers de páginas externas) |
+| `pciutils` `usbutils` | Detección de GPU/NIC para firmware |
+| `firmware-linux*` Mesa VA/Vulkan | Firmware + aceleración según hardware (Intel/AMD/NVIDIA, iwlwifi, realtek, …) |
+| `gh` | **No es solo apt.** Repo oficial GitHub CLI; keyring verificado por SHA256 |
+| `zed` | **No es paquete apt.** Instalador `zed.dev/install.sh` |
+| `agy` | **Antigravity CLI.** `curl -fsSL https://antigravity.google/cli/install.sh \| bash` → `~/.local/bin/agy` (amd64/arm64) |
+| `antigravity-ide` | **Antigravity IDE** standalone. Tarball Linux desde [download](https://antigravity.google/download) → `~/.local/share/antigravity-ide` + `.desktop` (amd64/arm64) |
+| `thunar` | File manager extra (Yazi sigue como default XDG) |
+| `voxtype` | Voz a texto Wayland. `.deb` amd64 de [peteonrails/voxtype](https://github.com/peteonrails/voxtype). No pisa Super+V (clipboard) |
+| `deno` `bun` `pnpm` | Runtimes JS. Deno/Bun al home; pnpm vía corepack |
+| `cloudflared` | Cloudflare Tunnel. `.deb` GitHub latest |
+| `bruno` | Cliente API. `.deb` GitHub latest (amd64/arm64) |
+| `podman` | Contenedores rootless (`uidmap` `slirp4netns` `fuse-overlayfs`) |
+| `balena-etcher` | Flasher USB. `.deb` amd64 de [balena-io/etcher](https://github.com/balena-io/etcher/releases) |
+| `snapd` | Snap. Quita `/etc/apt/preferences.d/nosnap.pref` si existe; `enable snapd.socket`; `/snap` → `/var/lib/snapd/snap` |
+| `flatpak` | Flatpak + remote Flathub + `xdg-desktop-portal-wlr` |
+| Homebrew | [linuxbrew](https://brew.sh). `NONINTERACTIVE=1` install.sh; `brew shellenv` en `zoi.fish` |
+| llama.cpp | **No Homebrew.** Clone + cmake en `~/apps/llama.cpp` ([MBZUAI-IFM `model/K2Horizon`](https://github.com/MBZUAI-IFM/llama.cpp/tree/model/K2Horizon)) → `~/.local/bin/llama-cli` y `llama-server`. |
+| K2-Horizon GGUF | [IFM/K2-Horizon-0.9B-GGUF](https://huggingface.co/IFM/K2-Horizon-0.9B-GGUF) → `~/models/K2-Horizon-1B-BF16.gguf` (BF16, ~1.8 GB). Wrappers: `k2-chat`, `k2-server` (ctx default 8192; 128K = YaRN). |
+| Go | Tarball oficial [go.dev](https://go.dev/dl/) → `/usr/local/go` (SHA256; ≥1.25.10). PATH: `/usr/local/go/bin` y `~/go/bin` |
+| `gentle-ai` | [Gentleman-Programming/gentle-ai](https://github.com/Gentleman-Programming/gentle-ai) `go install …/v2/cmd/gentle-ai@latest` |
+| `engram` | [Gentleman-Programming/engram](https://github.com/Gentleman-Programming/engram) `go install …/cmd/engram@latest` |
+| `gentle-pi` | [Gentleman-Programming/gentle-pi](https://github.com/Gentleman-Programming/gentle-pi) `pi install npm:gentle-pi@latest` |
+| `gga` | [gentleman-guardian-angel](https://github.com/Gentleman-Programming/gentleman-guardian-angel) `brew install gentleman-programming/tap/gga` o `./install.sh` del repo |
+| `codegraph` | CLI en PATH. MCP **solo** Antigravity CLI (`~/.gemini/config/mcp_config.json`). No se corre `codegraph install --yes` (eso cablea Cursor/Claude/Copilot). |
+| `chrome-devtools-mcp` | npm global + entrada MCP **solo** en Antigravity CLI |
+| Cloudflare MCP | Remoto `https://mcp.cloudflare.com/mcp`. Skills **solo Pi** (`~/.pi/agent/skills/`). MCP **solo agy** (`mcp_config.json`). Como Herdr: no se instala en todos los IDEs. |
+| `rustc` `cargo` | **rustup** (`https://sh.rustup.rs`, toolchain stable) → `~/.cargo/bin` |
+| `hx` | **Helix**. [Paquete Debian de GitHub](https://docs.helix-editor.com/package-managers.html#ubuntudebian) (amd64 `.deb`; arm64 tarball + `runtime` en `~/.config/helix/runtime`) |
+| Drift | Video editor [CutWire-Studios/Drift](https://github.com/CutWire-Studios/Drift). `flatpak install flathub org.cutwire.Drift`; fallback AppImage amd64 |
 | `mullvad-browser` | Se instala (amd64). XDG default = Thorium si existe, si no Mullvad. `qs-browser` sigue XDG |
 | `yazi` | File manager (foot + Sixel). Repo APT oficial, `deb [arch=$ARCH …]` (amd64/arm64) |
 | `inlyne` | **No es paquete apt.** Release GitHub v0.5.3 → `~/.local/bin/inlyne` (amd64/arm64) |
@@ -119,7 +151,7 @@ Importante: el primer arranque de `qs` necesita:
 | `xz-utils` | Extrae el tarball de Node.js |
 | `nodejs` / `npm` | **No es paquete apt.** Current latest de [nodejs.org](https://nodejs.org/dist/latest/) → `/usr/local` (amd64/arm64). Un re-run actualiza si hay versión nueva |
 | `herdr` | Multiplexer de terminales para agentes. Instalador oficial `herdr.dev/install.sh` |
-| `ffmpeg` `poppler-utils` `fd-find` `ripgrep` `fzf` `imagemagick` `p7zip-full` | Previews de Yazi |
+| `ffmpeg` `poppler-utils` `fd-find` `ripgrep` `fzf` `imagemagick` `p7zip-full` `ffmpegthumbnailer` `chafa` `unzip` | Previews de Yazi |
 | `fish` | Login shell + shell de foot |
 | `bc` | Cálculos matemáticos en scripts auxiliares |
 | `btop` | Monitor de recursos del sistema (themeado por zoi-theme) |
@@ -270,7 +302,7 @@ Puedo escribir /etc/sudoers.d/zoi-<usuario> con: <usuario> ALL=(ALL:ALL) ALL
 ```
 
 - **Y** (default): drop-in validado con `visudo -c`, modo `0440`, y el usuario entra al grupo `sudo`.
-- **n**: no toca sudoers. La fase 2 igual necesita `sudo` para apt/seatd/Lemurs.
+- **n**: no toca sudoers. La fase 2 igual necesita `sudo` para apt.
 - Re-run: si el archivo ya está, no vuelve a preguntar.
 - No interactivo: `ZOI_NONINTERACTIVE=1` (agrega) o `ZOI_SUDOERS=0` (omite).
 
@@ -293,8 +325,7 @@ sudo usermod -aG sudo "$USER"
 
 ```sh
 systemctl --user enable --now wireplumber
-sudo systemctl enable --now NetworkManager bluetooth
-# Lemurs: install.sh / lemurs-setup.sh apply (enable, no start). TTY2 + vtrgb.
+sudo systemctl enable --now NetworkManager bluetooth lightdm
 ```
 
 ### Verificar
@@ -306,12 +337,20 @@ swaymsg exec /usr/bin/qs -n --daemonize
 
 Si no se ve nada, mirá `~/.cache/quickshell/crashes/<shell>/`.
 
+## Variante Waybar
+
+El default es la barra Quickshell. Para barra nativa **Waybar** (mismos overlays QML: launcher, notifs, lock, OSD):
+
+```sh
+./scripts/install-waybar.sh
+```
+
+Si el desktop no está, corre `install.sh` primero. Clicks de Waybar llaman `qs ipc`. Tema: `waybar.css.tpl` vía `zoi-theme`.
+
 ## Desinstalar
 
 ```sh
 ~/projects/zoi-debian/scripts/uninstall.sh
 ```
 
-Quita el shell ZOI (`qs-*`, Inlyne, `~/.config/quickshell`). Los paquetes apt quedan.
-
-Display manager: [lemurs.md](lemurs.md).
+Quita el shell ZOI (`qs-*`, Inlyne, `~/.config/quickshell`) y leftovers de Lemurs. Habilita LightDM. Los paquetes apt quedan.
