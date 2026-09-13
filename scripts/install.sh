@@ -941,99 +941,6 @@ else
   curl -fsS https://zed.dev/install.sh | sh || warn "No se pudo instalar zed. Después: curl -fsS https://zed.dev/install.sh | sh"
 fi
 
-# ---------------------------------------------------------------- antigravity CLI + IDE
-# https://antigravity.google/download#antigravity-cli
-log "Instalando Antigravity CLI (agy) + IDE."
-if command -v agy >/dev/null 2>&1 || [ -x "$HOME/.local/bin/agy" ]; then
-  log "agy ya está en PATH."
-else
-  curl -fsSL https://antigravity.google/cli/install.sh | bash || \
-    warn "No se pudo instalar Antigravity CLI. Después: curl -fsSL https://antigravity.google/cli/install.sh | bash"
-fi
-
-install_antigravity_ide() {
-  local dest="$HOME/.local/share/antigravity-ide"
-  local link="$HOME/.local/bin/antigravity-ide"
-  local arch_tag html url tmp inner found desk
-  if command -v antigravity-ide >/dev/null 2>&1 || [ -x "$link" ]; then
-    log "Antigravity IDE ya está instalado."
-    return 0
-  fi
-  case "$ARCH" in
-    amd64) arch_tag="linux-x64" ;;
-    arm64) arch_tag="linux-arm" ;;
-    *)
-      warn "Antigravity IDE no publica tarball para $ARCH; salteo."
-      return 0
-      ;;
-  esac
-  html="$(curl -fsSL --compressed https://antigravity.google/download)" || html=""
-  url="$(printf '%s\n' "$html" | tr '"' '\n' | grep -E "edgedl.me.gvt1.com/.*/${arch_tag}/Antigravity(%20|[[:space:]])IDE.tar.gz" | head -n 1)"
-  if [ -z "$url" ]; then
-    warn "No pude resolver la URL de Antigravity IDE ($arch_tag)."
-    return 0
-  fi
-  log "Descargando Antigravity IDE ($arch_tag)."
-  tmp="$(mktemp -d)"
-  if ! curl -fL "$url" -o "$tmp/ide.tar.gz"; then
-    rm -rf "$tmp"
-    warn "No pude descargar Antigravity IDE."
-    return 0
-  fi
-  tar -xzf "$tmp/ide.tar.gz" -C "$tmp" || {
-    rm -rf "$tmp"
-    warn "No pude extraer Antigravity IDE."
-    return 0
-  }
-  inner="$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
-  if [ -z "$inner" ]; then
-    rm -rf "$tmp"
-    warn "El tarball de Antigravity IDE no trajo directorio."
-    return 0
-  fi
-  rm -rf "$dest"
-  mv "$inner" "$dest"
-  rm -rf "$tmp"
-  found=""
-  for n in antigravity antigravity-ide; do
-    if [ -x "$dest/$n" ]; then
-      found="$dest/$n"
-      break
-    fi
-    if [ -x "$dest/bin/$n" ]; then
-      found="$dest/bin/$n"
-      break
-    fi
-  done
-  if [ -z "$found" ]; then
-    found="$(find "$dest" -maxdepth 3 -type f \( -name antigravity -o -name antigravity-ide \) -perm /111 | head -n 1)"
-  fi
-  if [ -z "$found" ]; then
-    warn "El tarball de Antigravity IDE no trajo el binario."
-    return 0
-  fi
-  mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
-  ln -sfn "$found" "$link"
-  desk="$(find "$dest" -maxdepth 2 -name '*.desktop' | head -n 1)"
-  if [ -n "$desk" ]; then
-    cp "$desk" "$HOME/.local/share/applications/antigravity-ide.desktop"
-    sed -i "s|^Exec=.*|Exec=$found %F|" "$HOME/.local/share/applications/antigravity-ide.desktop" || true
-  else
-    cat > "$HOME/.local/share/applications/antigravity-ide.desktop" <<EOF
-[Desktop Entry]
-Type=Application
-Name=Antigravity IDE
-Comment=Google Antigravity standalone IDE
-Exec=$found %F
-Terminal=false
-Categories=Development;IDE;
-StartupNotify=true
-EOF
-  fi
-  log "Antigravity IDE → $found"
-}
-install_antigravity_ide
-
 # ---------------------------------------------------------------- extra tools (thunar, rustup, helix, voxtype, deno/bun/pnpm, cloudflared, bruno, etcher, snap, flatpak, brew, drift)
 github_latest_asset_url() {
   local repo="$1" needle="$2"
@@ -1306,8 +1213,6 @@ command -v thorium-browser >/dev/null || command -v mullvad-browser >/dev/null |
 command -v herdr >/dev/null || warn "Falta binario: herdr (curl -fsSL https://herdr.dev/install.sh | sh)."
 command -v pi >/dev/null || warn "Falta binario: pi (reiniciá la shell o agregá el PATH de pi.dev)."
 command -v zed >/dev/null || warn "Falta binario: zed (curl -fsS https://zed.dev/install.sh | sh)."
-command -v agy >/dev/null || warn "Falta binario: agy (curl -fsSL https://antigravity.google/cli/install.sh | bash)."
-command -v antigravity-ide >/dev/null || warn "Falta Antigravity IDE (~/.local/bin/antigravity-ide)."
 command -v thunar >/dev/null || warn "Falta thunar."
 command -v podman >/dev/null || warn "Falta podman."
 command -v deno >/dev/null || [ -x "$HOME/.deno/bin/deno" ] || warn "Falta deno."

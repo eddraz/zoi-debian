@@ -28,7 +28,7 @@ El instalador, en orden:
 2. Locale / teclado / timezone **solo si el sistema no los tiene**.
 3. Usa el **usuario del sistema operativo** (no pide nombre, correo, usuario ni contraseña; no crea cuentas ni configura git).
 4. Pregunta si agregar ese usuario a **sudoers** (`/etc/sudoers.d/zoi-<usuario>`, default **Y**). `ZOI_SUDOERS=0` lo omite.
-5. Instala curl, git, Node.js latest (`/usr/local`), Rust (rustup), Helix, Pi, Herdr, Zed, Antigravity CLI+IDE, Deno/Bun/pnpm, Voxtype, Thunar, Podman, Bruno, Etcher, Drift, cloudflared, Snap, Flatpak, Homebrew, gh, drivers/firmware, zram, UPower, Sway, Quickshell, foot+fish, Yazi, Inlyne, Mullvad, LightDM, Amberol, Loupe, temas. Terceros según arquitectura.
+5. Instala curl, git, Node.js latest (`/usr/local`), Rust (rustup), Helix, Pi, Herdr, Zed, Deno/Bun/pnpm, Voxtype, Thunar, Podman, Bruno, Etcher, Drift, cloudflared, Snap, Flatpak, Homebrew, gh, drivers/firmware, zram, UPower, Sway, Quickshell, foot+fish, Yazi, Inlyne, Mullvad, LightDM, Amberol, Loupe, temas. Terceros según arquitectura.
 6. Pregunta si reiniciás. Un re-run no vuelve a preguntar lo ya configurado ni pisa la paleta activa.
 
 Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1` usa env `TARGET_USER` / `ZOI_LANG` / `ZOI_XKB` / `ZOI_TZ` / `ZOI_SUDOERS`.
@@ -38,7 +38,7 @@ Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1`
 - **Sway** (WM) + **foot** (terminal) + **fish** (login shell y shell de foot). El bar por defecto es **Quickshell** (no waybar).
 - **Quickshell 0.3.0** desde trixie-backports, con **`qt6-wayland`** (plugin QPA; sin él `qs` no arranca).
 - **PipeWire** implícito vía los servicios de QS.
-- **ZOI Theme Engine (`zoi-theme`)**: Motor de temas declarativo (arquitectura Omarchy Quatro) con 17 paletas estándar, 22 colores normalizados (`colors.toml`), plantillas (`*.tpl`) y propagación atómica en vivo a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK 3/4, Herdr, Yazi e Inlyne.
+- **ZOI Theme Engine (`zoi-theme`)**: Motor de temas declarativo (arquitectura Omarchy Quatro) con 17 paletas estándar, 22 colores normalizados (`colors.toml`), plantillas (`*.tpl`) y propagación atómica en vivo a Foot, Sway, btop, Helix, Zed, VSCode/VSCodium, GTK 3/4, Herdr, Yazi e Inlyne.
 - Utilidades: `grim` `slurp` `wf-recorder` `wlsunset` `wtype` `wl-clipboard` `swayidle` `swaylock` `swaybg` `swaymsg` `playerctl` `mpv` `mpv-mpris` `yt-dlp` `cliphist` `figlet` `python3-terminaltexteffects` `brightnessctl` `btop` `bc` `libqrencode4` `mullvad-browser` (se instala). XDG default = **Thorium** si está, si no Mullvad. Super+Shift+Return usa `qs-browser`.
 - **Yazi** en **foot** (Sixel) como file manager (`Super+Shift+F`). Íconos ASCII (no Nerd Font).
 - **Inlyne** visor markdown GPU (`qs-md`). Learn, Trigger y Yazi lo usan.
@@ -48,12 +48,11 @@ Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1`
 - **UPower** (chip de batería), **zram-tools** (`zstd`, 60% RAM), **firmware/drivers** según GPU/NIC (Mesa, Realtek, AMD graphics, microcode, NVIDIA modeset si aplica), **fwupd**, Mesa i386 para Steam.
 - **GitHub CLI (`gh`)** desde el repo oficial (keyring con SHA256).
 - **Zed** editor (`zed.dev`); `zoi-theme` pinta la paleta.
-- **Antigravity CLI (`agy`)** + **IDE** standalone ([download](https://antigravity.google/download#antigravity-cli)). CLI → `~/.local/bin/agy`; IDE → `~/.local/share/antigravity-ide` (amd64/arm64).
 - **Thunar** (file manager extra; el default XDG sigue siendo Yazi), **Voxtype** (voz a texto Wayland, `.deb` amd64), **Podman**.
 - **Rust** (`rustup` stable → `~/.cargo/bin`) y **Helix** (`hx`; `.deb` de GitHub en amd64, tarball en arm64). `zoi-theme` pinta Helix.
 - **llama.cpp** compilado desde `~/apps/llama.cpp` (fork K2-Horizon, sin Homebrew). Modelo [K2-Horizon-0.9B GGUF](https://huggingface.co/IFM/K2-Horizon-0.9B-GGUF) en `~/models` (`k2-chat` / `k2-server`).
 - **Go** (oficial go.dev ≥1.25.10) + **Gentle-AI**, **Engram**, **gentle-pi**, **gga** (Guardian Angel).
-- **CodeGraph**, **Chrome DevTools MCP** y **Cloudflare MCP/skills** solo para **Pi** y **Antigravity CLI** (mismo criterio que Herdr; no se cablean Cursor/Claude/Copilot).
+- **Gentle stack** y **skills Cloudflare** para **Pi** (`~/.pi/agent/skills/`, `pi install`). **CodeGraph** y **chrome-devtools-mcp** quedan como binarios en PATH; no se corre `codegraph install --yes` (eso cablea Cursor/Claude/Copilot). No hay Antigravity ni `~/.gemini/config/mcp_config.json`.
 - **Drift** editor de video ([CutWire-Studios/Drift](https://github.com/CutWire-Studios/Drift)): Flathub `org.cutwire.Drift`, fallback AppImage amd64.
 - **Deno**, **Bun**, **pnpm** (corepack). PATH en `zoi.fish`.
 - **cloudflared**, **Bruno**, **balena Etcher** (`.deb` desde GitHub).

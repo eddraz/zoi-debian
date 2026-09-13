@@ -146,7 +146,7 @@ Aplicaciones compiladas automáticamente:
 - **btop**: `~/.config/btop/themes/zoi.theme` + `btop.conf`
 - **Helix Editor**: `~/.config/helix/themes/zoi.toml` + `config.toml`
 - **Zed Editor**: `~/.config/zed/themes/zoi.json` + `settings.json`
-- **VSCode / Antigravity IDE / VSCodium**: `settings.json` (`workbench.colorCustomizations`)
+- **VSCode / VSCodium**: `settings.json` (`workbench.colorCustomizations`)
 - **GTK 3.0 y GTK 4.0 / LibreWolf**: `~/.config/gtk-3.0/gtk.css` y `~/.config/gtk-4.0/gtk.css` + `gsettings prefer-dark/prefer-light` (`libglib2.0-bin`; si falta, el resto del tema igual se aplica)
 - **Herdr**: `~/.config/herdr/config.toml` (seed del repo; `zoi-theme` pinta `[theme.custom]`). Guía: [herdr.md](herdr.md).
 - **Yazi**: `~/.config/yazi/yazi.toml` (openers; `url = "*.md"`) y `theme.toml` (íconos ASCII).

@@ -315,7 +315,7 @@ swaymsg 'output * bg "'$path'" fill'
   - Foot terminal (`foot.ini`)
   - Bordes y colores de ventanas en Sway (`theme.conf` + `swaymsg client.*`)
   - Monitor de sistema btop (`zoi.theme`)
-  - Editores de código: Helix (`zoi.toml`), Zed (`zoi.json`), VSCode / Antigravity IDE (`settings.json`)
+  - Editores de código: Helix (`zoi.toml`), Zed (`zoi.json`), VSCode / VSCodium (`settings.json`)
   - Aplicaciones GTK 3 / 4 y navegadores como LibreWolf (`gtk.css` + `prefer-dark/prefer-light`)
   - Herdr (`config.toml`)
 - **Extracción de paleta desde Wallpaper**: `qs-theme-from-wallpaper` extrae los 22 colores con contraste WCAG AAA (> 7:1), tintando fondos suavemente y destacando acentos cromáticos. Al elegir un fondo de pantalla, todo el sistema adopta automáticamente su paleta derivada.

@@ -224,7 +224,7 @@ ZOI cuenta con un sistema de temas desacoplado y reactivo de dos niveles:
 2. **Nivel Sistema (`zoi-theme` + Templates `*.tpl`)**:
    - Compilador maestro que procesa plantillas declarativas usando paletas de 22 colores estandarizadas (`colors.toml`).
    - Bloqueo por archivo (`flock`) y staging atómico en `~/.local/state/zoi/theme/current`.
-   - Propaga simultáneamente a Foot, Sway, btop, Helix, Zed, VSCode/Antigravity, GTK, Herdr, Yazi e Inlyne.
+   - Propaga simultáneamente a Foot, Sway, btop, Helix, Zed, VSCode/VSCodium, GTK, Herdr, Yazi e Inlyne.
    - Ejecuta hooks de usuario en `~/.config/zoi/hooks/theme-set.d/*`.
 
 ## Tradeoffs y límites

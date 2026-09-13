@@ -161,7 +161,7 @@ install_codegraph_and_chrome_mcp() {
       warn "Sin npm; no instalo codegraph. https://github.com/colbymchenry/codegraph"
     fi
   fi
-  # No `codegraph install --yes`: eso cablea Claude/Cursor/Copilot/…. Solo PATH + MCP de agy.
+  # No `codegraph install --yes`: eso cablea Claude/Cursor/Copilot/…. Solo PATH.
 
   if command -v chrome-devtools-mcp >/dev/null 2>&1; then
     log "chrome-devtools-mcp ya está en PATH."
@@ -174,54 +174,12 @@ install_codegraph_and_chrome_mcp() {
   fi
 }
 
-merge_agy_mcp_servers() {
-  # Antigravity CLI: ~/.gemini/config/mcp_config.json (no Claude/Cursor/etc.).
-  python3 - <<'PY'
-import json, os
-path = os.path.expanduser("~/.gemini/config/mcp_config.json")
-os.makedirs(os.path.dirname(path), exist_ok=True)
-data = {}
-if os.path.isfile(path):
-    try:
-        with open(path, encoding="utf-8") as fh:
-            data = json.load(fh) or {}
-    except (OSError, json.JSONDecodeError):
-        data = {}
-if not isinstance(data, dict):
-    data = {}
-servers = data.setdefault("mcpServers", {})
-if not isinstance(servers, dict):
-    servers = {}
-    data["mcpServers"] = servers
-wanted = {
-    "cloudflare-api": {"serverUrl": "https://mcp.cloudflare.com/mcp"},
-    "cloudflare-docs": {"serverUrl": "https://docs.mcp.cloudflare.com/mcp"},
-    "chrome-devtools": {
-        "command": "npx",
-        "args": ["-y", "chrome-devtools-mcp@latest"],
-    },
-    "codegraph": {"command": "codegraph", "args": ["serve", "--mcp"]},
-}
-changed = False
-for key, val in wanted.items():
-    if key not in servers:
-        servers[key] = val
-        changed = True
-if changed or not os.path.isfile(path):
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as fh:
-        json.dump(data, fh, indent=2)
-        fh.write("\n")
-    os.replace(tmp, path)
-PY
-}
-
 install_cloudflare_mcp_servers() {
-  # Solo Pi (skills) y Antigravity CLI (mcp_config.json). Como Herdr: no se cablea a todos los IDEs.
+  # Solo Pi (skills). Como Herdr: no se cablea a todos los IDEs.
   # https://developers.cloudflare.com/agents/model-context-protocol/cloudflare/servers-for-cloudflare/
   local dest skills_tmp pi_skills
-  log "Cloudflare MCP/skills para Pi + Antigravity CLI."
-  mkdir -p "$HOME/.config/zoi" "$HOME/.pi/agent/skills" "$HOME/.gemini/config"
+  log "Cloudflare skills para Pi."
+  mkdir -p "$HOME/.config/zoi" "$HOME/.pi/agent/skills"
   cat > "$HOME/.config/zoi/mcp-cloudflare.json" <<'EOF'
 {
   "mcpServers": {
@@ -230,7 +188,6 @@ install_cloudflare_mcp_servers() {
   }
 }
 EOF
-  merge_agy_mcp_servers || warn "No pude escribir ~/.gemini/config/mcp_config.json"
   pi_skills="$HOME/.pi/agent/skills"
   if [ ! -f "$pi_skills/cloudflare/SKILL.md" ]; then
     skills_tmp="$(mktemp -d)"

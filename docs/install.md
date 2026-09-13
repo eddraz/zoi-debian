@@ -49,7 +49,7 @@ Variables de entorno:
 2. **Asegura PATH de sbin** (`/usr/sbin:/sbin`) para `usermod`, `locale-gen`, `update-locale`.
 3. **Pregunta** si agregar al usuario del SO en sudoers (`/etc/sudoers.d/zoi-<usuario>` + grupo `sudo`). Default **Y**. Si el drop-in ya existe, no pregunta.
 4. **Activa backports** (`/etc/apt/sources.list.d/backports.list`) si no existe.
-5. **Instala paquetes** (ver tabla abajo), incluyendo **curl**, **git**, **Node.js latest**, **gh**, **Zed**, **Antigravity CLI+IDE**, **UPower**, **zram** y firmware según GPU/NIC.
+5. **Instala paquetes** (ver tabla abajo), incluyendo **curl**, **git**, **Node.js latest**, **gh**, **Zed**, **UPower**, **zram** y firmware según GPU/NIC.
 6. **Clona** el repo de zoi-debian en `$ZOI_DIR`.
 7. **Copia dotfiles y temas**:
    - `~/.config/quickshell/` (todos los QML + `shell.json`)
@@ -118,8 +118,6 @@ Importante: el primer arranque de `qs` necesita:
 | `firmware-linux*` Mesa VA/Vulkan | Firmware + aceleración según hardware (Intel/AMD/NVIDIA, iwlwifi, realtek, …) |
 | `gh` | **No es solo apt.** Repo oficial GitHub CLI; keyring verificado por SHA256 |
 | `zed` | **No es paquete apt.** Instalador `zed.dev/install.sh` |
-| `agy` | **Antigravity CLI.** `curl -fsSL https://antigravity.google/cli/install.sh \| bash` → `~/.local/bin/agy` (amd64/arm64) |
-| `antigravity-ide` | **Antigravity IDE** standalone. Tarball Linux desde [download](https://antigravity.google/download) → `~/.local/share/antigravity-ide` + `.desktop` (amd64/arm64) |
 | `thunar` | File manager extra (Yazi sigue como default XDG) |
 | `voxtype` | Voz a texto Wayland. `.deb` amd64 de [peteonrails/voxtype](https://github.com/peteonrails/voxtype). No pisa Super+V (clipboard) |
 | `deno` `bun` `pnpm` | Runtimes JS. Deno/Bun al home; pnpm vía corepack |
@@ -137,9 +135,9 @@ Importante: el primer arranque de `qs` necesita:
 | `engram` | [Gentleman-Programming/engram](https://github.com/Gentleman-Programming/engram) `go install …/cmd/engram@latest` |
 | `gentle-pi` | [Gentleman-Programming/gentle-pi](https://github.com/Gentleman-Programming/gentle-pi) `pi install npm:gentle-pi@latest` |
 | `gga` | [gentleman-guardian-angel](https://github.com/Gentleman-Programming/gentleman-guardian-angel) `brew install gentleman-programming/tap/gga` o `./install.sh` del repo |
-| `codegraph` | CLI en PATH. MCP **solo** Antigravity CLI (`~/.gemini/config/mcp_config.json`). No se corre `codegraph install --yes` (eso cablea Cursor/Claude/Copilot). |
-| `chrome-devtools-mcp` | npm global + entrada MCP **solo** en Antigravity CLI |
-| Cloudflare MCP | Remoto `https://mcp.cloudflare.com/mcp`. Skills **solo Pi** (`~/.pi/agent/skills/`). MCP **solo agy** (`mcp_config.json`). Como Herdr: no se instala en todos los IDEs. |
+| `codegraph` | CLI en PATH. No se corre `codegraph install --yes` (eso cablea Cursor/Claude/Copilot). No se escribe MCP Gemini ni se cablea MCP a Pi. |
+| `chrome-devtools-mcp` | npm global → binario en PATH. No se cablea MCP a Pi ni a otros IDEs. |
+| Cloudflare MCP | Remoto `https://mcp.cloudflare.com/mcp`. Skills **solo Pi** (`~/.pi/agent/skills/`). Snapshot `~/.config/zoi/mcp-cloudflare.json`. Como Herdr: no se instala en todos los IDEs. |
 | `rustc` `cargo` | **rustup** (`https://sh.rustup.rs`, toolchain stable) → `~/.cargo/bin` |
 | `hx` | **Helix**. [Paquete Debian de GitHub](https://docs.helix-editor.com/package-managers.html#ubuntudebian) (amd64 `.deb`; arm64 tarball + `runtime` en `~/.config/helix/runtime`) |
 | Drift | Video editor [CutWire-Studios/Drift](https://github.com/CutWire-Studios/Drift). `flatpak install flathub org.cutwire.Drift`; fallback AppImage amd64 |
