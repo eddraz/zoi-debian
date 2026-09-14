@@ -94,6 +94,26 @@ install_gentleman_stack() {
       go install github.com/gentleman-programming/gentle-ai/v2/cmd/gentle-ai@latest || \
         warn "go install gentle-ai falló. Fallback: curl -fsSL https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.sh | bash"
     fi
+    # Cablear gentle-ai → Pi: persona (gentleman), preset (full-gentleman),
+    # componentes managed (persona, engram), background-subagents=on.
+    # Idempotente: re-aplica sin pisar overrides posteriores del usuario.
+    gentle_ai_bin=""
+    if command -v gentle-ai >/dev/null 2>&1; then
+      gentle_ai_bin="$(command -v gentle-ai)"
+    elif [ -x "$HOME/go/bin/gentle-ai" ]; then
+      gentle_ai_bin="$HOME/go/bin/gentle-ai"
+    fi
+    if [ -n "$gentle_ai_bin" ]; then
+      if ! command -v pi >/dev/null 2>&1; then
+        warn "Sin pi; no corro gentle-ai install --agent pi. Después: pi install https://pi.dev && gentle-ai install --agent pi --scope global"
+      else
+        log "Cableando gentle-ai → Pi (install --agent pi --scope global)."
+        "$gentle_ai_bin" install --agent pi --scope global \
+          || warn "gentle-ai install falló. Después: gentle-ai install --agent pi --scope global"
+      fi
+    else
+      warn "No encuentro el binario gentle-ai; no cableo al agente."
+    fi
     if command -v engram >/dev/null 2>&1; then
       log "engram ya está en PATH."
     else
@@ -267,4 +287,53 @@ install_go_and_gentleman() {
   install_codegraph_and_chrome_mcp
   install_cloudflare_mcp_servers
   install_pi_mcp_adapter
+  seed_pi_native_mcp_config
+}
+
+seed_pi_native_mcp_config() {
+  # Siembra el MCP config que Pi lee nativamente (~/.pi/agent/mcp.json).
+  # Distinto de ~/.config/mcp/mcp.json (lo lee pi-mcp-adapter, ver install_pi_mcp_adapter).
+  # Servers: codegraph (binario local), engram (node spawn de binario Go),
+  #          deepwiki (SSE público), mcp=Cloudflare (HTTP público).
+  # Idempotente: si los 4 servers ya están, no piso overrides del usuario.
+  local mcp_json="$HOME/.pi/agent/mcp.json"
+  log "Sembrando MCP config nativo de Pi en ${mcp_json#${HOME}/}."
+  mkdir -p "$(dirname "$mcp_json")"
+  if [ -f "$mcp_json" \
+    ] && grep -q '"codegraph"' "$mcp_json" \
+    ] && grep -q '"deepwiki"' "$mcp_json" \
+    ] && grep -q '"engram"' "$mcp_json" \
+    ] && grep -q '"mcp"' "$mcp_json"; then
+    log "MCP config nativo ya tiene codegraph + deepwiki + engram + mcp; no piso."
+    return 0
+  fi
+  cat > "$mcp_json" <<'EOF'
+{
+  "mcpServers": {
+    "codegraph": {
+      "args": [
+        "serve",
+        "--mcp"
+      ],
+      "command": "codegraph"
+    },
+    "deepwiki": {
+      "url": "https://mcp.deepwiki.com/sse"
+    },
+    "engram": {
+      "args": [
+        "-e",
+        "const { spawn } = require('node:child_process'); const bin = process.env.ENGRAM_BIN || 'engram'; const child = spawn(bin, ['mcp', '--tools=agent'], { stdio: 'inherit' }); child.on('error', () => process.exit(127)); child.on('exit', (code, signal) => { if (typeof code === 'number') process.exit(code); process.kill(process.pid, signal || 'SIGTERM'); });"
+      ],
+      "command": "node",
+      "directTools": false,
+      "lifecycle": "lazy"
+    },
+    "mcp": {
+      "url": "https://mcp.cloudflare.com/mcp"
+    }
+  }
+}
+EOF
+  log "MCP config nativo sembrado en ${mcp_json#${HOME}/}."
 }
