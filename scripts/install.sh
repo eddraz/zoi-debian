@@ -1277,6 +1277,10 @@ command -v engram >/dev/null || [ -x "$HOME/go/bin/engram" ] || warn "Falta engr
 command -v gga >/dev/null || [ -x "$HOME/.local/bin/gga" ] || warn "Falta gga (Gentleman Guardian Angel)."
 command -v codegraph >/dev/null || warn "Falta codegraph."
 command -v chrome-devtools-mcp >/dev/null || warn "Falta chrome-devtools-mcp (npx -y chrome-devtools-mcp@latest)."
+# context7 es HTTP público; no hay binario. Chequeamos que el config nativo
+# de Pi lo tenga sembrado (Fase 2 → seed_pi_native_mcp_config en lib-go-gentleman.sh).
+grep -q '"context7"' "$HOME/.pi/agent/mcp.json" 2>/dev/null \
+  || warn "Falta server MCP context7 en ~/.pi/agent/mcp.json (mcp.context7.com/mcp)."
 command -v pi >/dev/null || warn "Falta pi (gentle-pi)."
 [ -f "$HOME/.pi/agent/skills/herdr/SKILL.md" ] || warn "Falta skill de herdr para Pi (~/.pi/agent/skills/herdr/SKILL.md)."
 
