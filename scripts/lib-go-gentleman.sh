@@ -294,17 +294,21 @@ seed_pi_native_mcp_config() {
   # Siembra el MCP config que Pi lee nativamente (~/.pi/agent/mcp.json).
   # Distinto de ~/.config/mcp/mcp.json (lo lee pi-mcp-adapter, ver install_pi_mcp_adapter).
   # Servers: codegraph (binario local), engram (node spawn de binario Go),
-  #          deepwiki (SSE público), mcp=Cloudflare (HTTP público).
+  #          context7 (HTTP público, lookup de docs), mcp=Cloudflare (HTTP público).
   # Idempotente: si los 4 servers ya están, no piso overrides del usuario.
+  #
+  # Hist: antes era `deepwiki (SSE)`. El endpoint público de DeepWiki murió
+  # (HTTP 410 en mcp.deepwiki.com/sse verificado Sep 2026). Context7 estaba
+  # en el preset list de pi-mcp-adapter y era la opción original del usuario.
   local mcp_json="$HOME/.pi/agent/mcp.json"
   log "Sembrando MCP config nativo de Pi en ${mcp_json#${HOME}/}."
   mkdir -p "$(dirname "$mcp_json")"
   if [ -f "$mcp_json" \
     ] && grep -q '"codegraph"' "$mcp_json" \
-    ] && grep -q '"deepwiki"' "$mcp_json" \
+    ] && grep -q '"context7"' "$mcp_json" \
     ] && grep -q '"engram"' "$mcp_json" \
     ] && grep -q '"mcp"' "$mcp_json"; then
-    log "MCP config nativo ya tiene codegraph + deepwiki + engram + mcp; no piso."
+    log "MCP config nativo ya tiene codegraph + context7 + engram + mcp; no piso."
     return 0
   fi
   cat > "$mcp_json" <<'EOF'
@@ -317,8 +321,8 @@ seed_pi_native_mcp_config() {
       ],
       "command": "codegraph"
     },
-    "deepwiki": {
-      "url": "https://mcp.deepwiki.com/sse"
+    "context7": {
+      "url": "https://mcp.context7.com/mcp"
     },
     "engram": {
       "args": [
