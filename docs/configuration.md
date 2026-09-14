@@ -4,14 +4,23 @@ Dónde está cada config, qué hace, cómo la cambiás.
 
 ## MCP (Model Context Protocol)
 
-`pi-mcp-adapter` (instalado vía `pi install npm:pi-mcp-adapter@latest`) es la
-extensión que cablea servers MCP a Pi. El core de Pi **no soporta MCP por
-diseño del upstream**; este adapter expone las tools via un único proxy
-(`mcp(...)`) con carga lazy (los servers arrancan solo cuando los invocás, no
-al inicio de la sesión). Más info en
+ZOI siembra **dos configs paralelos** para que Pi tenga servers MCP activos:
+
+1. **`~/.config/mcp/mcp.json`** — el que lee `pi-mcp-adapter`
+   (`pi install npm:pi-mcp-adapter@latest`). Carga lazy, single proxy
+   `mcp(...)`. Cubre `chrome-devtools`, `cloudflare-api`, `cloudflare-docs`.
+2. **`~/.pi/agent/mcp.json`** — el que Pi lee **nativamente**. Cubre
+   `codegraph`, `context7`, `engram`, `mcp` (Cloudflare vía HTTP público).
+
+`pi-mcp-adapter` es la extensión comunitaria porque el core de Pi **no soporta
+MCP por diseño del upstream**; aun así Pi trae soporte nativo experimental y
+lee `~/.pi/agent/mcp.json` aunque el adapter esté instalado. Por eso ZOI
+siembra los dos: el adapter da los servers que requieren stdio / carga lazy
+(pesados), y el nativo da los HTTP simples (`context7`, Cloudflare) y los
+spawners de binarios Go (`codegraph`, `engram`). Más info sobre el adapter en
 https://github.com/nicobailon/pi-mcp-adapter.
 
-### Config sembrada por ZOI
+### Config sembrado por ZOI (pi-mcp-adapter)
 
 `~/.config/mcp/mcp.json` (path canónico user-global que lee pi-mcp-adapter;
 precedencia sobre `~/.pi/agent/mcp.json`, `.mcp.json`, `.pi/mcp.json`):
@@ -39,6 +48,47 @@ precedencia sobre `~/.pi/agent/mcp.json`, `.mcp.json`, `.pi/mcp.json`):
 | `cloudflare-api` | HTTP/SSE | OAuth Cloudflare | La primera invocación abre un browser flow contra tu cuenta. |
 | `cloudflare-docs` | HTTP/SSE | OAuth Cloudflare | Idem. |
 
+### Config sembrado por ZOI (nativo de Pi)
+
+`~/.pi/agent/mcp.json` (path nativo de Pi; convive con el adapter). Es donde
+vive `context7`:
+
+```json
+{
+  "mcpServers": {
+    "codegraph": {
+      "args": ["serve", "--mcp"],
+      "command": "codegraph"
+    },
+    "context7": {
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "engram": {
+      "args": ["-e", "const { spawn } = require('node:child_process'); …"],
+      "command": "node",
+      "directTools": false,
+      "lifecycle": "lazy"
+    },
+    "mcp": {
+      "url": "https://mcp.cloudflare.com/mcp"
+    }
+  }
+}
+```
+
+| Server | Tipo | Auth | Notas |
+|---|---|---|---|
+| `codegraph` | stdio | — | Binario `codegraph serve --mcp` (PATH). Solo corre cuando Pi lo invoca. |
+| `context7` | HTTP | — | **Lookup de docs de librerías** ([context7.com](https://context7.com)). Sin auth, rate-limit por IP. Endpoint público. |
+| `engram` | stdio | — | `node` hace spawn de `engram mcp --tools=agent`; respeta `$ENGRAM_BIN`. |
+| `mcp` | HTTP | — | Cloudflare MCP vía HTTP público (mismo endpoint que `cloudflare-api` pero por el camino nativo). |
+
+> Hist: antes este config traía `deepwiki` (SSE). El endpoint público murió
+> (HTTP 410 en `mcp.deepwiki.com/sse`, verificado Sep 2026). `context7` estaba
+> en el preset list de `pi-mcp-adapter` y era la opción preferida para
+> lookup de docs; pasó al config nativo para no duplicar servers entre los
+> dos paths.
+
 ### Comandos
 
 - `/mcp` — panel interactivo: ver servers, tools, estado.
@@ -49,12 +99,18 @@ precedencia sobre `~/.pi/agent/mcp.json`, `.mcp.json`, `.pi/mcp.json`):
 
 ### Cambios comunes
 
-- **Sumar un server**: editá `~/.config/mcp/mcp.json`, agregá la entrada bajo
-  `mcpServers`, y corré `/reload` dentro de Pi.
-- **Forzar re-sembrado del config de ZOI**: borrá `~/.config/mcp/mcp.json` y
-  re-ejecutá `sudo ./scripts/install.sh` (o la parte de `install_go_and_gentleman`).
+- **Sumar un server al adapter**: editá `~/.config/mcp/mcp.json`, agregá la
+  entrada bajo `mcpServers`, y corré `/reload` dentro de Pi.
+- **Sumar un server al nativo**: editá `~/.pi/agent/mcp.json`. Pi lo relee
+  con `/reload` (sin reiniciar).
+- **Forzar re-sembrado del config del adapter**: borrá `~/.config/mcp/mcp.json`
+  y re-ejecutá `sudo ./scripts/install.sh` (o la parte de
+  `install_go_and_gentleman`).
+- **Forzar re-sembrado del nativo**: borrá `~/.pi/agent/mcp.json` y re-ejecutá
+  `install.sh`. Idempotente: si los 4 servers ya están, no pisa overrides.
 - **Desinstalar**: `pi uninstall npm:pi-mcp-adapter` + `scripts/uninstall.sh`
-  (limpia `~/.config/mcp/mcp.json` solo si contiene exactamente nuestros servers).
+  (limpia `~/.config/mcp/mcp.json` solo si contiene exactamente nuestros servers;
+  el nativo en `~/.pi/agent/mcp.json` queda a tu cargo).
 
 ## Sway
 

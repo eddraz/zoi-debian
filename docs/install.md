@@ -138,6 +138,7 @@ Importante: el primer arranque de `qs` necesita:
 | `codegraph` | CLI en PATH. No se corre `codegraph install --yes` (eso cablea Cursor/Claude/Copilot). No se escribe MCP Gemini ni se cablea MCP a Pi. |
 | `chrome-devtools-mcp` | npm global → binario en PATH. No se cablea MCP a Pi ni a otros IDEs. |
 | Cloudflare MCP | Remoto `https://mcp.cloudflare.com/mcp`. Skills **solo Pi** (`~/.pi/agent/skills/`). Snapshot `~/.config/zoi/mcp-cloudflare.json`. Como Herdr: no se instala en todos los IDEs. |
+| `context7` (MCP) | HTTP público `https://mcp.context7.com/mcp` para **lookup de docs** ([context7.com](https://context7.com)). Sin auth, rate-limit por IP. Se siembra en `~/.pi/agent/mcp.json` (camino **nativo de Pi**), no en `~/.config/mcp/mcp.json` (pi-mcp-adapter). Convive con los dos configs que siembra ZOI — ver [configuration.md](configuration.md#mcp-model-context-protocol). |
 | `rustc` `cargo` | **rustup** (`https://sh.rustup.rs`, toolchain stable) → `~/.cargo/bin` |
 | `hx` | **Helix**. [Paquete Debian de GitHub](https://docs.helix-editor.com/package-managers.html#ubuntudebian) (amd64 `.deb`; arm64 tarball + `runtime` en `~/.config/helix/runtime`) |
 | Drift | Video editor [CutWire-Studios/Drift](https://github.com/CutWire-Studios/Drift). `flatpak install flathub org.cutwire.Drift`; fallback AppImage amd64 |

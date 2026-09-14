@@ -52,7 +52,7 @@ Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1`
 - **Rust** (`rustup` stable → `~/.cargo/bin`) y **Helix** (`hx`; `.deb` de GitHub en amd64, tarball en arm64). `zoi-theme` pinta Helix.
 - **llama.cpp** compilado desde `~/apps/llama.cpp` (fork K2-Horizon, sin Homebrew). Modelo [K2-Horizon-0.9B GGUF](https://huggingface.co/IFM/K2-Horizon-0.9B-GGUF) en `~/models` (`k2-chat` / `k2-server`).
 - **Go** (oficial go.dev ≥1.25.10) + **Gentle-AI**, **Engram**, **gentle-pi**, **gga** (Guardian Angel).
-- **Gentle stack** y **skills Cloudflare** para **Pi** (`~/.pi/agent/skills/`, `pi install`). **CodeGraph** y **chrome-devtools-mcp** quedan como binarios en PATH; no se corre `codegraph install --yes` (eso cablea Cursor/Claude/Copilot). No hay Antigravity ni `~/.gemini/config/mcp_config.json`.
+- **Gentle stack** y **skills Cloudflare** para **Pi** (`~/.pi/agent/skills/`, `pi install`). **CodeGraph** y **chrome-devtools-mcp** quedan como binarios en PATH; no se corre `codegraph install --yes` (eso cablea Cursor/Claude/Copilot). **MCP `context7`** (lookup de docs) va por el camino **nativo de Pi** en `~/.pi/agent/mcp.json`; `cloudflare-api` y `cloudflare-docs` van por `pi-mcp-adapter` en `~/.config/mcp/mcp.json`. No hay Antigravity ni `~/.gemini/config/mcp_config.json`.
 - **Drift** editor de video ([CutWire-Studios/Drift](https://github.com/CutWire-Studios/Drift)): Flathub `org.cutwire.Drift`, fallback AppImage amd64.
 - **Deno**, **Bun**, **pnpm** (corepack). PATH en `zoi.fish`.
 - **cloudflared**, **Bruno**, **balena Etcher** (`.deb` desde GitHub).
