@@ -2,6 +2,60 @@
 
 Dónde está cada config, qué hace, cómo la cambiás.
 
+## MCP (Model Context Protocol)
+
+`pi-mcp-adapter` (instalado vía `pi install npm:pi-mcp-adapter@latest`) es la
+extensión que cablea servers MCP a Pi. El core de Pi **no soporta MCP por
+diseño del upstream**; este adapter expone las tools via un único proxy
+(`mcp(...)`) con carga lazy (los servers arrancan solo cuando los invocás, no
+al inicio de la sesión). Más info en
+https://github.com/nicobailon/pi-mcp-adapter.
+
+### Config sembrada por ZOI
+
+`~/.config/mcp/mcp.json` (path canónico user-global que lee pi-mcp-adapter;
+precedencia sobre `~/.pi/agent/mcp.json`, `.mcp.json`, `.pi/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "/home/<usuario>/.local/bin/chrome-devtools-mcp",
+      "args": []
+    },
+    "cloudflare-api": {
+      "serverUrl": "https://mcp.cloudflare.com/mcp"
+    },
+    "cloudflare-docs": {
+      "serverUrl": "https://docs.mcp.cloudflare.com/mcp"
+    }
+  }
+}
+```
+
+| Server | Tipo | Auth | Notas |
+|---|---|---|---|
+| `chrome-devtools` | stdio | — | Local, apunta al binario `~/.local/bin/chrome-devtools-mcp` que pone ZOI. |
+| `cloudflare-api` | HTTP/SSE | OAuth Cloudflare | La primera invocación abre un browser flow contra tu cuenta. |
+| `cloudflare-docs` | HTTP/SSE | OAuth Cloudflare | Idem. |
+
+### Comandos
+
+- `/mcp` — panel interactivo: ver servers, tools, estado.
+- `/mcp disable <server>` / `/mcp enable <server>` — toggle por server
+  (persiste en `.pi/mcp.json` local del proyecto).
+- `/reload` — releer la config después de cambios manuales.
+- `pi-mcp-adapter init` — detectar configs de Cursor/Claude/Codex y adoptarlos.
+
+### Cambios comunes
+
+- **Sumar un server**: editá `~/.config/mcp/mcp.json`, agregá la entrada bajo
+  `mcpServers`, y corré `/reload` dentro de Pi.
+- **Forzar re-sembrado del config de ZOI**: borrá `~/.config/mcp/mcp.json` y
+  re-ejecutá `sudo ./scripts/install.sh` (o la parte de `install_go_and_gentleman`).
+- **Desinstalar**: `pi uninstall npm:pi-mcp-adapter` + `scripts/uninstall.sh`
+  (limpia `~/.config/mcp/mcp.json` solo si contiene exactamente nuestros servers).
+
 ## Sway
 
 `~/.config/sway/config`

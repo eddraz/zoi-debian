@@ -176,18 +176,11 @@ install_codegraph_and_chrome_mcp() {
 
 install_cloudflare_mcp_servers() {
   # Solo Pi (skills). Como Herdr: no se cablea a todos los IDEs.
+  # Los servers MCP de Cloudflare los cablea install_pi_mcp_adapter, no este bloque.
   # https://developers.cloudflare.com/agents/model-context-protocol/cloudflare/servers-for-cloudflare/
   local dest skills_tmp pi_skills
   log "Cloudflare skills para Pi."
-  mkdir -p "$HOME/.config/zoi" "$HOME/.pi/agent/skills"
-  cat > "$HOME/.config/zoi/mcp-cloudflare.json" <<'EOF'
-{
-  "mcpServers": {
-    "cloudflare-api": { "serverUrl": "https://mcp.cloudflare.com/mcp" },
-    "cloudflare-docs": { "serverUrl": "https://docs.mcp.cloudflare.com/mcp" }
-  }
-}
-EOF
+  mkdir -p "$HOME/.pi/agent/skills"
   pi_skills="$HOME/.pi/agent/skills"
   if [ ! -f "$pi_skills/cloudflare/SKILL.md" ]; then
     skills_tmp="$(mktemp -d)"
@@ -213,9 +206,65 @@ EOF
   fi
 }
 
+install_pi_mcp_adapter() {
+  # Cablea servers MCP a Pi via la extensión pi-mcp-adapter (https://github.com/nicobailon/pi-mcp-adapter).
+  # Pi core NO soporta MCP por diseño del upstream; pi-mcp-adapter es la bridge oficial de la comunidad.
+  # La extensión lee ~/.config/mcp/mcp.json (path canónico user-global), con precedencia sobre
+  # ~/.pi/agent/mcp.json, .mcp.json, .pi/mcp.json.
+  local mcp_json="$HOME/.config/mcp/mcp.json"
+  log "Cableando MCPs a Pi vía pi-mcp-adapter."
+
+  if ! command -v pi >/dev/null 2>&1; then
+    warn "Sin pi; no instalo pi-mcp-adapter. Después: pi install npm:pi-mcp-adapter@latest"
+    return 0
+  fi
+
+  if pi list 2>/dev/null | grep -q 'pi-mcp-adapter'; then
+    log "pi-mcp-adapter ya está en Pi."
+  else
+    log "Instalando pi-mcp-adapter (npm:pi-mcp-adapter@latest)."
+    pi install npm:pi-mcp-adapter@latest \
+      || warn "pi install pi-mcp-adapter falló. Después: pi install npm:pi-mcp-adapter@latest"
+  fi
+
+  mkdir -p "$(dirname "$mcp_json")"
+  if [ -f "$mcp_json" ] \
+    && grep -q '"chrome-devtools"' "$mcp_json" \
+    && grep -q '"cloudflare-api"' "$mcp_json" \
+    && grep -q '"cloudflare-docs"' "$mcp_json"; then
+    log "MCP config ya está sembrado en ${mcp_json#${HOME}/}."
+  else
+    log "Sembrando MCP config en ${mcp_json#${HOME}/} (chrome-devtools + cloudflare-api + cloudflare-docs)."
+    cat > "$mcp_json" <<EOF
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "$HOME/.local/bin/chrome-devtools-mcp",
+      "args": []
+    },
+    "cloudflare-api": {
+      "serverUrl": "https://mcp.cloudflare.com/mcp"
+    },
+    "cloudflare-docs": {
+      "serverUrl": "https://docs.mcp.cloudflare.com/mcp"
+    }
+  }
+}
+EOF
+  fi
+
+  # Limpieza: el viejo ~/.config/zoi/mcp-cloudflare.json quedó huérfano
+  # (pi-mcp-adapter lee ~/.config/mcp/mcp.json, no este archivo).
+  if [ -f "$HOME/.config/zoi/mcp-cloudflare.json" ]; then
+    log "Quitando ~/.config/zoi/mcp-cloudflare.json (obsoleto, reemplazado por pi-mcp-adapter)."
+    rm -f "$HOME/.config/zoi/mcp-cloudflare.json"
+  fi
+}
+
 install_go_and_gentleman() {
   install_go_lang
   install_gentleman_stack
   install_codegraph_and_chrome_mcp
   install_cloudflare_mcp_servers
+  install_pi_mcp_adapter
 }
