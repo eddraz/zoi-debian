@@ -30,6 +30,16 @@ Si el archivo no existe, `zoi-theme` no toca Herdr. El install lo crea antes del
 
 El skill de Herdr solo aplica con `HERDR_ENV=1` (pane gestionado). Fuera de Herdr, no inspecciona la sesión.
 
+`scripts/install.sh` siembra automáticamente `skills/herdr/SKILL.md` en
+`~/.pi/agent/skills/herdr/` para que Pi la cargue como skill del agente:
+
+1. Fuente primaria: `herdr --skill` (release-matched con el binario).
+2. Fallback: raw de GitHub taggeado con `herdr --version`.
+3. Final fallback sugerido al usuario: `npx skills add herdrdev/herdr --skill herdr -g`.
+
+Es idempotente: re-ejecutar no reescribe la skill. Si querés forzar el re-fetch,
+borrá `~/.pi/agent/skills/herdr/SKILL.md` antes de correr `install.sh` de nuevo.
+
 ## Uninstall
 
 `uninstall.sh` **no** borra el binario ni `~/.config/herdr`. Es software de usuario, como Pi.

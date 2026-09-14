@@ -935,6 +935,37 @@ else
   curl -fsSL https://herdr.dev/install.sh | sh || warn "No se pudo instalar herdr. Después: curl -fsSL https://herdr.dev/install.sh | sh"
 fi
 
+# ---------------------------------------------------------------- herdr agent skill for Pi
+# Siembra skills/herdr/SKILL.md dentro de ~/.pi/agent/skills/herdr/ para que Pi la cargue
+# junto con las demás skills del agente. Fuente primaria: `herdr --skill` (release-matched
+# con el binario). Fallback: raw de GitHub taggeado con `herdr --version`. El guardrail
+# interno de la skill exige HERDR_ENV=1, así que queda inactiva fuera de un pane gestionado.
+# Idempotente.
+log "Sembrando skill de herdr para Pi (~/.pi/agent/skills/herdr)."
+if ! command -v herdr >/dev/null 2>&1; then
+  warn "Falta binario herdr; salteo skill."
+else
+  herdr_skill_target="$HOME/.pi/agent/skills/herdr/SKILL.md"
+  mkdir -p "$HOME/.pi/agent/skills/herdr"
+  if [ -f "$herdr_skill_target" ]; then
+    log "Skill de herdr ya está en Pi (${herdr_skill_target#${HOME}/})."
+  else
+    herdr_skill_src="$(herdr --skill 2>/dev/null || true)"
+    if [ -z "$herdr_skill_src" ]; then
+      herdr_ver="$(herdr --version 2>/dev/null | awk '{print $2}' | sed 's/^v//')"
+      if [ -n "$herdr_ver" ]; then
+        herdr_skill_src="$(curl -fsSL "https://raw.githubusercontent.com/herdrdev/herdr/v${herdr_ver}/skills/herdr/SKILL.md" 2>/dev/null || true)"
+      fi
+    fi
+    if [ -n "$herdr_skill_src" ] && printf '%s' "$herdr_skill_src" | head -n1 | grep -q '^---'; then
+      printf '%s\n' "$herdr_skill_src" > "$herdr_skill_target"
+      log "Skill de herdr → ${herdr_skill_target#${HOME}/}."
+    else
+      warn "No pude obtener la SKILL.md de herdr. Después: npx skills add herdrdev/herdr --skill herdr -g"
+    fi
+  fi
+fi
+
 # ---------------------------------------------------------------- pi-agent
 log "Instalando Pi coding agent (https://pi.dev)."
 if command -v pi >/dev/null 2>&1; then
@@ -1247,6 +1278,7 @@ command -v gga >/dev/null || [ -x "$HOME/.local/bin/gga" ] || warn "Falta gga (G
 command -v codegraph >/dev/null || warn "Falta codegraph."
 command -v chrome-devtools-mcp >/dev/null || warn "Falta chrome-devtools-mcp (npx -y chrome-devtools-mcp@latest)."
 command -v pi >/dev/null || warn "Falta pi (gentle-pi)."
+[ -f "$HOME/.pi/agent/skills/herdr/SKILL.md" ] || warn "Falta skill de herdr para Pi (~/.pi/agent/skills/herdr/SKILL.md)."
 
 command -v flatpak >/dev/null && flatpak list --app 2>/dev/null | grep -q org.cutwire.Drift || [ -x "$HOME/.local/bin/Drift.AppImage" ] || warn "Falta Drift (flatpak org.cutwire.Drift)."
 

@@ -24,6 +24,8 @@ fi
 
 log "Removing qs-*, zoi-theme and Inlyne from ~/.local/bin."
 rm -f $HOME/.local/bin/qs-* $HOME/.local/bin/zoi-theme $HOME/.local/bin/inlyne
+log "Removing herdr agent skill for Pi (~/.pi/agent/skills/herdr)."
+rm -rf "$HOME/.pi/agent/skills/herdr"
 rm -f $HOME/.config/zoi/keys.json $HOME/.config/zoi/keys-apply.json
 rm -f "$HOME/.local/share/applications/inlyne.desktop" \
      "$HOME/.local/share/applications/zoi-markdown.desktop"
