@@ -684,6 +684,33 @@ if [ -n "${ZOI_XKB:-}" ]; then
   sed -i "s/xkb_layout .*/xkb_layout ${ZOI_XKB}/" "$HOME/.config/sway/config"
 fi
 
+# Keep the hardware-key block explicit and idempotent in the installed config.
+# Remove stale/conflicting entries before writing the canonical --locked bindings.
+sed -i -E \
+  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioMute([[:space:]]|$)/d' \
+  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioLowerVolume([[:space:]]|$)/d' \
+  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioRaiseVolume([[:space:]]|$)/d' \
+  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioPlay([[:space:]]|$)/d' \
+  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioPause([[:space:]]|$)/d' \
+  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioNext([[:space:]]|$)/d' \
+  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioPrev([[:space:]]|$)/d' \
+  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86MonBrightnessDown([[:space:]]|$)/d' \
+  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86MonBrightnessUp([[:space:]]|$)/d' \
+  "$HOME/.config/sway/config"
+cat >> "$HOME/.config/sway/config" <<'EOF'
+
+# zoi-debian: hardware keys (keep these bindings --locked)
+bindsym --locked XF86AudioMute exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && /usr/bin/qs ipc call osd volume
+bindsym --locked XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- && /usr/bin/qs ipc call osd volume
+bindsym --locked XF86AudioRaiseVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ && /usr/bin/qs ipc call osd volume
+bindsym --locked XF86AudioPlay exec playerctl play-pause
+bindsym --locked XF86AudioPause exec playerctl play-pause
+bindsym --locked XF86AudioNext exec playerctl next
+bindsym --locked XF86AudioPrev exec playerctl previous
+bindsym --locked XF86MonBrightnessDown exec brightnessctl set 5%- && /usr/bin/qs ipc call osd brightness
+bindsym --locked XF86MonBrightnessUp exec brightnessctl set 5%+ && /usr/bin/qs ipc call osd brightness
+EOF
+
 
 # ---------------------------------------------------------------- foot + fish
 log "Instalando foot + fish como terminal y shell default."

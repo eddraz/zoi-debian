@@ -69,19 +69,21 @@ Esta tabla lista todos los binds de Sway + atajos internos de Quickshell.
 
 ### Media / brightness
 
-| Tecla | Acción |
-|---|---|
-| `XF86AudioRaiseVolume` | OSD volume up (`qs ipc call osd volume +5`) |
-| `XF86AudioLowerVolume` | OSD volume down |
-| `XF86AudioMute` | Toggle mute |
-| `XF86AudioMicMute` | Toggle mic mute |
-| `XF86AudioPlay` | MPRIS play-pause |
-| `XF86AudioNext` | MPRIS next |
-| `XF86AudioPrev` | MPRIS prev |
-| `XF86KbdBrightnessUp` | OSD brightness up |
-| `XF86KbdBrightnessDown` | OSD brightness down |
-| `XF86MonBrightnessUp` | OSD screen brightness up |
-| `XF86MonBrightnessDown` | OSD screen brightness down |
+Estas teclas usan `--locked`, por lo que siguen funcionando con Sway bloqueado.
+
+| Tecla | Acción | Comando |
+|---|---|---|
+| `XF86AudioRaiseVolume` | Subir volumen + OSD | `wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ && /usr/bin/qs ipc call osd volume` |
+| `XF86AudioLowerVolume` | Bajar volumen + OSD | `wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- && /usr/bin/qs ipc call osd volume` |
+| `XF86AudioMute` | Toggle mute + OSD | `wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && /usr/bin/qs ipc call osd volume` |
+| `XF86AudioMicMute` | Toggle mic mute | `wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle` |
+| `XF86AudioPlay` | MPRIS play-pause | `playerctl play-pause` |
+| `XF86AudioPause` | MPRIS play-pause | `playerctl play-pause` |
+| `XF86AudioStop` | MPRIS stop | `playerctl stop` |
+| `XF86AudioNext` | MPRIS next | `playerctl next` |
+| `XF86AudioPrev` | MPRIS prev | `playerctl previous` |
+| `XF86MonBrightnessUp` | Subir brillo de pantalla + OSD | `brightnessctl set 5%+ && /usr/bin/qs ipc call osd brightness` |
+| `XF86MonBrightnessDown` | Bajar brillo de pantalla + OSD | `brightnessctl set 5%- && /usr/bin/qs ipc call osd brightness` |
 
 ## Dentro de un popup
 

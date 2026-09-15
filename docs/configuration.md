@@ -156,6 +156,16 @@ bindsym $mod+Escape exec /usr/bin/qs ipc call session toggle
 bindsym $mod+slash exec /usr/bin/qs ipc call popups toggle keys
 bindsym $mod+q exec /usr/bin/qs ipc call popups close
 bindsym $mod+c exec /usr/bin/qs ipc call popups toggle calendar
+# Hardware keys (all remain active while Sway is locked)
+bindsym --locked XF86AudioMute exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && /usr/bin/qs ipc call osd volume
+bindsym --locked XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- && /usr/bin/qs ipc call osd volume
+bindsym --locked XF86AudioRaiseVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ && /usr/bin/qs ipc call osd volume
+bindsym --locked XF86AudioPlay exec playerctl play-pause
+bindsym --locked XF86AudioPause exec playerctl play-pause
+bindsym --locked XF86AudioNext exec playerctl next
+bindsym --locked XF86AudioPrev exec playerctl previous
+bindsym --locked XF86MonBrightnessDown exec brightnessctl set 5%- && /usr/bin/qs ipc call osd brightness
+bindsym --locked XF86MonBrightnessUp exec brightnessctl set 5%+ && /usr/bin/qs ipc call osd brightness
 # ... etc
 
 # Mouse bindings
