@@ -711,6 +711,30 @@ bindsym --locked XF86MonBrightnessDown exec brightnessctl set 5%- && /usr/bin/qs
 bindsym --locked XF86MonBrightnessUp exec brightnessctl set 5%+ && /usr/bin/qs ipc call osd brightness
 EOF
 
+# ---------------------------------------------------------------- brightness permissions
+# Debian's brightnessctl ships without udev rules: without them, XF86 brightness
+# keys fail with "Permission denied" even for users in the video group. Install
+# the standard rule, then fall back to a systemd-tmpfiles override if udev did
+# not apply it (some devices skip RUN rules on replay).
+log "Instalando regla udev para brightnessctl (grupo video)."
+$SUDO tee /etc/udev/rules.d/90-brightnessctl.rules >/dev/null <<'EOF'
+ACTION=="add", SUBSYSTEM=="backlight", RUN+="/bin/chgrp video $sys$devpath/brightness", RUN+="/bin/chmod g+w $sys$devpath/brightness"
+ACTION=="add", SUBSYSTEM=="leds", RUN+="/bin/chgrp input $sys$devpath/brightness", RUN+="/bin/chmod g+w $sys$devpath/brightness"
+EOF
+$SUDO udevadm control --reload-rules || true
+for bl in /sys/class/backlight/*; do
+  [ -e "$bl/brightness" ] || continue
+  $SUDO udevadm trigger -v -c add "$bl" || true
+done
+BL_DEV="$(find /sys/class/backlight -name brightness 2>/dev/null | head -1)"
+if [ -n "$BL_DEV" ] && [ "$(stat -c %G "$BL_DEV" 2>/dev/null)" != "video" ]; then
+  warn "udev no aplicó el grupo video; usando systemd-tmpfiles como fallback."
+  for bl in /sys/class/backlight/*; do
+    [ -e "$bl/brightness" ] || continue
+    $SUDO systemd-tmpfiles --create - <<<"z $(readlink -f "$bl/brightness") 0664 root video - -" || true
+  done
+fi
+
 
 # ---------------------------------------------------------------- foot + fish
 log "Instalando foot + fish como terminal y shell default."

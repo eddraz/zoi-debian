@@ -78,6 +78,36 @@ kill <pid>
 
 O el catálogo tiene el mismo `target:` declarado dos veces.
 
+## "Las teclas de brillo no hacen nada"
+
+En Debian, `brightnessctl` no trae las reglas udev: aunque tu usuario esté en el grupo `video`, escribir el backlight da `Permission denied`.
+
+```sh
+brightnessctl set 5%+          # si tira "Permission denied", es esto
+stat -c '%U %G %a' /sys/class/backlight/*/brightness   # grupo debe ser video
+```
+
+`install.sh` instala la regla `/etc/udev/rules.d/90-brightnessctl.rules` (grupo `video` para backlight, `input` para leds) y la aplica con `udevadm trigger`. A mano:
+
+```sh
+sudo tee /etc/udev/rules.d/90-brightnessctl.rules >/dev/null <<'EOF'
+ACTION=="add", SUBSYSTEM=="backlight", RUN+="/bin/chgrp video $sys$devpath/brightness", RUN+="/bin/chmod g+w $sys$devpath/brightness"
+ACTION=="add", SUBSYSTEM=="leds", RUN+="/bin/chgrp input $sys$devpath/brightness", RUN+="/bin/chmod g+w $sys$devpath/brightness"
+EOF
+sudo udevadm control --reload-rules
+sudo udevadm trigger -v -c add /sys/class/backlight/amdgpu_bl0  # tu device
+```
+
+Si udev no aplica el grupo (algunos devices saltan las reglas `RUN`), fallback con systemd-tmpfiles:
+
+```sh
+printf 'z /sys/class/backlight/amdgpu_bl0/brightness 0664 root video - -\n' \
+  | sudo tee /etc/tmpfiles.d/backlight.conf
+sudo systemd-tmpfiles --create /etc/tmpfiles.d/backlight.conf
+```
+
+Las teclas XF86 de volumen usan `wpctl` (PipeWire); si fallan, chequeá `wpctl get-volume @DEFAULT_AUDIO_SINK@` y que `wireplumber` esté corriendo.
+
 ## "El wallpaper no se aplica"
 
 ```sh

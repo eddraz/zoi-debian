@@ -62,7 +62,8 @@ Variables de entorno:
 10. **Habilita LightDM** (y quita leftovers de Lemurs si hay).
 11. **Cambia la shell** a `fish`.
 12. **Agrega** `exec_always` de qs + qs-idle al `sway/config`.
-13. Verifica binarios.
+13. **Permisos de brillo**: instala `/etc/udev/rules.d/90-brightnessctl.rules` (grupo `video` para backlight; Debian no trae las reglas de `brightnessctl`) con fallback systemd-tmpfiles. Sin esto, las teclas XF86 de brillo dan `Permission denied`.
+14. Verifica binarios.
 
 ### 3. Cerrá sesión y volvé a entrar
 
