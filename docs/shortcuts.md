@@ -53,7 +53,7 @@ Esta tabla lista todos los binds de Sway + atajos internos de Quickshell.
 | Combo | Acción |
 |---|---|
 | `Super+0..9` | Workspace N |
-| `Super+Shift+0..9` | Mover ventana a N |
+| `Super+Shift+0..9` | Mover ventana a N y cambiar a ese workspace |
 | `Super+Tab` | Workspace next |
 | `Super+Shift+Tab` | Workspace prev |
 
