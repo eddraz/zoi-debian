@@ -44,6 +44,9 @@ pkill -x waybar >/dev/null 2>&1 || true
 SWAY="$HOME/.config/sway/config"
 if [ -f "$SWAY" ]; then
   sed -i \
+    -e '/# zoi-debian quickshell:/d' \
+    -e '/^[[:space:]]*exec\(_always\)\{0,1\}[[:space:]]*\/usr\/bin\/qs -p/d' \
+    -e '/^[[:space:]]*exec\(_always\)\{0,1\}[[:space:]]*quickshell -p/d' \
     -e '/# zoi-debian waybar:/d' \
     -e '/qs-waybar/d' \
     -e '/exec_always[[:space:]]\+waybar/d' \

@@ -679,6 +679,19 @@ if [ -f "$HOME/.config/sway/config" ] && [ ! -L "$HOME/.config/sway/config" ]; t
   cp "$HOME/.config/sway/config" "$HOME/.config/sway/config.bak.$(date +%s)"
 fi
 cp "$ZOI_DIR/dotfiles/sway/config" "$HOME/.config/sway/config"
+# Keep the quickshell autostart explicit and idempotent: remove stale
+# variants, then append the canonical exec (points at the QS_DOT dir
+# populated above).
+sed -i -E \
+  -e '/^[[:space:]]*exec(_always)?[[:space:]]+\/usr\/bin\/qs[[:space:]]+-p([[:space:]]|$)/d' \
+  -e '/^[[:space:]]*exec(_always)?[[:space:]]+quickshell[[:space:]]+-p([[:space:]]|$)/d' \
+  -e '/^# zoi-debian quickshell:/d' \
+  "$HOME/.config/sway/config"
+cat >> "$HOME/.config/sway/config" <<'EOF'
+
+# zoi-debian quickshell: bar + overlays autostart (canonical)
+exec_always /usr/bin/qs -p "$HOME"/.config/quickshell
+EOF
 if [ -n "${ZOI_XKB:-}" ]; then
   log "Sway xkb_layout → $ZOI_XKB"
   sed -i "s/xkb_layout .*/xkb_layout ${ZOI_XKB}/" "$HOME/.config/sway/config"

@@ -4,6 +4,20 @@ Problemas frecuentes y cómo resolverlos.
 
 ## "qs no arrancó"
 
+Primero verificá que haya un proceso vivo — si no hay ninguno, la causa más común es que falte el autostart en la config de Sway:
+
+```sh
+pgrep -af quickshell
+# Si no aparece nada, el autostart no está (o la config de Sway no es la de zoi):
+grep 'zoi-debian quickshell' ~/.config/sway/config
+```
+
+La línea canónica es `exec_always /usr/bin/qs -p "$HOME"/.config/quickshell` (la reinstala `install.sh` idempotentemente; `install-waybar.sh` / `install-swaybar.sh` la sacan porque reemplazan la barra). Para levantarla ya:
+
+```sh
+/usr/bin/qs -n --daemonize
+```
+
 ```sh
 # Ver logs
 ls -t /run/user/$(id -u)/quickshell/by-id/*/log.log | head -1 | xargs tail -30

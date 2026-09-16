@@ -77,6 +77,12 @@ PY
     log "Sway ya arranca Waybar."
   else
     log "Sway: qs (overlays) + qs-waybar (barra)."
+    # Drop the quickshell bar autostart: waybar replaces it.
+    sed -i \
+      -e '/# zoi-debian quickshell:/d' \
+      -e '/^[[:space:]]*exec(_always)\{0,1\}[[:space:]]*\/usr\/bin\/qs -p/d' \
+      -e '/^[[:space:]]*exec(_always)\{0,1\}[[:space:]]*quickshell -p/d' \
+      "$SWAY"
     cat >> "$SWAY" <<'EOF'
 
 # zoi-debian waybar: barra nativa; qs sigue para launcher/notifs/lock/OSD

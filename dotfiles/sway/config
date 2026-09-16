@@ -40,6 +40,7 @@ include /etc/sway/config-vars.d/*
 
 ### Idle configuration
 #
+exec_always /usr/bin/qs -p ~/.config/quickshell
 exec_always ~/.local/bin/qs-idle
 exec_always ~/.local/bin/qs-clipwatch
 exec_always ~/.local/bin/qs-wallpaper restore
