@@ -683,15 +683,18 @@ cp "$ZOI_DIR/dotfiles/sway/config" "$HOME/.config/sway/config"
 # variants, then append the canonical exec (points at the QS_DOT dir
 # populated above).
 sed -i -E \
-  -e '/^[[:space:]]*exec(_always)?[[:space:]]+\/usr\/bin\/qs[[:space:]]+-p([[:space:]]|$)/d' \
-  -e '/^[[:space:]]*exec(_always)?[[:space:]]+quickshell[[:space:]]+-p([[:space:]]|$)/d' \
+  -e '/^[[:space:]]*exec(_always)?[[:space:]]+\/usr\/bin\/qs([[:space:]]|$)/d' \
+  -e '/^[[:space:]]*exec(_always)?[[:space:]]+quickshell([[:space:]]|$)/d' \
+  -e '/^[[:space:]]*exec(_always)?[[:space:]]+.*\/qs-shell([[:space:]]|$)/d' \
   -e '/^# zoi-debian quickshell:/d' \
   "$HOME/.config/sway/config"
-cat >> "$HOME/.config/sway/config" <<'EOF'
+if ! grep -q 'qs-shell' "$HOME/.config/sway/config"; then
+  cat >> "$HOME/.config/sway/config" <<'EOF'
 
 # zoi-debian quickshell: bar + overlays autostart (canonical)
-exec_always /usr/bin/qs -p "$HOME"/.config/quickshell
+exec_always ~/.local/bin/qs-shell
 EOF
+fi
 if [ -n "${ZOI_XKB:-}" ]; then
   log "Sway xkb_layout → $ZOI_XKB"
   sed -i "s/xkb_layout .*/xkb_layout ${ZOI_XKB}/" "$HOME/.config/sway/config"
@@ -941,12 +944,10 @@ $SUDO systemctl enable lightdm.service 2>/dev/null || warn "No pude enable Light
 $SUDO systemctl daemon-reload 2>/dev/null || true
 
 # ---------------------------------------------------------------- exec_always in sway
-log "Asegurando que sway ejecute qs + qs-idle."
-if ! grep -q "qs -n --daemonize" "$HOME/.config/sway/config"; then
+log "Asegurando que sway ejecute qs-idle."
+if ! grep -q "qs-idle" "$HOME/.config/sway/config"; then
   cat >> "$HOME/.config/sway/config" <<'EOF'
 
-# zoi-debian: arrancar qs (si no lo está)
-exec_always /usr/bin/qs -n --daemonize
 exec_always $HOME/.local/bin/qs-idle
 EOF
 fi

@@ -1,0 +1,7 @@
+#!/bin/sh
+# Single Quickshell instance (sway exec_always reloads it cleanly without stacking).
+pkill -x qs 2>/dev/null || true
+pkill -x quickshell 2>/dev/null || true
+sleep 0.15
+QS_BIN="$(command -v qs 2>/dev/null || command -v quickshell 2>/dev/null || echo "/usr/bin/qs")"
+exec "$QS_BIN" -p "${XDG_CONFIG_HOME:-$HOME/.config}/quickshell"

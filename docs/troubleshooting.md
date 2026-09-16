@@ -12,10 +12,10 @@ pgrep -af quickshell
 grep 'zoi-debian quickshell' ~/.config/sway/config
 ```
 
-La línea canónica es `exec_always /usr/bin/qs -p "$HOME"/.config/quickshell` (la reinstala `install.sh` idempotentemente; `install-waybar.sh` / `install-swaybar.sh` la sacan porque reemplazan la barra). Para levantarla ya:
+La línea canónica es `exec_always ~/.local/bin/qs-shell` (la instala `install.sh` idempotentemente y reinicia Quickshell limpiamente en `Super+Shift+C` sin duplicar barras). Para levantarla ya:
 
 ```sh
-/usr/bin/qs -n --daemonize
+~/.local/bin/qs-shell &
 ```
 
 ```sh

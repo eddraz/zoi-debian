@@ -334,13 +334,13 @@ sudo systemctl enable --now NetworkManager bluetooth lightdm
 `install.sh` deja el autostart de Quickshell en la config de Sway (bloque `# zoi-debian quickshell: bar + overlays autostart`):
 
 ```sh
-exec_always /usr/bin/qs -p "$HOME"/.config/quickshell
+exec_always ~/.local/bin/qs-shell
 ```
 
 Para probar sin reloguear:
 
 ```sh
-swaymsg exec /usr/bin/qs -n --daemonize
+~/.local/bin/qs-shell &
 /usr/bin/qs ipc call launcher toggle  # debería abrir el launcher
 ```
 

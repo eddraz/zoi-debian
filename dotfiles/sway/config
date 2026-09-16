@@ -40,7 +40,7 @@ include /etc/sway/config-vars.d/*
 
 ### Idle configuration
 #
-exec_always /usr/bin/qs -p ~/.config/quickshell
+exec_always ~/.local/bin/qs-shell
 exec_always ~/.local/bin/qs-idle
 exec_always ~/.local/bin/qs-clipwatch
 exec_always ~/.local/bin/qs-wallpaper restore
@@ -265,8 +265,8 @@ for_window [app_id="qs-screensaver"] fullscreen enable, border none
 #
 # Status Bar:
 #
-# Quickshell replaces swaybar. Config: ~/.config/quickshell
-# To restore the native bar, comment the exec_always line and uncomment `bar { ... }`.
+# Quickshell replaces swaybar (started via qs-shell above). Config: ~/.config/quickshell
+# To restore the native bar, comment qs-shell and uncomment `bar { ... }`.
 #
 # bar {
 #     position top
@@ -277,7 +277,6 @@ for_window [app_id="qs-screensaver"] fullscreen enable, border none
 #         inactive_workspace #32323200 #32323200 #5c5c5c
 #     }
 # }
-exec_always /usr/bin/qs -n --daemonize
 
 include /etc/sway/config.d/*
 
