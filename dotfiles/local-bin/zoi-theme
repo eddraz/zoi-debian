@@ -585,6 +585,9 @@ class ZoiThemeManager:
                 new_lines.insert(0, 'theme = "zoi"\n')
             with open(helix_cfg, "w", encoding="utf-8") as f:
                 f.writelines(new_lines)
+        else:
+            with open(helix_cfg, "w", encoding="utf-8") as f:
+                f.write('theme = "zoi"\n')
 
     def _dispatch_zed(self, content):
         if not content:

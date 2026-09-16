@@ -1146,6 +1146,8 @@ else
     *) warn "Helix no publica paquete para $ARCH." ;;
   esac
 fi
+mkdir -p "$HOME/.config/helix"
+[ -f "$HOME/.config/helix/config.toml" ] || printf 'theme = "zoi"\n' > "$HOME/.config/helix/config.toml"
 
 if command -v voxtype >/dev/null 2>&1; then
   log "voxtype ya está en PATH."
