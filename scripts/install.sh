@@ -1,22 +1,52 @@
 #!/usr/bin/env bash
-# zoi-debian installer for a Debian 13 terminal/minimal install.
+# ==============================================================================
+# zoi-debian installer for Debian 13 (Trixie) minimal / netinst installs.
+# ==============================================================================
 #
-# From a clone:
-#   apt-get update && apt-get install -y curl git
-#   git clone https://github.com/<you>/zoi-debian.git
-#   cd zoi-debian && sudo ./scripts/install.sh
+# DESCRIPCIÓN:
+#   Instalador integral e idempotente del entorno ZOI: Sway (Wayland), Quickshell,
+#   Foot, Fish, LightDM, temas dinámicos, drivers de hardware, utilidades modernas,
+#   toolchains de desarrollo (Node, Go, Rust, Deno, Bun, pnpm) y stack AI (Pi agent,
+#   Herdr, K2-Horizon, servidores MCP).
 #
-# Or one-liner (needs network already, pipe to bash not sh):
-#   curl -fsSL https://raw.githubusercontent.com/<you>/zoi-debian/main/scripts/install.sh \
-#     | sudo ZOI_REPO=https://github.com/<you>/zoi-debian.git bash
+# ARQUITECTURA EN DOS FASES:
+#   - Fase 1 (Root / Bootstrap):
+#       Verifica red (o asiste en configurar Wi-Fi con NetworkManager).
+#       Detecta o pregunta configuración regional (locale, layout de teclado, tz).
+#       Asigna grupos de hardware al usuario del sistema (video, render, audio,
+#       netdev, plugdev, input) y configura sudoers con confirmación.
+#       Descarga/actualiza el repositorio en el home del usuario y se re-ejecuta
+#       como el usuario destino sin privilegios de root (privilege drop).
+#   - Fase 2 (Usuario sin privilegios):
+#       Habilita repositorios APT (backports, contrib, non-free, non-free-firmware).
+#       Instala paquetes base de escritorio, drivers GPU/red y firmware.
+#       Despliega dotfiles de Quickshell, Sway, Foot, Fish, temas y scripts en ~/.local/bin.
+#       Instala toolchains de desarrollo, agentes AI y servidores MCP.
+#       Aplica paleta de color inicial y configura LightDM como Display Manager.
 #
-# Prompts only what is missing: Wi-Fi if offline; locale/keyboard/timezone if unset;
-# sudoers for the login user (confirm). Uses the existing OS login user. Does not ask
-# for name, email, username, or password, and does not create users or set git identity.
-# Then Pi + desktop. Idempotent. Re-run does not re-ask or re-theme an existing desktop.
+# USO RECOMENDADO:
+#   Desde un clone:
+#     apt-get update && apt-get install -y curl git sudo
+#     git clone https://github.com/eddraz/zoi-debian.git
+#     cd zoi-debian && sudo ./scripts/install.sh
 #
-# Env: ZOI_REPO ZOI_BRANCH ZOI_DIR ZOI_NONINTERACTIVE=1 ZOI_SKIP_REBOOT=1
-#      ZOI_LANG ZOI_XKB ZOI_TZ TARGET_USER ZOI_SUDOERS=0|1
+#   One-liner directo desde la red:
+#     curl -fsSL https://raw.githubusercontent.com/eddraz/zoi-debian/main/scripts/install.sh \
+#       | sudo bash
+#
+# VARIABLES DE ENTORNO SOPORTADAS:
+#   ZOI_REPO            URL del repositorio Git (default: https://github.com/eddraz/zoi-debian.git)
+#   ZOI_BRANCH          Rama a clonar (default: main)
+#   ZOI_DIR             Ruta local donde se ubica el repo (default: ~/projects/zoi-debian)
+#   ZOI_NONINTERACTIVE  1 para omitir preguntas interactivas y usar defaults
+#   ZOI_SKIP_REBOOT     1 para no solicitar el reinicio al finalizar
+#   ZOI_LANG            Locale del sistema (default: detectado o es_CO.UTF-8)
+#   ZOI_XKB             Layout de teclado XKB (default: detectado o latam,us)
+#   ZOI_TZ              Zona horaria (default: detectada o America/Bogota)
+#   ZOI_SUDOERS         1 para agregar al usuario a sudoers (default: 1 en no interactivo)
+#   TARGET_USER         Usuario de escritorio destino (default: $SUDO_USER o primer usuario UID >= 1000)
+#   GITHUB_TOKEN        Token opcional para la API de GitHub (evita límites de tasa 60 req/h)
+# ==============================================================================
 
 set -euo pipefail
 
@@ -24,7 +54,7 @@ set -euo pipefail
 # (sudo -E, su sin '-', agentes) no lo incluye y el script muere con 127.
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin:${PATH:-/usr/bin:/bin}"
 
-ZOI_REPO="${ZOI_REPO:-https://github.com/<owner>/zoi-debian.git}"
+ZOI_REPO="${ZOI_REPO:-https://github.com/eddraz/zoi-debian.git}"
 ZOI_BRANCH="${ZOI_BRANCH:-main}"
 
 log()  { printf '\033[1;35m[zoi]\033[0m %s\n' "$*"; }
@@ -54,34 +84,36 @@ tty_in() {
 
 ask() {
   local prompt="$1"
-  local __out
+  local __out=""
   if [ -r /dev/tty ]; then
     printf '%s' "$prompt" >/dev/tty
-    IFS= read -r __out </dev/tty
+    IFS= read -r __out </dev/tty || true
   else
     printf '%s' "$prompt"
-    IFS= read -r __out
+    IFS= read -r __out || true
   fi
   printf '%s' "$__out"
 }
 
 ask_secret() {
   local prompt="$1"
-  local __out
+  local __out=""
   if [ -r /dev/tty ]; then
     printf '%s' "$prompt" >/dev/tty
-    IFS= read -rs __out </dev/tty
+    IFS= read -rs __out </dev/tty || true
     printf '\n' >/dev/tty
   else
     printf '%s' "$prompt"
-    IFS= read -rs __out
+    IFS= read -rs __out || true
     printf '\n'
   fi
   printf '%s' "$__out"
 }
 
 have_net() {
-  ping -c 1 -W 2 1.1.1.1 >/dev/null 2>&1 || ping -c 1 -W 2 9.9.9.9 >/dev/null 2>&1
+  ping -c 1 -W 2 1.1.1.1 >/dev/null 2>&1 \
+    || ping -c 1 -W 2 9.9.9.9 >/dev/null 2>&1 \
+    || curl -fsSI --max-time 3 http://deb.debian.org >/dev/null 2>&1
 }
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -225,7 +257,7 @@ if [ "${ZOI_BOOTSTRAPPED:-}" != "1" ]; then
   fi
 
   _glist=""
-  for _g in video render audio netdev plugdev; do
+  for _g in video render audio netdev plugdev input; do
     getent group "$_g" >/dev/null 2>&1 || continue
     _glist="${_glist:+$_glist,}$_g"
   done
@@ -296,7 +328,7 @@ if [ "${ZOI_BOOTSTRAPPED:-}" != "1" ]; then
         printf '%s\n' "${ZOI_LANG} UTF-8" | $SUDO tee -a /etc/locale.gen >/dev/null
       fi
       $SUDO locale-gen "$ZOI_LANG" >/dev/null
-      $SUDO update-locale LANG="$ZOI_LANG" LANGUAGE="${ZOI_LANG%%.*}" LC_ALL="$ZOI_LANG"
+      $SUDO update-locale LANG="$ZOI_LANG" LANGUAGE="${ZOI_LANG%%.*}"
       $SUDO tee /etc/default/keyboard >/dev/null <<EOF
 XKBMODEL="pc105"
 XKBLAYOUT="${ZOI_XKB}"
@@ -342,7 +374,10 @@ EOF
   if [ "$(id -u)" -eq 0 ]; then
     log "Re-lanzando el resto de la instalación como $TARGET_USER."
     exec sudo -u "$TARGET_USER" -H \
-      env ZOI_BOOTSTRAPPED=1 ZOI_DIR="$DEST_REPO" ZOI_SKIP_REBOOT="${ZOI_SKIP_REBOOT:-}" \
+      env ZOI_BOOTSTRAPPED=1 ZOI_DIR="$DEST_REPO" \
+          ZOI_NONINTERACTIVE="${ZOI_NONINTERACTIVE:-}" \
+          ZOI_SKIP_REBOOT="${ZOI_SKIP_REBOOT:-}" \
+          GITHUB_TOKEN="${GITHUB_TOKEN:-${GH_TOKEN:-}}" \
           TARGET_USER="$TARGET_USER" \
           ZOI_LANG="$ZOI_LANG" ZOI_XKB="$ZOI_XKB" ZOI_TZ="$ZOI_TZ" \
       bash "$DEST_REPO/scripts/install.sh"
@@ -362,6 +397,9 @@ if [ "$(id -u)" -eq 0 ]; then
   die "La fase de escritorio no debe correr como root."
 fi
 SUDO=sudo
+
+# Asegurar que los binarios instalados en el home del usuario y toolchains estén en el PATH de la Fase 2
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.deno/bin:$HOME/.bun/bin:/usr/local/go/bin:$HOME/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin:${PATH:-/usr/bin:/bin}"
 
 ARCH="$(dpkg_arch)"
 export ARCH
@@ -385,7 +423,6 @@ DEBIAN_FRONTEND=noninteractive $SUDO apt-get -y full-upgrade || warn "full-upgra
 PKGS=(
   sway swaybg swaylock swayidle
   foot foot-themes
-  quickshell
   qt6-wayland
   pipewire wireplumber
   wlsunset wtype wl-clipboard grim slurp wf-recorder
@@ -398,6 +435,7 @@ PKGS=(
   jq
   bc
   btop
+  cmake
   python3 python3-gi gir1.2-gdkpixbuf-2.0 libglib2.0-bin
   libqrencode4 qrencode
   polkitd pkexec
@@ -424,21 +462,94 @@ BP_PKGS=(quickshell)
 
 log "Instalando paquetes base (puede tardar 1-3 min)."
 $SUDO apt-get install -y --no-install-recommends "${PKGS[@]}"
-log "Asegurando paquetes de backports."
+log "Asegurando paquetes de backports (quickshell)."
 $SUDO apt-get install -y --no-install-recommends -t trixie-backports "${BP_PKGS[@]}"
 
 # ---------------------------------------------------------------- firmware / drivers (from projects/scripts/install.sh)
 ensure_firmware_repo() {
   local sources="/etc/apt/sources.list" d="/etc/apt/sources.list.d"
-  if grep -Rqs "non-free-firmware" "$sources" "$d" 2>/dev/null; then
+  local has_contrib has_nonfree updated=0
+
+  # Verificar si contrib y non-free ya están habilitados en los repositorios de Debian
+  has_contrib="$(grep -RhE '^[[:space:]]*(deb|deb-src)[[:space:]].*\bcontrib\b' "$sources" "$d" 2>/dev/null || true)"
+  has_nonfree="$(grep -RhE '^[[:space:]]*(deb|deb-src)[[:space:]].*\bnon-free\b' "$sources" "$d" 2>/dev/null || true)"
+
+  if [ -n "$has_contrib" ] && [ -n "$has_nonfree" ]; then
+    log "Repositorios contrib y non-free ya están habilitados."
     return 0
   fi
-  log "Habilitando contrib non-free non-free-firmware."
-  if [ -f "$sources" ] && grep -qE "^deb .*debian" "$sources"; then
-    $SUDO sed -i -E 's/^(deb .*debian.*main)(.*)$/\1 contrib non-free non-free-firmware\2/' "$sources"
-    $SUDO sed -i -E 's/ contrib contrib/ contrib/g; s/ non-free non-free/ non-free/g; s/ non-free-firmware non-free-firmware/ non-free-firmware/g' "$sources"
+
+  log "Habilitando contrib, non-free y non-free-firmware en /etc/apt."
+
+  # Actualizar /etc/apt/sources.list clásico si existe
+  if [ -f "$sources" ]; then
+    $SUDO python3 - "$sources" <<'PY' || true
+import sys
+
+path = sys.argv[1]
+with open(path, "r", encoding="utf-8") as fh:
+    lines = fh.readlines()
+
+modified = False
+new_lines = []
+for line in lines:
+    stripped = line.strip()
+    if stripped.startswith(("deb ", "deb-src ")) and ("debian.org" in stripped):
+        parts = stripped.split()
+        if len(parts) >= 4:
+            prefix = parts[:3]
+            comps = parts[3:]
+            orig = list(comps)
+            for c in ["contrib", "non-free", "non-free-firmware"]:
+                if c not in comps:
+                    comps.append(c)
+            if comps != orig:
+                modified = True
+                line = " ".join(prefix + comps) + "\n"
+    new_lines.append(line)
+
+if modified:
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.writelines(new_lines)
+PY
+    updated=1
   fi
-  $SUDO apt-get update -y
+
+  # Actualizar formatos deb822 en /etc/apt/sources.list.d/*.sources si existen
+  for sf in "$d"/*.sources; do
+    [ -f "$sf" ] || continue
+    $SUDO python3 - "$sf" <<'PY' || true
+import sys
+
+path = sys.argv[1]
+with open(path, "r", encoding="utf-8") as fh:
+    content = fh.read()
+
+modified = False
+new_lines = []
+for line in content.splitlines():
+    if line.strip().startswith("Components:"):
+        parts = line.split()
+        comps = parts[1:]
+        orig = list(comps)
+        for c in ["contrib", "non-free", "non-free-firmware"]:
+            if c not in comps:
+                comps.append(c)
+        if comps != orig:
+            modified = True
+            line = "Components: " + " ".join(comps)
+    new_lines.append(line)
+
+if modified:
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(new_lines) + "\n")
+PY
+    updated=1
+  done
+
+  if [ "$updated" -eq 1 ]; then
+    $SUDO apt-get update -y
+  fi
 }
 
 install_hw_drivers() {
@@ -581,12 +692,19 @@ if [ -n "$node_arch" ]; then
   else
     log "Instalando Node.js v${node_latest} ($ARCH) en /usr/local."
     node_tmp="$(mktemp -d)"
-    node_url="https://nodejs.org/dist/latest/node-v${node_latest}-linux-${node_arch}.tar.xz"
-    if curl -fsSL "$node_url" -o "$node_tmp/node.tar.xz" \
-      && $SUDO tar -xJf "$node_tmp/node.tar.xz" -C /usr/local --strip-components=1; then
-      log "Node.js $(/usr/local/bin/node -v)  npm $(/usr/local/bin/npm -v 2>/dev/null || echo '?')"
+    node_tar="node-v${node_latest}-linux-${node_arch}.tar.xz"
+    node_url="https://nodejs.org/dist/latest/${node_tar}"
+    if curl -fsSL "$node_url" -o "$node_tmp/${node_tar}"; then
+      node_expected_sha="$(printf '%s\n' "$node_shasums" | awk -v file="$node_tar" '$2 == file { print $1; exit }')"
+      if [ -n "$node_expected_sha" ] && ! (cd "$node_tmp" && echo "${node_expected_sha}  ${node_tar}" | sha256sum -c --status); then
+        warn "SHA256 de Node.js no coincide con el oficial; aborto instalación de Node.js."
+      elif $SUDO tar -xJf "$node_tmp/${node_tar}" -C /usr/local --strip-components=1; then
+        log "Node.js $(/usr/local/bin/node -v)  npm $(/usr/local/bin/npm -v 2>/dev/null || echo '?')"
+      else
+        warn "No pude extraer Node.js v${node_latest}."
+      fi
     else
-      warn "No pude instalar Node.js v${node_latest}."
+      warn "No pude descargar Node.js v${node_latest}."
     fi
     rm -rf "$node_tmp"
   fi
@@ -691,15 +809,13 @@ if [ -f "$HOME/.config/sway/config" ] && [ ! -L "$HOME/.config/sway/config" ]; t
   cp "$HOME/.config/sway/config" "$HOME/.config/sway/config.bak.$(date +%s)"
 fi
 cp "$ZOI_DIR/dotfiles/sway/config" "$HOME/.config/sway/config"
-# Keep the quickshell autostart explicit and idempotent: remove stale
-# variants, then append the canonical exec (points at the QS_DOT dir
-# populated above).
+# Limpieza de variantes obsoletas de versiones anteriores si existen
 sed -i -E \
   -e '/^[[:space:]]*exec(_always)?[[:space:]]+\/usr\/bin\/qs([[:space:]]|$)/d' \
   -e '/^[[:space:]]*exec(_always)?[[:space:]]+quickshell([[:space:]]|$)/d' \
-  -e '/^[[:space:]]*exec(_always)?[[:space:]]+.*\/qs-shell([[:space:]]|$)/d' \
-  -e '/^# zoi-debian quickshell:/d' \
   "$HOME/.config/sway/config"
+
+# Asegurar autostart canónico de qs-shell si no estuviera presente
 if ! grep -q 'qs-shell' "$HOME/.config/sway/config"; then
   cat >> "$HOME/.config/sway/config" <<'EOF'
 
@@ -707,37 +823,11 @@ if ! grep -q 'qs-shell' "$HOME/.config/sway/config"; then
 exec_always ~/.local/bin/qs-shell
 EOF
 fi
+
 if [ -n "${ZOI_XKB:-}" ]; then
   log "Sway xkb_layout → $ZOI_XKB"
   sed -i "s/xkb_layout .*/xkb_layout ${ZOI_XKB}/" "$HOME/.config/sway/config"
 fi
-
-# Keep the hardware-key block explicit and idempotent in the installed config.
-# Remove stale/conflicting entries before writing the canonical --locked bindings.
-sed -i -E \
-  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioMute([[:space:]]|$)/d' \
-  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioLowerVolume([[:space:]]|$)/d' \
-  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioRaiseVolume([[:space:]]|$)/d' \
-  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioPlay([[:space:]]|$)/d' \
-  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioPause([[:space:]]|$)/d' \
-  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioNext([[:space:]]|$)/d' \
-  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86AudioPrev([[:space:]]|$)/d' \
-  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86MonBrightnessDown([[:space:]]|$)/d' \
-  -e '/^[[:space:]]*bindsym([[:space:]]+--locked)?[[:space:]]+XF86MonBrightnessUp([[:space:]]|$)/d' \
-  "$HOME/.config/sway/config"
-cat >> "$HOME/.config/sway/config" <<'EOF'
-
-# zoi-debian: hardware keys (keep these bindings --locked)
-bindsym --locked XF86AudioMute exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && /usr/bin/qs ipc call osd volume
-bindsym --locked XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- && /usr/bin/qs ipc call osd volume
-bindsym --locked XF86AudioRaiseVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ && /usr/bin/qs ipc call osd volume
-bindsym --locked XF86AudioPlay exec playerctl play-pause
-bindsym --locked XF86AudioPause exec playerctl play-pause
-bindsym --locked XF86AudioNext exec playerctl next
-bindsym --locked XF86AudioPrev exec playerctl previous
-bindsym --locked XF86MonBrightnessDown exec brightnessctl set 5%- && /usr/bin/qs ipc call osd brightness
-bindsym --locked XF86MonBrightnessUp exec brightnessctl set 5%+ && /usr/bin/qs ipc call osd brightness
-EOF
 
 # ---------------------------------------------------------------- brightness permissions
 # Debian's brightnessctl ships without udev rules: without them, XF86 brightness
@@ -1062,7 +1152,13 @@ fi
 # ---------------------------------------------------------------- extra tools (thunar, rustup, helix, voxtype, deno/bun/pnpm, cloudflared, bruno, etcher, snap, flatpak, brew, drift)
 github_latest_asset_url() {
   local repo="$1" needle="$2"
-  curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" 2>/dev/null | python3 -c '
+  local -a auth=()
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
+    auth=(-H "Authorization: Bearer $GITHUB_TOKEN")
+  elif [ -n "${GH_TOKEN:-}" ]; then
+    auth=(-H "Authorization: Bearer $GH_TOKEN")
+  fi
+  curl -fsSL "${auth[@]}" "https://api.github.com/repos/${repo}/releases/latest" 2>/dev/null | python3 -c '
 import json, sys
 needle = sys.argv[1].lower()
 try:
@@ -1080,7 +1176,13 @@ for a in data.get("assets") or []:
 
 github_latest_deb_url() {
   local repo="$1" needle="$2"
-  curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" 2>/dev/null | python3 -c '
+  local -a auth=()
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
+    auth=(-H "Authorization: Bearer $GITHUB_TOKEN")
+  elif [ -n "${GH_TOKEN:-}" ]; then
+    auth=(-H "Authorization: Bearer $GH_TOKEN")
+  fi
+  curl -fsSL "${auth[@]}" "https://api.github.com/repos/${repo}/releases/latest" 2>/dev/null | python3 -c '
 import json, sys
 needle = sys.argv[1].lower()
 try:
@@ -1191,11 +1293,11 @@ if command -v pnpm >/dev/null 2>&1; then
   log "pnpm ya está en PATH."
 elif command -v corepack >/dev/null 2>&1; then
   log "Activando pnpm vía corepack."
-  corepack enable >/dev/null 2>&1 || true
-  corepack prepare pnpm@latest --activate || warn "corepack no pudo activar pnpm."
+  $SUDO corepack enable >/dev/null 2>&1 || corepack enable >/dev/null 2>&1 || true
+  $SUDO corepack prepare pnpm@latest --activate 2>/dev/null || corepack prepare pnpm@latest --activate 2>/dev/null || warn "corepack no pudo activar pnpm."
 elif command -v npm >/dev/null 2>&1; then
-  log "Instalando pnpm con npm -g."
-  npm install -g pnpm || warn "npm no pudo instalar pnpm."
+  log "Instalando pnpm."
+  $SUDO npm install -g pnpm 2>/dev/null || npm install -g --prefix "$HOME/.local" pnpm || warn "npm no pudo instalar pnpm."
 else
   warn "Sin corepack/npm; no instalo pnpm."
 fi
@@ -1360,7 +1462,6 @@ command -v chrome-devtools-mcp >/dev/null || warn "Falta chrome-devtools-mcp (np
 # de Pi lo tenga sembrado (Fase 2 → seed_pi_native_mcp_config en lib-go-gentleman.sh).
 grep -q '"context7"' "$HOME/.pi/agent/mcp.json" 2>/dev/null \
   || warn "Falta server MCP context7 en ~/.pi/agent/mcp.json (mcp.context7.com/mcp)."
-command -v pi >/dev/null || warn "Falta pi (gentle-pi)."
 [ -f "$HOME/.pi/agent/skills/herdr/SKILL.md" ] || warn "Falta skill de herdr para Pi (~/.pi/agent/skills/herdr/SKILL.md)."
 
 command -v flatpak >/dev/null && flatpak list --app 2>/dev/null | grep -q org.cutwire.Drift || [ -x "$HOME/.local/bin/Drift.AppImage" ] || warn "Falta Drift (flatpak org.cutwire.Drift)."
@@ -1372,10 +1473,14 @@ fi
 log "Atajos: docs/shortcuts.md  ·  Temas: docs/configuration.md  ·  Fallos: docs/troubleshooting.md"
 
 if [ "${ZOI_SKIP_REBOOT:-}" != "1" ]; then
-  log "Reiniciá el PC para entrar con LightDM y comprobar Sway + qs + foot/fish."
-  ANSWER="$(ask "¿Reiniciar ahora? [Y/n] ")"
-  case "$ANSWER" in
-    ""|Y|y|S|s) $SUDO systemctl reboot ;;
-    *) log "OK. Cuando quieras: sudo reboot" ;;
-  esac
+  if [ "${ZOI_NONINTERACTIVE:-}" = "1" ]; then
+    log "Modo no interactivo activo; omito reinicio automático. Cuando quieras: sudo reboot"
+  else
+    log "Reiniciá el PC para entrar con LightDM y comprobar Sway + qs + foot/fish."
+    ANSWER="$(ask "¿Reiniciar ahora? [Y/n] ")"
+    case "$ANSWER" in
+      ""|Y|y|S|s) $SUDO systemctl reboot ;;
+      *) log "OK. Cuando quieras: sudo reboot" ;;
+    esac
+  fi
 fi
