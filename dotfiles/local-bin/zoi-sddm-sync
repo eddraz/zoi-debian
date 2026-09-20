@@ -1,0 +1,74 @@
+#!/bin/bash
+# zoi-sddm-sync — push the active zoi-theme palette + wallpaper into the SDDM theme.
+# Called by the theme-set.d hook after every `zoi-theme set`.
+# Renders the sddm-theme.conf template inline (never calls zoi-theme apply-json,
+# which would re-enter this hook). Fails soft when sudo is unavailable.
+set -euo pipefail
+
+THEME_DIR="/usr/share/sddm/themes/zoi"
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/zoi/theme/current"
+WALLPAPER_STATE="${XDG_STATE_HOME:-$HOME/.local/state}/quickshell/wallpaper"
+REPO="${ZOI_REPO:-$HOME/projects/zoi-debian}"
+
+[ -d "$THEME_DIR" ] || { echo "zoi-sddm-sync: $THEME_DIR missing (run scripts/install-sddm.sh)" >&2; exit 0; }
+[ -f "$STATE/colors.json" ] || { echo "zoi-sddm-sync: no active palette" >&2; exit 0; }
+TPL="$REPO/dotfiles/themes/templates/sddm-theme.conf.tpl"
+[ -f "$TPL" ] || TPL="$HOME/.local/share/zoi/templates/sddm-theme.conf.tpl"
+
+wallpaper="$THEME_DIR/default-background.jpg"
+if [ -f "$WALLPAPER_STATE" ]; then
+  candidate="$(head -n1 "$WALLPAPER_STATE")"
+  [ -f "$candidate" ] && wallpaper="$candidate"
+fi
+
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+
+# Render moustache vars: {{key}}, {{key_strip}} and {{mix a b NN%}} (hex blend),
+# same semantics as the engine's render_template for the subset we use.
+TPL="$TPL" STATE="$STATE" python3 - "$tmp" <<'EOF'
+import json, os, re, sys
+
+tpl = open(os.environ["TPL"]).read()
+pal = json.load(open(os.path.join(os.environ["STATE"], "colors.json")))
+
+def hx(c):
+    c = c.lstrip("#")
+    return tuple(int(c[i:i+2], 16) for i in (0, 2, 4))
+
+def blend(a, b, r):
+    ra, ga, ba = hx(a); rb, gb, bb = hx(b)
+    return "#%02x%02x%02x" % (
+        round(ra + (rb - ra) * r),
+        round(ga + (gb - ga) * r),
+        round(ba + (bb - ba) * r))
+
+def sub(m):
+    expr = m.group(1).strip()
+    mix = re.match(r"mix\s+(\w+)\s+(\w+)\s+([0-9.]+)%?$", expr)
+    if mix:
+        r = float(mix.group(3))
+        if r > 1: r /= 100.0
+        return blend(pal.get(mix.group(1), "#ffffff"), pal.get(mix.group(2), "#000000"), r)
+    if expr.endswith("_strip"):
+        return pal.get(expr[:-6], "#ffffff").lstrip("#")
+    return pal.get(expr, "#ffffff")
+
+out = re.sub(r"\{\{\s*([^}]+?)\s*\}\}", sub, tpl)
+open(sys.argv[1], "w").write(out)
+EOF
+
+# The QML must only read paths inside the root-owned theme dir.
+sed -i "s|__ZOI_WALLPAPER__|$THEME_DIR/background-image|" "$tmp"
+
+install_root() {
+  if sudo -n "$@" 2>/dev/null; then return 0; fi
+  sudo "$@"
+}
+
+install_root install -d -m 0755 "$THEME_DIR"
+install_root install -m 0644 "$tmp" "$THEME_DIR/theme.conf"
+[ "$wallpaper" = "$THEME_DIR/default-background.jpg" ] || \
+  install_root install -m 0644 "$wallpaper" "$THEME_DIR/background-image"
+
+echo "zoi-sddm-sync: SDDM theme updated (palette + wallpaper)"

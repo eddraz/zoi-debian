@@ -1,0 +1,9 @@
+[SddmGreeterTheme]
+Name=zoi
+Description=ZOI Debian theme, palette-synced with zoi-theme
+Author=zoi-debian
+License=MIT
+Type=sddm-theme
+MainScript=Main.qml
+ConfigFile=theme.conf
+Screenshot=preview.png
