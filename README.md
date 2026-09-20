@@ -92,8 +92,10 @@ zoi-debian/
 ├── assets/
 │   └── default-wallpaper.jpg  baby-yoda
 └── skills/
-    └── zoi-debian/
-        └── SKILL.md           manual de la AI para mantener este repo
+    ├── zoi-debian/
+    │   └── SKILL.md           manual de la AI para mantener este repo
+    └── typesafe-ai/
+        └── SKILL.md           skill de TypeSafe (System One/Jev), vendorizado de upstream
 ```
 
 ## Características
