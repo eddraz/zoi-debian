@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -e
+
+if [ $# -eq 0 ]; then
+    notify-send -i dialog-error "Error de compresión" "No se seleccionó ningún archivo."
+    exit 1
+fi
+
+# Directorio base del primer archivo
+first_item="$1"
+target_dir="$(dirname "$first_item")"
+cd "$target_dir"
+
+# Si es un solo elemento seleccionado
+if [ $# -eq 1 ]; then
+    base_name="$(basename "$first_item")"
+    archive_name="${base_name}.zip"
+else
+    # Si son varios elementos seleccionados dentro de una carpeta
+    parent_name="$(basename "$target_dir")"
+    archive_name="${parent_name}_seleccion.zip"
+fi
+
+# Construir lista de nombres relativos (basenames) para evitar rutas absolutas en el zip
+relative_items=()
+for item in "$@"; do
+    relative_items+=("$(basename "$item")")
+done
+
+# Crear el archivo zip usando 7z
+7z a -tzip "$archive_name" "${relative_items[@]}" > /dev/null
+
+notify-send -i package-x-generic "Compresión finalizada" "Archivo creado exitosamente:\n$archive_name"

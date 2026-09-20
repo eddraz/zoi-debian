@@ -119,7 +119,7 @@ Importante: el primer arranque de `qs` necesita:
 | `firmware-linux*` Mesa VA/Vulkan | Firmware + aceleración según hardware (Intel/AMD/NVIDIA, iwlwifi, realtek, …) |
 | `gh` | **No es solo apt.** Repo oficial GitHub CLI; keyring verificado por SHA256 |
 | `zed` | **No es paquete apt.** Instalador `zed.dev/install.sh` |
-| `thunar` | File manager extra (Yazi sigue como default XDG) |
+| `thunar` `thunar-volman` `tumbler` `gvfs` `gvfs-backends` `gvfs-fuse` `thunar-archive-plugin` `xarchiver` `zip` `7zip` | File manager gráfico con soporte GVFS (papelera, udisks2, red SMB/SFTP, MTP) y gestión completa de archivadores vía plugin nativo y Xarchiver respaldado por el motor oficial 7-Zip (`7z`) |
 | `voxtype` | Voz a texto Wayland. `.deb` amd64 de [peteonrails/voxtype](https://github.com/peteonrails/voxtype). No pisa Super+V (clipboard) |
 | `deno` `bun` `pnpm` | Runtimes JS. Deno/Bun al home; pnpm vía corepack |
 | `cloudflared` | Cloudflare Tunnel. `.deb` GitHub latest |

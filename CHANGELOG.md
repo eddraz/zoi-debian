@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Features
+- **Gestor de compresión y archivadores nativo para Thunar:** se integraron `thunar-archive-plugin`, `xarchiver`, `zip` y `7zip` en `scripts/install.sh` y documentación, dotando a Thunar de menús contextuales nativos ("Crear archivador...", "Extraer aquí", "Extraer en...") con soporte completo para formatos `.7z`, `.zip`, `.tar.gz`, `.tar.xz`, cifrado AES-256 de 7-Zip, y el script auxiliar `thunar-compress` en `dotfiles/local-bin/` para compresión rápida en un clic.
+- **Soporte GVFS para Thunar:** se agregaron `gvfs`, `gvfs-backends` y `gvfs-fuse` a la lista de paquetes base en `scripts/install.sh` y documentación, dotando a Thunar de soporte completo para papelera (`trash:///`), montaje y desmontaje de unidades y memorias USB vía UDisks2, navegación en red local (SMB/SFTP) y dispositivos móviles MTP.
 - **Sway auto-follow en cambio de workspace:** al enviar una ventana a otro espacio con `Super+Shift+[0-9]`, se encadena `move container to workspace number X; workspace number X` para mover la ventana y cambiar el foco inmediatamente al espacio de destino. Docs: `docs/shortcuts.md`.
 
 ### Fixes

@@ -452,7 +452,7 @@ PKGS=(
   ffmpeg poppler-utils fd-find ripgrep fzf imagemagick p7zip-full
   ffmpegthumbnailer chafa
   git curl ca-certificates xz-utils
-  thunar thunar-volman tumbler
+  thunar thunar-volman tumbler gvfs gvfs-backends gvfs-fuse thunar-archive-plugin xarchiver zip 7zip
   podman uidmap slirp4netns fuse-overlayfs
   snapd flatpak xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk
   build-essential pipewire-alsa libnotify-bin libvulkan1
@@ -895,6 +895,9 @@ if [ ! -x "$HOME/.local/bin/qs-weather" ]; then
 fi
 if [ ! -x /usr/bin/python3 ]; then
   warn "Falta /usr/bin/python3; el chip de weather no puede fetch."
+fi
+if [ -f /usr/lib/thunar-archive-plugin/xarchiver.tap ] && [ ! -f /usr/libexec/thunar-archive-plugin/xarchiver.tap ]; then
+  $SUDO ln -sf /usr/lib/thunar-archive-plugin/xarchiver.tap /usr/libexec/thunar-archive-plugin/xarchiver.tap || true
 fi
 
 # ---------------------------------------------------------------- inlyne (GPU markdown viewer; amd64/arm64)
@@ -1437,6 +1440,8 @@ command -v herdr >/dev/null || warn "Falta binario: herdr (curl -fsSL https://he
 command -v pi >/dev/null || warn "Falta binario: pi (reiniciá la shell o agregá el PATH de pi.dev)."
 command -v zed >/dev/null || warn "Falta binario: zed (curl -fsS https://zed.dev/install.sh | sh)."
 command -v thunar >/dev/null || warn "Falta thunar."
+command -v xarchiver >/dev/null || warn "Falta xarchiver."
+command -v 7z >/dev/null || warn "Falta 7z (paquete 7zip)."
 command -v podman >/dev/null || warn "Falta podman."
 command -v deno >/dev/null || [ -x "$HOME/.deno/bin/deno" ] || warn "Falta deno."
 command -v bun >/dev/null || [ -x "$HOME/.bun/bin/bun" ] || warn "Falta bun."

@@ -18,6 +18,7 @@ state/
 .codegraph/
 # Local Pi runtime state
 .atl/
+.serena/
 
 # Slint / Rust
 /apps/target/

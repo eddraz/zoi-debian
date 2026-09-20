@@ -48,7 +48,7 @@ Es **idempotente**. `ZOI_SKIP_REBOOT=1` saltea el reboot. `ZOI_NONINTERACTIVE=1`
 - **UPower** (chip de batería), **zram-tools** (`zstd`, 60% RAM), **firmware/drivers** según GPU/NIC (Mesa, Realtek, AMD graphics, microcode, NVIDIA modeset si aplica), **fwupd**, Mesa i386 para Steam.
 - **GitHub CLI (`gh`)** desde el repo oficial (keyring con SHA256).
 - **Zed** editor (`zed.dev`); `zoi-theme` pinta la paleta.
-- **Thunar** (file manager extra; el default XDG sigue siendo Yazi), **Voxtype** (voz a texto Wayland, `.deb` amd64), **Podman**.
+- **Thunar** (file manager extra con GVFS y gestión nativa de archivadores vía 7-Zip/Xarchiver; el default XDG sigue siendo Yazi), **Voxtype** (voz a texto Wayland, `.deb` amd64), **Podman**.
 - **Rust** (`rustup` stable → `~/.cargo/bin`) y **Helix** (`hx`; `.deb` de GitHub en amd64, tarball en arm64). `zoi-theme` pinta Helix.
 - **llama.cpp** compilado desde `~/apps/llama.cpp` (fork K2-Horizon, sin Homebrew). Modelo [K2-Horizon-0.9B GGUF](https://huggingface.co/IFM/K2-Horizon-0.9B-GGUF) en `~/models` (`k2-chat` / `k2-server`).
 - **Go** (oficial go.dev ≥1.25.10) + **Gentle-AI**, **Engram**, **gentle-pi**, **gga** (Guardian Angel).
